@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -23,7 +24,8 @@ import {
 } from 'lucide-react'
 
 function IdeaCard({ idea, onVote }) {
-    const { isAuthenticated } = useAuth()
+    const { isAuthenticated, user } = useAuth()
+    const { launchProjectFromIdea } = useData()
     const totalVotes = idea.votes.up + idea.votes.down
 
     return (
@@ -90,12 +92,24 @@ function IdeaCard({ idea, onVote }) {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                    <Button variant="conceptnexus" className="flex-1">
-                        <Sparkles className="w-4 h-4 mr-1" /> Validate
-                    </Button>
+                    {idea.status === 'validated' && !idea.linkedBoardId ? (
+                        <Button
+                            variant="conceptnexus"
+                            className="flex-1"
+                            onClick={() => launchProjectFromIdea(idea, user.id, user.name)}
+                        >
+                            <Sparkles className="w-4 h-4 mr-1" /> Launch Project
+                        </Button>
+                    ) : (
+                        <Button variant="conceptnexus" className="flex-1" disabled={idea.status !== 'validated'}>
+                            <Sparkles className="w-4 h-4 mr-1" /> {idea.linkedBoardId ? 'Project Launched' : 'Validate'}
+                        </Button>
+                    )}
                     {idea.linkedBoardId && (
-                        <Button variant="outline" size="icon" title="View on Collaboard">
-                            <ExternalLink className="w-4 h-4" />
+                        <Button variant="outline" size="icon" title="View on Collaboard" asChild>
+                            <Link to={`/apps/collaboard?boardId=${idea.linkedBoardId}`}>
+                                <ExternalLink className="w-4 h-4" />
+                            </Link>
                         </Button>
                     )}
                 </div>

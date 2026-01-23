@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams, Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -14,8 +15,10 @@ import {
     Clock,
     ArrowRight,
     MessageSquare,
-    Calendar
+    Calendar,
+    ExternalLink
 } from 'lucide-react'
+
 
 function TaskCard({ task, columnId }) {
     return (
@@ -136,9 +139,17 @@ function BoardCard({ board }) {
 }
 
 export default function Collaboard() {
-    const { boards } = useData()
+    const { boards, getRecommendedTalents } = useData()
     const { isAuthenticated, user } = useAuth()
+    const [searchParams] = useSearchParams()
     const [selectedBoard, setSelectedBoard] = useState(null)
+
+    useEffect(() => {
+        const boardId = searchParams.get('boardId')
+        if (boardId) {
+            setSelectedBoard(boardId)
+        }
+    }, [searchParams])
 
     const myBoards = boards.filter(b =>
         b.members.some(m => m.userId === user?.id)
@@ -150,6 +161,8 @@ export default function Collaboard() {
             setSelectedBoard(null)
             return null
         }
+
+        const recommendations = getRecommendedTalents(board.id)
 
         return (
             <main className="py-8">
@@ -175,11 +188,69 @@ export default function Collaboard() {
                         </div>
                     </div>
 
-                    {/* Kanban Board */}
-                    <div className="flex gap-4 overflow-x-auto pb-4">
-                        {board.columns.map(column => (
-                            <BoardColumn key={column.id} column={column} boardId={board.id} />
-                        ))}
+                    <div className="grid lg:grid-cols-4 gap-6">
+                        {/* Kanban Board */}
+                        <div className="lg:col-span-3 flex gap-4 overflow-x-auto pb-4">
+                            {board.columns.map(column => (
+                                <BoardColumn key={column.id} column={column} boardId={board.id} />
+                            ))}
+                        </div>
+
+                        {/* Skill Summoner Sidebar */}
+                        <div className="space-y-6">
+                            <Card className="border-collaboard/20 bg-collaboard/5">
+                                <CardHeader className="pb-3">
+                                    <div className="flex items-center gap-2 text-collaboard">
+                                        <Users className="w-5 h-5 font-bold" />
+                                        <CardTitle className="text-lg">Skill Summoner</CardTitle>
+                                    </div>
+                                    <p className="text-xs text-muted">AI-recommended talent for this project</p>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {recommendations.length > 0 ? (
+                                        recommendations.map(talent => (
+                                            <div key={talent.id} className="p-3 rounded-lg bg-card border shadow-sm group hover:border-collaboard transition-colors">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <Avatar className="w-8 h-8">
+                                                        <AvatarFallback className="text-xs">{getInitials(talent.displayName)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-medium text-sm truncate">{talent.displayName}</p>
+                                                        <p className="text-xs text-muted">{talent.hourlyRate}/hr</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-wrap gap-1 mb-3">
+                                                    {talent.skills.slice(0, 2).map((s, i) => (
+                                                        <Badge key={i} variant="secondary" className="text-[10px] px-1 py-0">{s.name}</Badge>
+                                                    ))}
+                                                </div>
+                                                <Button variant="outline" size="sm" className="w-full h-8 text-xs group-hover:bg-collaboard group-hover:text-white">
+                                                    Summon Help
+                                                </Button>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted text-center py-4">No matching talent found</p>
+                                    )}
+                                    <Button variant="ghost" size="sm" className="w-full text-xs" asChild>
+                                        <Link to="/apps/skillscanvas">
+                                            View all on SkillsCanvas →
+                                        </Link>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader className="pb-3">
+                                    <CardTitle className="text-sm">Project Details</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-xs text-muted leading-relaxed">
+                                        {board.description}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
                 </div>
             </main>

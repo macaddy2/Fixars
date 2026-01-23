@@ -19,10 +19,54 @@ import {
     Zap
 } from 'lucide-react'
 
+// Activity Feed Component
+function ActivityFeed({ activities }) {
+    const getIcon = (type) => {
+        switch (type) {
+            case 'launch': return <Lightbulb className="w-4 h-4 text-conceptnexus" />
+            case 'stake': return <TrendingUp className="w-4 h-4 text-investden" />
+            case 'skill': return <Palette className="w-4 h-4 text-skillscanvas" />
+            default: return <Zap className="w-4 h-4 text-primary" />
+        }
+    }
+
+    return (
+        <Card>
+            <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center justify-between">
+                    Community Feed
+                    <div className="flex gap-1">
+                        <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                    </div>
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    {activities.map((act) => (
+                        <div key={act.id} className="flex gap-3 text-sm">
+                            <div className="mt-1 shrink-0">
+                                {getIcon(act.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-foreground leading-snug">
+                                    <span className="font-bold">{act.user}</span> {act.message}
+                                </p>
+                                <p className="text-xs text-muted mt-0.5">
+                                    {new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
 export default function Dashboard() {
     const { user, isAuthenticated } = useAuth()
     const { points, level, getNextLevel, LEVELS } = usePoints()
-    const { stakes, ideas, boards, talents } = useData()
+    const { stakes, ideas, boards, talents, activities } = useData()
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />
@@ -221,6 +265,8 @@ export default function Dashboard() {
                                 </Button>
                             </CardContent>
                         </Card>
+
+                        <ActivityFeed activities={activities} />
 
                         {/* Top Talents */}
                         <Card>

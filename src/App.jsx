@@ -5,6 +5,7 @@ import { SocialProvider } from '@/contexts/SocialContext'
 import { DataProvider } from '@/contexts/DataContext'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import RewardToast from '@/components/RewardToast'
 
 // Pages
 import Home from '@/pages/Home'
@@ -111,6 +112,7 @@ export default function App() {
                   </Routes>
                 </div>
                 <Footer />
+                <RewardToast />
               </div>
             </SocialProvider>
           </PointsProvider>

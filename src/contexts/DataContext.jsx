@@ -236,6 +236,46 @@ export function DataProvider({ children }) {
     const [stakes, setStakes] = useState(INITIAL_DATA.stakes)
     const [ideas, setIdeas] = useState(INITIAL_DATA.ideas)
     const [boards, setBoards] = useState(INITIAL_DATA.boards)
+    const [activities, setActivities] = useState([
+        {
+            id: 'act-001',
+            type: 'launch',
+            user: 'Alex Morgan',
+            message: 'launched Solar Grid Project',
+            timestamp: '2026-01-20T10:00:00Z',
+            app: 'conceptnexus'
+        },
+        {
+            id: 'act-002',
+            type: 'stake',
+            user: 'Sarah Chen',
+            message: 'staked $5,000 on Fixars Core Dev',
+            timestamp: '2026-01-19T15:30:00Z',
+            app: 'investden'
+        },
+        {
+            id: 'act-003',
+            type: 'skill',
+            user: 'Jessica Lee',
+            message: 'joined the talent pool',
+            timestamp: '2026-01-19T09:00:00Z',
+            app: 'skillscanvas'
+        }
+    ])
+
+    const logActivity = useCallback((type, user, message, app) => {
+        setActivities(prev => [
+            {
+                id: `act-${Date.now()}`,
+                type,
+                user,
+                message,
+                timestamp: new Date().toISOString(),
+                app
+            },
+            ...prev
+        ].slice(0, 10))
+    }, [])
     const [talents, setTalents] = useState(INITIAL_DATA.talents)
 
     // InvestDen actions
@@ -371,6 +411,44 @@ export function DataProvider({ children }) {
         ))
     }, [])
 
+    const launchProjectFromIdea = useCallback((idea, userId, userName) => {
+        const newBoard = createBoard({
+            title: idea.title,
+            description: `Project launched from idea: ${idea.description}`,
+            creatorId: userId,
+            members: [{ userId, role: 'owner', name: userName }],
+            linkedIdeaId: idea.id
+        })
+        linkIdeaToBoard(idea.id, newBoard.id)
+        logActivity('launch', userName, `launched ${idea.title} Project`, 'conceptnexus')
+        return newBoard
+    }, [createBoard, linkIdeaToBoard, logActivity])
+
+    const getRecommendedTalents = useCallback((boardId) => {
+        const board = boards.find(b => b.id === boardId)
+        if (!board) return []
+
+        const searchTerms = [
+            ...board.title.toLowerCase().split(' '),
+            ...board.description.toLowerCase().split(' ')
+        ].filter(term => term.length > 3)
+
+        return talents
+            .map(talent => {
+                let score = 0
+                talent.skills.forEach(skill => {
+                    if (searchTerms.some(term => skill.name.toLowerCase().includes(term) || term.includes(skill.name.toLowerCase()))) {
+                        score += skill.level === 'expert' ? 3 : skill.level === 'advanced' ? 2 : 1
+                        if (skill.verified) score += 2
+                    }
+                })
+                return { ...talent, matchScore: score }
+            })
+            .filter(t => t.matchScore > 0)
+            .sort((a, b) => b.matchScore - a.matchScore)
+            .slice(0, 3)
+    }, [boards, talents])
+
     return (
         <DataContext.Provider value={{
             // Data
@@ -378,6 +456,8 @@ export function DataProvider({ children }) {
             ideas,
             boards,
             talents,
+            activities,
+            logActivity,
             // InvestDen
             createStake,
             makeStake,
@@ -392,7 +472,9 @@ export function DataProvider({ children }) {
             updateTalentProfile,
             // Cross-app
             linkIdeaToStake,
-            linkIdeaToBoard
+            linkIdeaToBoard,
+            launchProjectFromIdea,
+            getRecommendedTalents
         }}>
             {children}
         </DataContext.Provider>

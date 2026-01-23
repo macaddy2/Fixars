@@ -29,10 +29,21 @@ const LEVELS = [
     { name: 'Legend', minPoints: 10000 }
 ]
 
+const BADGES = {
+    FIRST_IDEA: { id: 'first-idea', name: 'Innovator', icon: '💡', description: 'Submitted your first idea' },
+    FIRST_STAKE: { id: 'first-stake', name: 'Investor', icon: '📈', description: 'Made your first stake' },
+    TEAM_PLAYER: { id: 'team-player', name: 'Team Player', icon: '🤝', description: 'Joined 3 boards' },
+    VALIDATOR: { id: 'validator', name: 'Validator', icon: '✅', description: 'Validated 10 ideas' },
+    PIONEER: { id: 'pioneer', name: 'Pioneer', icon: '🚀', description: 'Reached Pioneer level' },
+    LEGEND: { id: 'legend', name: 'Legend', icon: '👑', description: 'Reached Legend level' }
+}
+
 export function PointsProvider({ children }) {
     const { user, updateUser } = useAuth()
     const [history, setHistory] = useState([])
     const [showReward, setShowReward] = useState(null)
+    const [userBadges, setUserBadges] = useState([])
+    const [showBadge, setShowBadge] = useState(null)
 
     const getLevel = useCallback((points) => {
         return LEVELS.reduce((acc, level) => {
@@ -102,18 +113,32 @@ export function PointsProvider({ children }) {
         return true
     }, [user, updateUser])
 
+    const awardBadge = useCallback((badgeKey) => {
+        const badge = BADGES[badgeKey]
+        if (!badge) return
+        if (userBadges.some(b => b.id === badge.id)) return // Already earned
+
+        setUserBadges(prev => [...prev, badge])
+        setShowBadge(badge)
+        setTimeout(() => setShowBadge(null), 3000)
+    }, [userBadges])
+
     return (
         <PointsContext.Provider value={{
             points: user?.points || 0,
             level: user?.level || 'Newcomer',
             history,
             showReward,
+            showBadge,
+            userBadges,
             awardPoints,
             spendPoints,
+            awardBadge,
             getLevel,
             getNextLevel,
             POINT_ACTIONS,
-            LEVELS
+            LEVELS,
+            BADGES
         }}>
             {children}
         </PointsContext.Provider>

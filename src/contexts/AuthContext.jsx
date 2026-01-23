@@ -111,7 +111,19 @@ export function AuthProvider({ children }) {
             // Mock login
             setIsLoading(true)
             await new Promise(resolve => setTimeout(resolve, 800))
-            const loggedInUser = { ...MOCK_USER, email }
+
+            let userId = 'user-001'
+            let name = 'Alex Morgan'
+
+            if (email === 'marcus@fixars.com' || email === 'marcus@fixars.io') {
+                userId = 'user-003'
+                name = 'Marcus Williams'
+            } else if (email === 'sarah@fixars.com' || email === 'sarah@fixars.io') {
+                userId = 'user-002'
+                name = 'Sarah Chen'
+            }
+
+            const loggedInUser = { ...MOCK_USER, id: userId, name: name, email }
             setUser(loggedInUser)
             localStorage.setItem('fixars_user', JSON.stringify(loggedInUser))
             setIsLoading(false)
