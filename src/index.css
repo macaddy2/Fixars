@@ -13,7 +13,7 @@
   --color-destructive: #ff4d4d;
 
   /* App-specific colors */
-  --color-investden: #6851FF;
+  --color-vestden: #6851FF;
   --color-conceptnexus: #00C2A8;
   --color-collaboard: #1AB3FF;
   --color-skillscanvas: #FFA800;
@@ -170,7 +170,7 @@ body {
   background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
 }
 
-.gradient-investden {
+.gradient-vestden {
   background: linear-gradient(135deg, #6851FF, #8b7aff);
 }
 

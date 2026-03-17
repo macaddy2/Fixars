@@ -24,7 +24,7 @@ function ActivityFeed({ activities }) {
     const getIcon = (type) => {
         switch (type) {
             case 'launch': return <Lightbulb className="w-4 h-4 text-conceptnexus" />
-            case 'stake': return <TrendingUp className="w-4 h-4 text-investden" />
+            case 'stake': return <TrendingUp className="w-4 h-4 text-vestden" />
             case 'skill': return <Palette className="w-4 h-4 text-skillscanvas" />
             default: return <Zap className="w-4 h-4 text-primary" />
         }
@@ -83,8 +83,8 @@ export default function Dashboard() {
             label: 'Active Stakes',
             value: stakes.filter(s => s.status === 'active').length,
             icon: TrendingUp,
-            color: 'investden',
-            link: '/apps/investden'
+            color: 'vestden',
+            link: '/apps/vestden'
         },
         {
             label: 'My Ideas',
@@ -167,7 +167,7 @@ export default function Dashboard() {
                             <CardHeader>
                                 <CardTitle className="flex items-center justify-between">
                                     Recent Stakes
-                                    <Link to="/apps/investden">
+                                    <Link to="/apps/vestden">
                                         <Button variant="ghost" size="sm">
                                             View all <ArrowRight className="w-4 h-4 ml-1" />
                                         </Button>
@@ -178,7 +178,7 @@ export default function Dashboard() {
                                 <div className="space-y-4">
                                     {stakes.slice(0, 3).map((stake) => (
                                         <div key={stake.id} className="flex items-center gap-4 p-4 rounded-xl bg-muted/5 hover:bg-muted/10 transition-colors">
-                                            <div className="w-12 h-12 rounded-xl gradient-investden flex items-center justify-center">
+                                            <div className="w-12 h-12 rounded-xl gradient-vestden flex items-center justify-center">
                                                 <TrendingUp className="w-6 h-6 text-white" />
                                             </div>
                                             <div className="flex-1 min-w-0">

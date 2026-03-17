@@ -56,11 +56,33 @@ export const isSupabaseConfigured = () => {
     return true
 }
 
-// Database types for TypeScript-like documentation
+// Database table names
 export const TABLES = {
     PROFILES: 'profiles',
+    // VestDen
+    STAKES: 'stakes',
+    STAKERS: 'stakers',
+    // ConceptNexus
+    IDEAS: 'ideas',
+    IDEA_VOTES: 'idea_votes',
+    // Collaboard
+    BOARDS: 'boards',
+    BOARD_MEMBERS: 'board_members',
+    BOARD_COLUMNS: 'board_columns',
+    TASKS: 'tasks',
+    // SkillsCanvas
     TALENTS: 'talents',
     SKILLS: 'skills',
     REVIEWS: 'reviews',
-    SKILL_REQUESTS: 'skill_requests'
+    SKILL_REQUESTS: 'skill_requests',
+    // Social
+    POSTS: 'posts',
+    POST_REACTIONS: 'post_reactions',
+    CONVERSATIONS: 'conversations',
+    CONVERSATION_PARTICIPANTS: 'conversation_participants',
+    MESSAGES: 'messages',
+    NOTIFICATIONS: 'notifications',
+    // Activity & Points
+    ACTIVITIES: 'activities',
+    POINTS_HISTORY: 'points_history'
 }

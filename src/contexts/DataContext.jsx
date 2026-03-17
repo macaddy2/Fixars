@@ -1,10 +1,16 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { isSupabaseConfigured } from '@/lib/supabase'
+import { useAuth } from './AuthContext'
+
+// DB service imports
+import { fetchStakes, createStakeDB, makeStakeDB } from '@/lib/db/stakes'
+import { fetchIdeas, submitIdeaDB, voteIdeaDB, linkIdeaToBoardDB, linkIdeaToStakeDB } from '@/lib/db/ideas'
+import { fetchBoards, createBoardDB, addTaskDB, moveTaskDB } from '@/lib/db/boards'
 
 const DataContext = createContext(null)
 
-// Mock data for all apps
-const INITIAL_DATA = {
-    // InvestDen stakes
+// Mock data for development (used when Supabase is not configured)
+const MOCK_DATA = {
     stakes: [
         {
             id: 'stake-001',
@@ -59,8 +65,6 @@ const INITIAL_DATA = {
             createdAt: '2026-01-08'
         }
     ],
-
-    // ConceptNexus ideas
     ideas: [
         {
             id: 'idea-001',
@@ -113,8 +117,6 @@ const INITIAL_DATA = {
             createdAt: '2026-01-16'
         }
     ],
-
-    // Collaboard boards
     boards: [
         {
             id: 'board-001',
@@ -172,8 +174,6 @@ const INITIAL_DATA = {
             createdAt: '2026-01-13'
         }
     ],
-
-    // SkillsCanvas talents
     talents: [
         {
             id: 'talent-001',
@@ -233,10 +233,16 @@ const INITIAL_DATA = {
 }
 
 export function DataProvider({ children }) {
-    const [stakes, setStakes] = useState(INITIAL_DATA.stakes)
-    const [ideas, setIdeas] = useState(INITIAL_DATA.ideas)
-    const [boards, setBoards] = useState(INITIAL_DATA.boards)
-    const [activities, setActivities] = useState([
+    const { user } = useAuth()
+    const isConfigured = isSupabaseConfigured()
+
+    const [stakes, setStakes] = useState(isConfigured ? [] : MOCK_DATA.stakes)
+    const [ideas, setIdeas] = useState(isConfigured ? [] : MOCK_DATA.ideas)
+    const [boards, setBoards] = useState(isConfigured ? [] : MOCK_DATA.boards)
+    const [talents, setTalents] = useState(isConfigured ? [] : MOCK_DATA.talents)
+    const [loading, setLoading] = useState(isConfigured)
+    const [error, setError] = useState(null)
+    const [activities, setActivities] = useState(isConfigured ? [] : [
         {
             id: 'act-001',
             type: 'launch',
@@ -251,7 +257,7 @@ export function DataProvider({ children }) {
             user: 'Sarah Chen',
             message: 'staked $5,000 on Fixars Core Dev',
             timestamp: '2026-01-19T15:30:00Z',
-            app: 'investden'
+            app: 'vestden'
         },
         {
             id: 'act-003',
@@ -263,12 +269,42 @@ export function DataProvider({ children }) {
         }
     ])
 
-    const logActivity = useCallback((type, user, message, app) => {
+    // ── Fetch data from Supabase on mount ──
+    useEffect(() => {
+        if (!isConfigured) return
+
+        async function loadData() {
+            try {
+                setLoading(true)
+                const [stakesData, ideasData] = await Promise.all([
+                    fetchStakes(),
+                    fetchIdeas()
+                ])
+                setStakes(stakesData)
+                setIdeas(ideasData)
+
+                // Boards require user context
+                if (user?.id) {
+                    const boardsData = await fetchBoards(user.id)
+                    setBoards(boardsData)
+                }
+            } catch (err) {
+                console.error('Error loading data:', err)
+                setError(err.message)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        loadData()
+    }, [isConfigured, user?.id])
+
+    const logActivity = useCallback((type, userName, message, app) => {
         setActivities(prev => [
             {
                 id: `act-${Date.now()}`,
                 type,
-                user,
+                user: userName,
                 message,
                 timestamp: new Date().toISOString(),
                 app
@@ -276,101 +312,175 @@ export function DataProvider({ children }) {
             ...prev
         ].slice(0, 10))
     }, [])
-    const [talents, setTalents] = useState(INITIAL_DATA.talents)
 
-    // InvestDen actions
-    const createStake = useCallback((stake) => {
-        const newStake = {
-            id: 'stake-' + Date.now(),
-            ...stake,
-            stakers: [],
-            currentAmount: 0,
-            status: 'active',
-            createdAt: new Date().toISOString()
+    // ── VestDen actions ──
+    const createStake = useCallback(async (stake) => {
+        if (!isConfigured) {
+            const newStake = {
+                id: 'stake-' + Date.now(),
+                ...stake,
+                stakers: [],
+                currentAmount: 0,
+                status: 'active',
+                createdAt: new Date().toISOString()
+            }
+            setStakes(prev => [newStake, ...prev])
+            return newStake
         }
+
+        const newStake = await createStakeDB(stake)
         setStakes(prev => [newStake, ...prev])
         return newStake
-    }, [])
+    }, [isConfigured])
 
-    const makeStake = useCallback((stakeId, userId, amount) => {
-        setStakes(prev => prev.map(s => {
-            if (s.id !== stakeId) return s
-            return {
-                ...s,
-                stakers: [...s.stakers, { userId, amount, date: new Date().toISOString() }],
-                currentAmount: s.currentAmount + amount,
-                status: s.currentAmount + amount >= s.targetAmount ? 'funded' : 'active'
-            }
-        }))
-    }, [])
-
-    // ConceptNexus actions
-    const submitIdea = useCallback((idea) => {
-        const newIdea = {
-            id: 'idea-' + Date.now(),
-            ...idea,
-            validationScore: 0,
-            votes: { up: 0, down: 0 },
-            validators: [],
-            status: 'validating',
-            linkedStakeId: null,
-            linkedBoardId: null,
-            createdAt: new Date().toISOString()
+    const makeStake = useCallback(async (stakeId, userId, amount) => {
+        if (!isConfigured) {
+            setStakes(prev => prev.map(s => {
+                if (s.id !== stakeId) return s
+                return {
+                    ...s,
+                    stakers: [...s.stakers, { userId, amount, date: new Date().toISOString() }],
+                    currentAmount: s.currentAmount + amount,
+                    status: s.currentAmount + amount >= s.targetAmount ? 'funded' : 'active'
+                }
+            }))
+            return
         }
+
+        await makeStakeDB(stakeId, userId, amount)
+        // Re-fetch to get trigger-updated values
+        const updated = await fetchStakes()
+        setStakes(updated)
+    }, [isConfigured])
+
+    // ── ConceptNexus actions ──
+    const submitIdea = useCallback(async (idea) => {
+        if (!isConfigured) {
+            const newIdea = {
+                id: 'idea-' + Date.now(),
+                ...idea,
+                validationScore: 0,
+                votes: { up: 0, down: 0 },
+                validators: [],
+                status: 'validating',
+                linkedStakeId: null,
+                linkedBoardId: null,
+                createdAt: new Date().toISOString()
+            }
+            setIdeas(prev => [newIdea, ...prev])
+            return newIdea
+        }
+
+        const newIdea = await submitIdeaDB(idea)
         setIdeas(prev => [newIdea, ...prev])
         return newIdea
-    }, [])
+    }, [isConfigured])
 
-    const voteIdea = useCallback((ideaId, userId, vote) => {
-        setIdeas(prev => prev.map(i => {
-            if (i.id !== ideaId) return i
-            const votes = { ...i.votes }
-            votes[vote] = (votes[vote] || 0) + 1
-            const total = votes.up + votes.down
-            const validationScore = total > 0 ? Math.round((votes.up / total) * 100) : 0
-            return {
-                ...i,
-                votes,
-                validationScore,
-                status: validationScore >= 75 && total >= 10 ? 'validated' : i.status
-            }
-        }))
-    }, [])
-
-    // Collaboard actions
-    const createBoard = useCallback((board) => {
-        const newBoard = {
-            id: 'board-' + Date.now(),
-            ...board,
-            columns: [
-                { id: 'todo', title: 'To Do', tasks: [] },
-                { id: 'progress', title: 'In Progress', tasks: [] },
-                { id: 'done', title: 'Done', tasks: [] }
-            ],
-            agreements: [],
-            createdAt: new Date().toISOString()
+    const voteIdea = useCallback(async (ideaId, userId, vote) => {
+        if (!isConfigured) {
+            setIdeas(prev => prev.map(i => {
+                if (i.id !== ideaId) return i
+                const votes = { ...i.votes }
+                votes[vote] = (votes[vote] || 0) + 1
+                const total = votes.up + votes.down
+                const validationScore = total > 0 ? Math.round((votes.up / total) * 100) : 0
+                return {
+                    ...i,
+                    votes,
+                    validationScore,
+                    status: validationScore >= 75 && total >= 10 ? 'validated' : i.status
+                }
+            }))
+            return
         }
+
+        await voteIdeaDB(ideaId, userId, vote)
+        const updated = await fetchIdeas()
+        setIdeas(updated)
+    }, [isConfigured])
+
+    // ── Collaboard actions ──
+    const createBoard = useCallback(async (board) => {
+        if (!isConfigured) {
+            const newBoard = {
+                id: 'board-' + Date.now(),
+                ...board,
+                columns: [
+                    { id: 'todo', title: 'To Do', tasks: [] },
+                    { id: 'progress', title: 'In Progress', tasks: [] },
+                    { id: 'done', title: 'Done', tasks: [] }
+                ],
+                agreements: [],
+                createdAt: new Date().toISOString()
+            }
+            setBoards(prev => [newBoard, ...prev])
+            return newBoard
+        }
+
+        const newBoard = await createBoardDB(board)
         setBoards(prev => [newBoard, ...prev])
         return newBoard
-    }, [])
+    }, [isConfigured])
 
-    const addTask = useCallback((boardId, columnId, task) => {
+    const addTask = useCallback(async (boardId, columnId, task) => {
+        if (!isConfigured) {
+            setBoards(prev => prev.map(b => {
+                if (b.id !== boardId) return b
+                return {
+                    ...b,
+                    columns: b.columns.map(col => {
+                        if (col.id !== columnId) return col
+                        return {
+                            ...col,
+                            tasks: [...col.tasks, { id: 't-' + Date.now(), ...task }]
+                        }
+                    })
+                }
+            }))
+            return
+        }
+
+        const newTask = await addTaskDB(boardId, columnId, task)
         setBoards(prev => prev.map(b => {
             if (b.id !== boardId) return b
             return {
                 ...b,
                 columns: b.columns.map(col => {
                     if (col.id !== columnId) return col
-                    return {
-                        ...col,
-                        tasks: [...col.tasks, { id: 't-' + Date.now(), ...task }]
-                    }
+                    return { ...col, tasks: [...col.tasks, newTask] }
                 })
             }
         }))
-    }, [])
+    }, [isConfigured])
 
-    const moveTask = useCallback((boardId, taskId, fromCol, toCol) => {
+    const moveTask = useCallback(async (boardId, taskId, fromCol, toCol) => {
+        if (!isConfigured) {
+            setBoards(prev => prev.map(b => {
+                if (b.id !== boardId) return b
+                let task = null
+                const columns = b.columns.map(col => {
+                    if (col.id === fromCol) {
+                        task = col.tasks.find(t => t.id === taskId)
+                        return { ...col, tasks: col.tasks.filter(t => t.id !== taskId) }
+                    }
+                    if (col.id === toCol && task) {
+                        return { ...col, tasks: [...col.tasks, toCol === 'done' ? { ...task, completedAt: new Date().toISOString() } : task] }
+                    }
+                    return col
+                })
+                return { ...b, columns }
+            }))
+            return
+        }
+
+        // Find the target column's UUID
+        const board = boards.find(b => b.id === boardId)
+        const targetColumn = board?.columns.find(c => c.id === toCol)
+        if (targetColumn) {
+            await moveTaskDB(taskId, targetColumn.id, toCol === 'done')
+        }
+
+        // Optimistic update locally
         setBoards(prev => prev.map(b => {
             if (b.id !== boardId) return b
             let task = null
@@ -386,40 +496,57 @@ export function DataProvider({ children }) {
             })
             return { ...b, columns }
         }))
-    }, [])
+    }, [isConfigured, boards])
 
-    // SkillsCanvas actions
+    // ── SkillsCanvas actions ──
     const updateTalentProfile = useCallback((talentId, updates) => {
         setTalents(prev => prev.map(t =>
             t.id === talentId ? { ...t, ...updates } : t
         ))
     }, [])
 
-    // Cross-app linking
-    const linkIdeaToStake = useCallback((ideaId, stakeId) => {
+    // ── Cross-app linking ──
+    const linkIdeaToStake = useCallback(async (ideaId, stakeId) => {
+        if (!isConfigured) {
+            setIdeas(prev => prev.map(i =>
+                i.id === ideaId ? { ...i, linkedStakeId: stakeId } : i
+            ))
+            return
+        }
+        await linkIdeaToStakeDB(ideaId, stakeId)
         setIdeas(prev => prev.map(i =>
             i.id === ideaId ? { ...i, linkedStakeId: stakeId } : i
         ))
-    }, [])
+    }, [isConfigured])
 
-    const linkIdeaToBoard = useCallback((ideaId, boardId) => {
+    const linkIdeaToBoard = useCallback(async (ideaId, boardId) => {
+        if (!isConfigured) {
+            setIdeas(prev => prev.map(i =>
+                i.id === ideaId ? { ...i, linkedBoardId: boardId } : i
+            ))
+            setBoards(prev => prev.map(b =>
+                b.id === boardId ? { ...b, linkedIdeaId: ideaId } : b
+            ))
+            return
+        }
+        await linkIdeaToBoardDB(ideaId, boardId)
         setIdeas(prev => prev.map(i =>
             i.id === ideaId ? { ...i, linkedBoardId: boardId } : i
         ))
         setBoards(prev => prev.map(b =>
             b.id === boardId ? { ...b, linkedIdeaId: ideaId } : b
         ))
-    }, [])
+    }, [isConfigured])
 
-    const launchProjectFromIdea = useCallback((idea, userId, userName) => {
-        const newBoard = createBoard({
+    const launchProjectFromIdea = useCallback(async (idea, userId, userName) => {
+        const newBoard = await createBoard({
             title: idea.title,
             description: `Project launched from idea: ${idea.description}`,
             creatorId: userId,
             members: [{ userId, role: 'owner', name: userName }],
             linkedIdeaId: idea.id
         })
-        linkIdeaToBoard(idea.id, newBoard.id)
+        await linkIdeaToBoard(idea.id, newBoard.id)
         logActivity('launch', userName, `launched ${idea.title} Project`, 'conceptnexus')
         return newBoard
     }, [createBoard, linkIdeaToBoard, logActivity])
@@ -457,8 +584,10 @@ export function DataProvider({ children }) {
             boards,
             talents,
             activities,
+            loading,
+            error,
             logActivity,
-            // InvestDen
+            // VestDen
             createStake,
             makeStake,
             // ConceptNexus

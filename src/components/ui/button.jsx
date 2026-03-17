@@ -14,7 +14,7 @@ const buttonVariants = cva(
                 secondary: "bg-muted/20 text-foreground hover:bg-muted/40",
                 ghost: "hover:bg-muted/20 hover:text-foreground",
                 link: "text-primary underline-offset-4 hover:underline",
-                investden: "bg-investden text-white shadow-md hover:bg-investden/90",
+                vestden: "bg-vestden text-white shadow-md hover:bg-vestden/90",
                 conceptnexus: "bg-conceptnexus text-white shadow-md hover:bg-conceptnexus/90",
                 collaboard: "bg-collaboard text-white shadow-md hover:bg-collaboard/90",
                 skillscanvas: "bg-skillscanvas text-white shadow-md hover:bg-skillscanvas/90",

@@ -1,17 +1,23 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { useAuth } from './AuthContext'
+import { isSupabaseConfigured } from '@/lib/supabase'
+import {
+    fetchPosts, createPostDB, reactToPostDB,
+    fetchConversations, sendMessageDB,
+    fetchNotifications, createNotificationDB, markNotificationsReadDB
+} from '@/lib/db/social'
 
 const SocialContext = createContext(null)
 
-// Mock data for posts
-const INITIAL_POSTS = [
+// Mock data for development
+const MOCK_POSTS = [
     {
         id: 'post-001',
         authorId: 'user-002',
         authorName: 'Sarah Chen',
         authorAvatar: null,
-        content: 'Just launched my first stake on InvestDen! Excited to see how the community responds to my AI-powered tutoring platform idea. 🚀',
-        sourceApp: 'investden',
+        content: 'Just launched my first stake on VestDen! Excited to see how the community responds to my AI-powered tutoring platform idea. 🚀',
+        sourceApp: 'vestden',
         linkedEntity: { type: 'stake', id: 'stake-001', name: 'AI Tutoring Platform' },
         reactions: { '👍': 24, '🔥': 12, '💡': 8 },
         commentCount: 7,
@@ -46,7 +52,7 @@ const INITIAL_POSTS = [
     }
 ]
 
-const INITIAL_MESSAGES = [
+const MOCK_MESSAGES = [
     {
         id: 'conv-001',
         participants: ['user-001', 'user-002'],
@@ -62,92 +68,159 @@ const INITIAL_MESSAGES = [
 
 export function SocialProvider({ children }) {
     const { user } = useAuth()
-    const [posts, setPosts] = useState(INITIAL_POSTS)
-    const [conversations, setConversations] = useState(INITIAL_MESSAGES)
+    const isConfigured = isSupabaseConfigured()
+
+    const [posts, setPosts] = useState(isConfigured ? [] : MOCK_POSTS)
+    const [conversations, setConversations] = useState(isConfigured ? [] : MOCK_MESSAGES)
     const [notifications, setNotifications] = useState([])
 
-    const createPost = useCallback((content, sourceApp = 'fixars', linkedEntity = null) => {
+    // Fetch data from Supabase on mount
+    useEffect(() => {
+        if (!isConfigured || !user?.id) return
+
+        async function loadSocial() {
+            try {
+                const [postsData, convsData, notifsData] = await Promise.all([
+                    fetchPosts(),
+                    fetchConversations(user.id),
+                    fetchNotifications(user.id)
+                ])
+                setPosts(postsData)
+                setConversations(convsData)
+                setNotifications(notifsData)
+            } catch (err) {
+                console.error('Error loading social data:', err)
+            }
+        }
+
+        loadSocial()
+    }, [isConfigured, user?.id])
+
+    const createPost = useCallback(async (content, sourceApp = 'fixars', linkedEntity = null) => {
         if (!user) return null
 
-        const newPost = {
-            id: 'post-' + Date.now(),
+        if (!isConfigured) {
+            const newPost = {
+                id: 'post-' + Date.now(),
+                authorId: user.id,
+                authorName: user.name,
+                authorAvatar: user.avatar,
+                content,
+                sourceApp,
+                linkedEntity,
+                reactions: {},
+                commentCount: 0,
+                createdAt: new Date().toISOString(),
+                visibility: 'public'
+            }
+            setPosts(prev => [newPost, ...prev])
+            return newPost
+        }
+
+        const newPost = await createPostDB({
             authorId: user.id,
             authorName: user.name,
             authorAvatar: user.avatar,
             content,
             sourceApp,
             linkedEntity,
-            reactions: {},
-            commentCount: 0,
-            createdAt: new Date().toISOString(),
             visibility: 'public'
-        }
-
+        })
         setPosts(prev => [newPost, ...prev])
         return newPost
-    }, [user])
+    }, [user, isConfigured])
 
-    const reactToPost = useCallback((postId, emoji) => {
+    const reactToPost = useCallback(async (postId, emoji) => {
+        if (!isConfigured) {
+            setPosts(prev => prev.map(post => {
+                if (post.id !== postId) return post
+                const reactions = { ...post.reactions }
+                reactions[emoji] = (reactions[emoji] || 0) + 1
+                return { ...post, reactions }
+            }))
+            return
+        }
+
+        if (user?.id) {
+            await reactToPostDB(postId, user.id, emoji)
+        }
+        // Optimistic update
         setPosts(prev => prev.map(post => {
             if (post.id !== postId) return post
-
             const reactions = { ...post.reactions }
             reactions[emoji] = (reactions[emoji] || 0) + 1
             return { ...post, reactions }
         }))
-    }, [])
+    }, [isConfigured, user])
 
-    const sendMessage = useCallback((recipientId, recipientName, content) => {
+    const sendMessage = useCallback(async (recipientId, recipientName, content) => {
         if (!user) return null
 
-        const existingConv = conversations.find(c =>
-            c.participants.includes(user.id) && c.participants.includes(recipientId)
-        )
+        if (!isConfigured) {
+            const existingConv = conversations.find(c =>
+                c.participants.includes(user.id) && c.participants.includes(recipientId)
+            )
 
-        const newMessage = {
-            id: 'm-' + Date.now(),
-            senderId: user.id,
-            content,
-            timestamp: new Date().toISOString(),
-            read: false
-        }
-
-        if (existingConv) {
-            setConversations(prev => prev.map(c => {
-                if (c.id !== existingConv.id) return c
-                return {
-                    ...c,
-                    messages: [...c.messages, newMessage],
-                    lastActivity: newMessage.timestamp
-                }
-            }))
-        } else {
-            const newConv = {
-                id: 'conv-' + Date.now(),
-                participants: [user.id, recipientId],
-                participantNames: { [user.id]: user.name, [recipientId]: recipientName },
-                messages: [newMessage],
-                lastActivity: newMessage.timestamp,
-                unread: 0
+            const newMessage = {
+                id: 'm-' + Date.now(),
+                senderId: user.id,
+                content,
+                timestamp: new Date().toISOString(),
+                read: false
             }
-            setConversations(prev => [newConv, ...prev])
+
+            if (existingConv) {
+                setConversations(prev => prev.map(c => {
+                    if (c.id !== existingConv.id) return c
+                    return {
+                        ...c,
+                        messages: [...c.messages, newMessage],
+                        lastActivity: newMessage.timestamp
+                    }
+                }))
+            } else {
+                const newConv = {
+                    id: 'conv-' + Date.now(),
+                    participants: [user.id, recipientId],
+                    participantNames: { [user.id]: user.name, [recipientId]: recipientName },
+                    messages: [newMessage],
+                    lastActivity: newMessage.timestamp,
+                    unread: 0
+                }
+                setConversations(prev => [newConv, ...prev])
+            }
+
+            return newMessage
         }
 
-        return newMessage
-    }, [user, conversations])
+        const msg = await sendMessageDB(user.id, user.name, recipientId, recipientName, content)
+        // Re-fetch conversations to get updated state
+        const updated = await fetchConversations(user.id)
+        setConversations(updated)
+        return msg
+    }, [user, conversations, isConfigured])
 
-    const addNotification = useCallback((notification) => {
-        setNotifications(prev => [{
+    const addNotification = useCallback(async (notification) => {
+        const notif = {
             id: 'notif-' + Date.now(),
             ...notification,
             read: false,
             createdAt: new Date().toISOString()
-        }, ...prev].slice(0, 50))
-    }, [])
+        }
 
-    const markNotificationsRead = useCallback(() => {
+        if (isConfigured && notification.userId) {
+            await createNotificationDB(notification)
+        }
+
+        setNotifications(prev => [notif, ...prev].slice(0, 50))
+    }, [isConfigured])
+
+    const markNotificationsRead = useCallback(async () => {
+        if (isConfigured && user?.id) {
+            await markNotificationsReadDB(user.id)
+        }
         setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-    }, [])
+    }, [isConfigured, user])
 
     const unreadCount = notifications.filter(n => !n.read).length
 

@@ -18,7 +18,7 @@ export default function PostCard({ post, onReact }) {
         .map(([emoji]) => emoji)
 
     const appColors = {
-        investden: 'investden',
+        vestden: 'vestden',
         conceptnexus: 'conceptnexus',
         collaboard: 'collaboard',
         skillscanvas: 'skillscanvas',

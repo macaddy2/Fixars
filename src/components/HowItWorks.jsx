@@ -16,7 +16,7 @@ const STEPS = [
     {
         icon: Rocket,
         title: 'Create',
-        description: 'Launch ideas on ConceptNexus, build on Collaboard, staff from SkillsCanvas, fund on InvestDen.',
+        description: 'Launch ideas on ConceptNexus, build on Collaboard, staff from SkillsCanvas, fund on VestDen.',
         color: 'bg-collaboard'
     },
     {

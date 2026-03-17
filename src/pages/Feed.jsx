@@ -53,7 +53,7 @@ export default function Feed() {
                                     <div className="flex justify-between items-center">
                                         <div className="flex gap-2">
                                             <Badge variant="secondary" className="cursor-pointer hover:bg-muted/40">
-                                                <TrendingUp className="w-3 h-3 mr-1" /> InvestDen
+                                                <TrendingUp className="w-3 h-3 mr-1" /> VestDen
                                             </Badge>
                                             <Badge variant="secondary" className="cursor-pointer hover:bg-muted/40">
                                                 <Sparkles className="w-3 h-3 mr-1" /> ConceptNexus

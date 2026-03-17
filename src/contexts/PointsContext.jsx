@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { useAuth } from './AuthContext'
+import { isSupabaseConfigured } from '@/lib/supabase'
+import { awardPointsDB, spendPointsDB, fetchPointsHistory } from '@/lib/db/points'
 
 const PointsContext = createContext(null)
 
@@ -40,10 +42,21 @@ const BADGES = {
 
 export function PointsProvider({ children }) {
     const { user, updateUser } = useAuth()
+    const isConfigured = isSupabaseConfigured()
+
     const [history, setHistory] = useState([])
     const [showReward, setShowReward] = useState(null)
     const [userBadges, setUserBadges] = useState([])
     const [showBadge, setShowBadge] = useState(null)
+
+    // Load points history from Supabase
+    useEffect(() => {
+        if (!isConfigured || !user?.id) return
+
+        fetchPointsHistory(user.id)
+            .then(setHistory)
+            .catch(err => console.error('Error loading points history:', err))
+    }, [isConfigured, user?.id])
 
     const getLevel = useCallback((points) => {
         return LEVELS.reduce((acc, level) => {
@@ -57,7 +70,7 @@ export function PointsProvider({ children }) {
         return currentIndex > 0 ? LEVELS[currentIndex] : null
     }, [])
 
-    const awardPoints = useCallback((actionKey, metadata = {}) => {
+    const awardPoints = useCallback(async (actionKey, metadata = {}) => {
         if (!user) return
 
         const action = POINT_ACTIONS[actionKey]
@@ -87,19 +100,39 @@ export function PointsProvider({ children }) {
         })
         setTimeout(() => setShowReward(null), 2500)
 
-        // Update user
+        // Persist to Supabase if configured
+        if (isConfigured && user.id) {
+            try {
+                await awardPointsDB(user.id, actionKey, action.points, action.label, metadata)
+            } catch (err) {
+                console.error('Error persisting points:', err)
+            }
+        }
+
+        // Update user state
         updateUser({
             points: newPoints,
             level: newLevel.name
         })
 
         return record
-    }, [user, updateUser, getLevel])
+    }, [user, updateUser, getLevel, isConfigured])
 
-    const spendPoints = useCallback((amount, reason) => {
+    const spendPoints = useCallback(async (amount, reason) => {
         if (!user || user.points < amount) return false
 
         const newPoints = user.points - amount
+
+        if (isConfigured && user.id) {
+            try {
+                const result = await spendPointsDB(user.id, amount, reason)
+                if (result === false) return false
+            } catch (err) {
+                console.error('Error spending points:', err)
+                return false
+            }
+        }
+
         updateUser({ points: newPoints })
 
         setHistory(prev => [{
@@ -111,7 +144,7 @@ export function PointsProvider({ children }) {
         }, ...prev].slice(0, 50))
 
         return true
-    }, [user, updateUser])
+    }, [user, updateUser, isConfigured])
 
     const awardBadge = useCallback((badgeKey) => {
         const badge = BADGES[badgeKey]

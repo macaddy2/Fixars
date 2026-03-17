@@ -81,11 +81,11 @@ export default function Hero() {
                             <div className="bg-card rounded-3xl shadow-2xl border p-8 animate-fade-in">
                                 <div className="grid grid-cols-2 gap-4">
                                     {/* App previews */}
-                                    <div className="rounded-2xl gradient-investden p-4 text-white">
+                                    <div className="rounded-2xl gradient-vestden p-4 text-white">
                                         <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-3">
                                             <span className="font-bold">ID</span>
                                         </div>
-                                        <h4 className="font-semibold mb-1">InvestDen</h4>
+                                        <h4 className="font-semibold mb-1">VestDen</h4>
                                         <p className="text-sm text-white/80">2.4K active stakes</p>
                                     </div>
                                     <div className="rounded-2xl gradient-conceptnexus p-4 text-white">

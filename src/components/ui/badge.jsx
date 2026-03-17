@@ -13,7 +13,7 @@ const badgeVariants = cva(
                 warning: "bg-warning/10 text-warning",
                 destructive: "bg-destructive/10 text-destructive",
                 outline: "border border-current bg-transparent",
-                investden: "bg-investden/10 text-investden",
+                vestden: "bg-vestden/10 text-vestden",
                 conceptnexus: "bg-conceptnexus/10 text-conceptnexus",
                 collaboard: "bg-collaboard/10 text-collaboard",
                 skillscanvas: "bg-skillscanvas/10 text-skillscanvas",

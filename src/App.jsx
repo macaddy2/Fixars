@@ -16,7 +16,7 @@ import Signup from '@/pages/Signup'
 import Dashboard from '@/pages/Dashboard'
 
 // Sub-apps
-import InvestDen from '@/apps/investden/InvestDen'
+import VestDen from '@/apps/vestden/VestDen'
 import ConceptNexus from '@/apps/conceptnexus/ConceptNexus'
 import Collaboard from '@/apps/collaboard/Collaboard'
 import SkillsCanvas from '@/apps/skillscanvas/SkillsCanvas'
@@ -33,7 +33,7 @@ function About() {
       </p>
       <p className="text-muted mb-4">
         Our vision is to create an interconnected world where ideas flow freely between apps,
-        where a validated concept in ConceptNexus can instantly become a funded stake in InvestDen,
+        where a validated concept in ConceptNexus can instantly become a funded stake in VestDen,
         be executed on Collaboard, and staffed from SkillsCanvas—all with a single login and
         a unified points system that rewards every action.
       </p>
@@ -95,7 +95,7 @@ export default function App() {
                     <Route path="/privacy" element={<Privacy />} />
 
                     {/* Sub-apps */}
-                    <Route path="/apps/investden" element={<InvestDen />} />
+                    <Route path="/apps/vestden" element={<VestDen />} />
                     <Route path="/apps/conceptnexus" element={<ConceptNexus />} />
                     <Route path="/apps/collaboard" element={<Collaboard />} />
                     <Route path="/apps/skillscanvas" element={<SkillsCanvas />} />

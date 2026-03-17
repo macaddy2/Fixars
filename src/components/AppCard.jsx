@@ -7,12 +7,12 @@ import { cn } from '@/lib/utils'
 
 const APPS = [
     {
-        slug: 'investden',
-        name: 'InvestDen',
+        slug: 'vestden',
+        name: 'VestDen',
         description: 'Stake on ideas, innovations, and risks. Be part of the next big thing—earn returns for your vision.',
         icon: TrendingUp,
-        color: 'investden',
-        gradient: 'gradient-investden',
+        color: 'vestden',
+        gradient: 'gradient-vestden',
         stats: { label: 'Active Stakes', value: '2.4K' }
     },
     {
