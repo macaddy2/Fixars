@@ -200,3 +200,65 @@ body {
 .gradient-skillscanvas {
   background: linear-gradient(135deg, #FFA800, #ffbf40);
 }
+
+/* Realtime indicator pulse */
+@keyframes realtimePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(53, 229, 126, 0.5); }
+  50% { box-shadow: 0 0 8px 3px rgba(53, 229, 126, 0.3); }
+}
+
+.animate-realtime-pulse {
+  animation: realtimePulse 2s ease-in-out infinite;
+}
+
+/* AI sparkle animation */
+@keyframes aiSparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  25% { transform: scale(1.2) rotate(10deg); opacity: 0.8; }
+  50% { transform: scale(1) rotate(-5deg); opacity: 1; }
+  75% { transform: scale(1.1) rotate(5deg); opacity: 0.9; }
+}
+
+.animate-ai-sparkle {
+  animation: aiSparkle 3s ease-in-out infinite;
+}
+
+/* Payment success animation */
+@keyframes paymentSuccess {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-payment-success {
+  animation: paymentSuccess 0.5s ease-out forwards;
+}
+
+/* Chart animations */
+@keyframes chartLine {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes chartArea {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes chartBar {
+  from { transform: scaleY(0); transform-origin: bottom; }
+  to { transform: scaleY(1); transform-origin: bottom; }
+}
+
+.animate-chart-line {
+  stroke-dasharray: 1000;
+  animation: chartLine 1.5s ease-out forwards;
+}
+
+.animate-chart-area {
+  animation: chartArea 1s ease-out forwards;
+}
+
+.animate-chart-bar {
+  animation: chartBar 0.5s ease-out forwards;
+}

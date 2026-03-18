@@ -10,7 +10,7 @@ const APPS = [
 
 const RESOURCES = [
     { name: 'Help Center', path: '/help' },
-    { name: 'API Docs', path: '/docs' },
+    { name: 'API Docs', path: '/developers' },
     { name: 'Blog', path: '/blog' },
     { name: 'Changelog', path: '/changelog' }
 ]

@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
+import AIRecommendations from '@/components/AIRecommendations'
 import {
     Lightbulb,
     Search,
@@ -204,24 +205,36 @@ export default function ConceptNexus() {
                     </Tabs>
                 </div>
 
-                {/* Ideas Grid */}
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredIdeas.map((idea, i) => (
-                        <div key={idea.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
-                            <IdeaCard idea={idea} onVote={handleVote} />
+                {/* Main content with sidebar */}
+                <div className="flex flex-col lg:flex-row gap-6">
+                    {/* Ideas Grid */}
+                    <div className="flex-1">
+                        <div className="grid sm:grid-cols-2 gap-6">
+                            {filteredIdeas.map((idea, i) => (
+                                <div key={idea.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+                                    <IdeaCard idea={idea} onVote={handleVote} />
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
 
-                {filteredIdeas.length === 0 && (
-                    <Card>
-                        <CardContent className="py-12 text-center">
-                            <Lightbulb className="w-12 h-12 text-muted mx-auto mb-4" />
-                            <p className="text-lg font-medium text-foreground mb-2">No ideas found</p>
-                            <p className="text-muted">Try adjusting your search or be the first to submit!</p>
-                        </CardContent>
-                    </Card>
-                )}
+                        {filteredIdeas.length === 0 && (
+                            <Card>
+                                <CardContent className="py-12 text-center">
+                                    <Lightbulb className="w-12 h-12 text-muted mx-auto mb-4" />
+                                    <p className="text-lg font-medium text-foreground mb-2">No ideas found</p>
+                                    <p className="text-muted">Try adjusting your search or be the first to submit!</p>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+
+                    {/* AI Recommendations Sidebar */}
+                    <div className="lg:w-80 shrink-0">
+                        <div className="lg:sticky lg:top-24">
+                            <AIRecommendations />
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
     )

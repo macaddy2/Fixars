@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { useAuth } from './AuthContext'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { subscribeToTable, TABLES } from '@/lib/realtime'
 import {
     fetchPosts, createPostDB, reactToPostDB,
     fetchConversations, sendMessageDB,
@@ -113,6 +114,27 @@ export function SocialProvider({ children }) {
         }
 
         loadSocial()
+    }, [isConfigured, user?.id])
+
+    // Realtime subscriptions
+    useEffect(() => {
+        if (!isConfigured || !user?.id) return
+
+        const unsubs = [
+            subscribeToTable(TABLES.POSTS, {
+                onInsert: () => fetchPosts().then(setPosts).catch(console.error),
+                onUpdate: () => fetchPosts().then(setPosts).catch(console.error)
+            }),
+            subscribeToTable(TABLES.NOTIFICATIONS, {
+                onInsert: () => fetchNotifications(user.id).then(setNotifications).catch(console.error),
+                onUpdate: () => fetchNotifications(user.id).then(setNotifications).catch(console.error)
+            }, `user_id=eq.${user.id}`),
+            subscribeToTable(TABLES.MESSAGES, {
+                onInsert: () => fetchConversations(user.id).then(setConversations).catch(console.error)
+            })
+        ]
+
+        return () => unsubs.forEach(fn => fn())
     }, [isConfigured, user?.id])
 
     const createPost = useCallback(async (content, sourceApp = 'fixars', linkedEntity = null) => {

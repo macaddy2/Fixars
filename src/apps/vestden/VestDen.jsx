@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,7 @@ import {
     Zap,
     Plus
 } from 'lucide-react'
+import PaymentModal from '@/components/PaymentModal'
 
 const RISK_COLORS = {
     low: 'success',
@@ -27,7 +28,7 @@ const RISK_COLORS = {
     high: 'destructive'
 }
 
-function StakeCard({ stake }) {
+function StakeCard({ stake, onStake }) {
     const progress = (stake.currentAmount / stake.targetAmount) * 100
 
     return (
@@ -72,7 +73,7 @@ function StakeCard({ stake }) {
                 </div>
 
                 < div className="flex gap-2" >
-                    <Button variant="vestden" className="flex-1" >
+                    <Button variant="vestden" className="flex-1" onClick={() => onStake?.(stake)}>
                         <Zap className="w-4 h-4 mr-1" /> Stake Now
                     </Button>
                     < Button variant="outline" size="icon" >
@@ -85,11 +86,23 @@ function StakeCard({ stake }) {
 }
 
 export default function VestDen() {
-    const { stakes } = useData()
+    const { stakes, makeStake } = useData()
     const { isAuthenticated, user } = useAuth()
     const { awardPoints } = usePoints()
     const [search, setSearch] = useState('')
     const [category, setCategory] = useState('all')
+    const [paymentModal, setPaymentModal] = useState({ open: false, stake: null, amount: 500 })
+
+    const handleStakeClick = useCallback((stake) => {
+        setPaymentModal({ open: true, stake, amount: 500 })
+    }, [])
+
+    const handlePaymentSuccess = useCallback(async (result) => {
+        if (paymentModal.stake && user?.id) {
+            await makeStake(paymentModal.stake.id, user.id, paymentModal.amount)
+            awardPoints('MAKE_STAKE')
+        }
+    }, [paymentModal, user, makeStake, awardPoints])
 
     const filteredStakes = stakes.filter(stake => {
         const matchesSearch = stake.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -223,7 +236,7 @@ export default function VestDen() {
                                 {
                                     userStakes.map((stake, i) => (
                                         <div key={stake.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }} >
-                                            <StakeCard stake={stake} />
+                                            <StakeCard stake={stake} onStake={handleStakeClick} />
                                         </div>
                                     ))
                                 }
@@ -249,7 +262,7 @@ export default function VestDen() {
                                 {
                                     filteredStakes.map((stake, i) => (
                                         <div key={stake.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms` }} >
-                                            <StakeCard stake={stake} />
+                                            <StakeCard stake={stake} onStake={handleStakeClick} />
                                         </div>
                                     ))}
                             </div>
@@ -268,6 +281,15 @@ export default function VestDen() {
                         </>
                     )}
             </div>
+
+            {/* Payment Modal */}
+            <PaymentModal
+                isOpen={paymentModal.open}
+                onClose={() => setPaymentModal({ open: false, stake: null, amount: 500 })}
+                stake={paymentModal.stake}
+                amount={paymentModal.amount}
+                onSuccess={handlePaymentSuccess}
+            />
         </main>
     )
 }

@@ -1,11 +1,13 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { useAuth } from './AuthContext'
+import { subscribeToTable, TABLES } from '@/lib/realtime'
 
 // DB service imports
 import { fetchStakes, createStakeDB, makeStakeDB } from '@/lib/db/stakes'
 import { fetchIdeas, submitIdeaDB, voteIdeaDB, linkIdeaToBoardDB, linkIdeaToStakeDB } from '@/lib/db/ideas'
 import { fetchBoards, createBoardDB, addTaskDB, moveTaskDB } from '@/lib/db/boards'
+import { fetchTalents, createTalentProfile as createTalentProfileDB } from '@/lib/db/talents'
 
 const DataContext = createContext(null)
 
@@ -276,12 +278,14 @@ export function DataProvider({ children }) {
         async function loadData() {
             try {
                 setLoading(true)
-                const [stakesData, ideasData] = await Promise.all([
+                const [stakesData, ideasData, talentsData] = await Promise.all([
                     fetchStakes(),
-                    fetchIdeas()
+                    fetchIdeas(),
+                    fetchTalents()
                 ])
                 setStakes(stakesData)
                 setIdeas(ideasData)
+                setTalents(talentsData)
 
                 // Boards require user context
                 if (user?.id) {
@@ -297,6 +301,41 @@ export function DataProvider({ children }) {
         }
 
         loadData()
+    }, [isConfigured, user?.id])
+
+    // ── Realtime subscriptions ──
+    useEffect(() => {
+        if (!isConfigured) return
+
+        const unsubs = [
+            subscribeToTable(TABLES.STAKES, {
+                onInsert: (row) => fetchStakes().then(setStakes).catch(console.error),
+                onUpdate: () => fetchStakes().then(setStakes).catch(console.error),
+                onDelete: () => fetchStakes().then(setStakes).catch(console.error)
+            }),
+            subscribeToTable(TABLES.IDEAS, {
+                onInsert: () => fetchIdeas().then(setIdeas).catch(console.error),
+                onUpdate: () => fetchIdeas().then(setIdeas).catch(console.error),
+                onDelete: () => fetchIdeas().then(setIdeas).catch(console.error)
+            }),
+            subscribeToTable(TABLES.TALENTS, {
+                onInsert: () => fetchTalents().then(setTalents).catch(console.error),
+                onUpdate: () => fetchTalents().then(setTalents).catch(console.error)
+            })
+        ]
+
+        // Board subscription needs user context
+        if (user?.id) {
+            unsubs.push(
+                subscribeToTable(TABLES.BOARDS, {
+                    onInsert: () => fetchBoards(user.id).then(setBoards).catch(console.error),
+                    onUpdate: () => fetchBoards(user.id).then(setBoards).catch(console.error),
+                    onDelete: () => fetchBoards(user.id).then(setBoards).catch(console.error)
+                })
+            )
+        }
+
+        return () => unsubs.forEach(fn => fn())
     }, [isConfigured, user?.id])
 
     const logActivity = useCallback((type, userName, message, app) => {
@@ -499,6 +538,25 @@ export function DataProvider({ children }) {
     }, [isConfigured, boards])
 
     // ── SkillsCanvas actions ──
+    const createTalentProfile = useCallback(async (profile) => {
+        if (!isConfigured) {
+            const newTalent = {
+                id: 'talent-' + Date.now(),
+                ...profile,
+                rating: 0,
+                reviewCount: 0,
+                completedProjects: 0,
+                createdAt: new Date().toISOString()
+            }
+            setTalents(prev => [newTalent, ...prev])
+            return newTalent
+        }
+
+        const newTalent = await createTalentProfileDB(profile)
+        setTalents(prev => [newTalent, ...prev])
+        return newTalent
+    }, [isConfigured])
+
     const updateTalentProfile = useCallback((talentId, updates) => {
         setTalents(prev => prev.map(t =>
             t.id === talentId ? { ...t, ...updates } : t
@@ -598,6 +656,7 @@ export function DataProvider({ children }) {
             addTask,
             moveTask,
             // SkillsCanvas
+            createTalentProfile,
             updateTalentProfile,
             // Cross-app
             linkIdeaToStake,

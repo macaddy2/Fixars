@@ -17,6 +17,8 @@ import Login from '@/pages/Login'
 import Signup from '@/pages/Signup'
 import Dashboard from '@/pages/Dashboard'
 import NotificationsPage from '@/pages/NotificationsPage'
+import Analytics from '@/pages/Analytics'
+import ApiDocs from '@/pages/ApiDocs'
 
 // Sub-apps
 import VestDen from '@/apps/vestden/VestDen'
@@ -110,6 +112,8 @@ export default function App() {
                     <Route path="/profile" element={<Dashboard />} />
                     <Route path="/messages" element={<Feed />} />
                     <Route path="/notifications" element={<NotificationsPage />} />
+                    <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/developers" element={<ApiDocs />} />
                     <Route path="/settings" element={<About />} />
 
                     {/* 404 */}

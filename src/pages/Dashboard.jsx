@@ -8,6 +8,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { getInitials, formatNumber } from '@/lib/utils'
+import AIRecommendations from '@/components/AIRecommendations'
+import { fetchPaymentHistory, formatCurrency } from '@/lib/payments'
 import {
     TrendingUp,
     Lightbulb,
@@ -267,6 +269,34 @@ export default function Dashboard() {
                         </Card>
 
                         <ActivityFeed activities={activities} />
+
+                        {/* AI Recommendations */}
+                        <AIRecommendations compact />
+
+                        {/* Recent Transactions */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Recent Transactions</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    {[{ id: 1, name: 'AI Recipe Generator', amount: 2500, time: '2d ago' }, { id: 2, name: 'Solar Grid Network', amount: 1000, time: '5d ago' }].map(txn => (
+                                        <div key={txn.id} className="flex items-center justify-between text-sm">
+                                            <div>
+                                                <p className="font-medium text-foreground truncate">{txn.name}</p>
+                                                <p className="text-xs text-muted">{txn.time}</p>
+                                            </div>
+                                            <Badge variant="outline" className="font-mono">{formatCurrency(txn.amount)}</Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                                <Button variant="ghost" size="sm" className="w-full mt-3" asChild>
+                                    <Link to="/apps/vestden">
+                                        View all <ArrowRight className="w-4 h-4 ml-1" />
+                                    </Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
 
                         {/* Top Talents */}
                         <Card>

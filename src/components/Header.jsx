@@ -13,7 +13,8 @@ import {
     Settings,
     ChevronDown,
     Search,
-    Command
+    Command,
+    BarChart3
 } from 'lucide-react'
 import { useSearch } from '@/contexts/SearchContext'
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import NotificationDropdown from '@/components/NotificationDropdown'
 import { cn, getInitials, formatNumber } from '@/lib/utils'
+import { isSupabaseConfigured } from '@/lib/supabase'
 
 export default function Header() {
     const location = useLocation()
@@ -48,6 +50,7 @@ export default function Header() {
         { path: '/', label: 'Home', icon: Home },
         { path: '/apps', label: 'Apps', icon: LayoutGrid },
         { path: '/feed', label: 'Feed', icon: MessageCircle },
+        ...(isAuthenticated ? [{ path: '/analytics', label: 'Analytics', icon: BarChart3 }] : [])
     ]
 
     return (
@@ -56,8 +59,13 @@ export default function Header() {
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2 group">
-                        <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                            <span className="text-white font-bold text-lg">F</span>
+                        <div className="relative">
+                            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                                <span className="text-white font-bold text-lg">F</span>
+                            </div>
+                            {isSupabaseConfigured() && (
+                                <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-background animate-realtime-pulse" title="Live connected" />
+                            )}
                         </div>
                         <span className="font-bold text-xl text-foreground hidden sm:block">Fixars</span>
                     </Link>
