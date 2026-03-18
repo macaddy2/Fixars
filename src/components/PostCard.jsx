@@ -3,13 +3,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
-import { Heart, MessageCircle, Share2, ExternalLink } from 'lucide-react'
+import { Heart, Share2, ExternalLink, Bookmark } from 'lucide-react'
+import CommentSection from '@/components/CommentSection'
 import { getInitials, getRelativeTime, formatNumber } from '@/lib/utils'
 
 const EMOJI_OPTIONS = ['👍', '🔥', '💡', '🎉', '💪', '❤️']
 
 export default function PostCard({ post, onReact }) {
     const [showReactions, setShowReactions] = useState(false)
+    const [bookmarked, setBookmarked] = useState(false)
 
     const totalReactions = Object.values(post.reactions).reduce((a, b) => a + b, 0)
     const topEmojis = Object.entries(post.reactions)
@@ -106,14 +108,21 @@ export default function PostCard({ post, onReact }) {
                         )}
                     </div>
 
-                    <Button variant="ghost" size="sm" className="gap-1.5">
-                        <MessageCircle className="w-4 h-4" />
-                        {post.commentCount > 0 && formatNumber(post.commentCount)}
-                    </Button>
+                    <CommentSection postId={post.id} />
 
-                    <Button variant="ghost" size="sm" className="gap-1.5 ml-auto">
-                        <Share2 className="w-4 h-4" />
-                    </Button>
+                    <div className="ml-auto flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5"
+                            onClick={() => setBookmarked(!bookmarked)}
+                        >
+                            <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-primary text-primary' : ''}`} />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="gap-1.5">
+                            <Share2 className="w-4 h-4" />
+                        </Button>
+                    </div>
                 </div>
             </CardContent>
         </Card>

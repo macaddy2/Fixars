@@ -72,7 +72,26 @@ export function SocialProvider({ children }) {
 
     const [posts, setPosts] = useState(isConfigured ? [] : MOCK_POSTS)
     const [conversations, setConversations] = useState(isConfigured ? [] : MOCK_MESSAGES)
-    const [notifications, setNotifications] = useState([])
+    const [followedUsers, setFollowedUsers] = useState(new Set(['user-002', 'user-003']))
+    const [comments, setComments] = useState({
+        'post-001': [
+            { id: 'c1', authorName: 'Marcus Williams', content: 'This is amazing! 🔥', createdAt: '2026-01-20T16:00:00Z' },
+            { id: 'c2', authorName: 'David Kim', content: 'Congrats on the launch!', createdAt: '2026-01-20T16:30:00Z' }
+        ],
+        'post-002': [
+            { id: 'c3', authorName: 'Sarah Chen', content: 'Great milestone, team!', createdAt: '2026-01-19T11:00:00Z' }
+        ]
+    })
+    const [notifications, setNotifications] = useState(isConfigured ? [] : [
+        { id: 'notif-001', type: 'idea_voted', title: 'Your idea received 5 new upvotes', message: 'Community Solar Grid Network is gaining traction!', userId: 'user-001', read: false, createdAt: new Date().toISOString() },
+        { id: 'notif-002', type: 'stake_received', title: 'New stake: $2,500 on AI Recipe Generator', message: 'A new investor backed your project', userId: 'user-001', read: false, createdAt: new Date(Date.now() - 3600000).toISOString() },
+        { id: 'notif-003', type: 'task_assigned', title: 'You were assigned a new task', message: '"Design points leaderboard" on Fixars Core Development', userId: 'user-001', read: false, createdAt: new Date(Date.now() - 7200000).toISOString() },
+        { id: 'notif-004', type: 'project_launched', title: 'Solar Grid Project launched!', message: 'David Kim launched a new project from a validated idea', userId: 'user-001', read: true, createdAt: new Date(Date.now() - 86400000).toISOString() },
+        { id: 'notif-005', type: 'reaction_received', title: 'Your post got 12 reactions 🔥', message: 'Your VestDen update is trending', userId: 'user-001', read: true, createdAt: new Date(Date.now() - 172800000).toISOString() },
+        { id: 'notif-006', type: 'talent_request', title: 'New talent inquiry', message: 'Emily Rodriguez wants to connect about React development', userId: 'user-001', read: true, createdAt: new Date(Date.now() - 259200000).toISOString() },
+        { id: 'notif-007', type: 'idea_validated', title: '🎉 Your idea was validated!', message: 'Community Solar Grid Network passed the validation threshold', userId: 'user-001', read: true, createdAt: new Date(Date.now() - 432000000).toISOString() },
+        { id: 'notif-008', type: 'points_earned', title: 'You earned 50 FixPoints!', message: 'Validated idea bonus awarded', userId: 'user-001', read: true, createdAt: new Date(Date.now() - 518400000).toISOString() }
+    ])
 
     // Fetch data from Supabase on mount
     useEffect(() => {
@@ -222,6 +241,47 @@ export function SocialProvider({ children }) {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     }, [isConfigured, user])
 
+    const deleteNotification = useCallback((id) => {
+        setNotifications(prev => prev.filter(n => n.id !== id))
+    }, [])
+
+    const followUser = useCallback((userId) => {
+        setFollowedUsers(prev => new Set(prev).add(userId))
+    }, [])
+
+    const unfollowUser = useCallback((userId) => {
+        setFollowedUsers(prev => {
+            const next = new Set(prev)
+            next.delete(userId)
+            return next
+        })
+    }, [])
+
+    const addComment = useCallback((postId, content) => {
+        if (!user) return
+        const comment = {
+            id: 'c-' + Date.now(),
+            authorName: user.name,
+            content,
+            createdAt: new Date().toISOString()
+        }
+        setComments(prev => ({
+            ...prev,
+            [postId]: [...(prev[postId] || []), comment]
+        }))
+        setPosts(prev => prev.map(p =>
+            p.id === postId ? { ...p, commentCount: (p.commentCount || 0) + 1 } : p
+        ))
+    }, [user])
+
+    const getComments = useCallback((postId) => {
+        return comments[postId] || []
+    }, [comments])
+
+    const isFollowing = useCallback((userId) => {
+        return followedUsers.has(userId)
+    }, [followedUsers])
+
     const unreadCount = notifications.filter(n => !n.read).length
 
     return (
@@ -230,11 +290,18 @@ export function SocialProvider({ children }) {
             conversations,
             notifications,
             unreadCount,
+            followedUsers,
             createPost,
             reactToPost,
             sendMessage,
             addNotification,
-            markNotificationsRead
+            markNotificationsRead,
+            deleteNotification,
+            followUser,
+            unfollowUser,
+            isFollowing,
+            addComment,
+            getComments
         }}>
             {children}
         </SocialContext.Provider>

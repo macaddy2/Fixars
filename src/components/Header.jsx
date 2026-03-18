@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
     Home,
     LayoutGrid,
@@ -11,23 +11,38 @@ import {
     Star,
     LogOut,
     Settings,
-    ChevronDown
+    ChevronDown,
+    Search,
+    Command
 } from 'lucide-react'
+import { useSearch } from '@/contexts/SearchContext'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
-import { useSocial } from '@/contexts/SocialContext'
+import NotificationDropdown from '@/components/NotificationDropdown'
 import { cn, getInitials, formatNumber } from '@/lib/utils'
 
 export default function Header() {
     const location = useLocation()
     const { user, isAuthenticated, logout } = useAuth()
     const { points, level, showReward } = usePoints()
-    const { unreadCount } = useSocial()
+    const { toggle: toggleSearch } = useSearch()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [userMenuOpen, setUserMenuOpen] = useState(false)
+
+    // Cmd+K / Ctrl+K keyboard shortcut
+    useEffect(() => {
+        function handleKeyDown(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault()
+                toggleSearch()
+            }
+        }
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [toggleSearch])
 
     const navLinks = [
         { path: '/', label: 'Home', icon: Home },
@@ -66,6 +81,18 @@ export default function Header() {
                         ))}
                     </nav>
 
+                    {/* Search */}
+                    <button
+                        onClick={toggleSearch}
+                        className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/10 hover:bg-muted/20 transition-colors text-sm text-muted border"
+                    >
+                        <Search className="w-4 h-4" />
+                        <span>Search...</span>
+                        <kbd className="flex items-center gap-0.5 px-1.5 py-0.5 bg-background rounded text-xs border">
+                            <Command className="w-3 h-3" />K
+                        </kbd>
+                    </button>
+
                     {/* Right side */}
                     <div className="flex items-center gap-3">
                         {isAuthenticated ? (
@@ -88,17 +115,7 @@ export default function Header() {
                                 </Link>
 
                                 {/* Notifications */}
-                                <Link
-                                    to="/notifications"
-                                    className="relative p-2 rounded-full hover:bg-muted/10 transition-colors"
-                                >
-                                    <Bell className="w-5 h-5 text-muted" />
-                                    {unreadCount > 0 && (
-                                        <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-destructive text-white text-xs rounded-full flex items-center justify-center font-medium">
-                                            {unreadCount > 9 ? '9+' : unreadCount}
-                                        </span>
-                                    )}
-                                </Link>
+                                <NotificationDropdown />
 
                                 {/* Messages */}
                                 <Link

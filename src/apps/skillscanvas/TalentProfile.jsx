@@ -25,6 +25,7 @@ import {
     Loader2,
     Send
 } from 'lucide-react'
+import BookingModal from '@/components/BookingModal'
 
 const SKILL_LEVELS = {
     expert: { label: 'Expert', color: 'success', percentage: 100 },
@@ -95,6 +96,7 @@ export default function TalentProfile() {
     const { reviews, stats, loading: reviewsLoading, submitReview } = useReviews(talentId)
 
     const [showReviewForm, setShowReviewForm] = useState(false)
+    const [showBooking, setShowBooking] = useState(false)
     const [reviewRating, setReviewRating] = useState(5)
     const [reviewContent, setReviewContent] = useState('')
     const [reviewProject, setReviewProject] = useState('')
@@ -191,11 +193,11 @@ export default function TalentProfile() {
                                 </div>
 
                                 <div className="flex gap-3 mt-6 pt-6 border-t">
-                                    <Button variant="skillscanvas" className="flex-1">
-                                        <MessageSquare className="w-4 h-4 mr-2" /> Contact
+                                    <Button variant="skillscanvas" className="flex-1" onClick={() => setShowBooking(true)}>
+                                        <Calendar className="w-4 h-4 mr-2" /> Book This Talent
                                     </Button>
                                     <Button variant="outline">
-                                        <Calendar className="w-4 h-4 mr-2" /> Book Call
+                                        <MessageSquare className="w-4 h-4 mr-2" /> Message
                                     </Button>
                                 </div>
                             </CardContent>
@@ -418,6 +420,9 @@ export default function TalentProfile() {
                     </div>
                 </div>
             </div>
+            {showBooking && (
+                <BookingModal talent={talent} onClose={() => setShowBooking(false)} />
+            )}
         </main>
     )
 }

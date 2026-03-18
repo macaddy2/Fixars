@@ -3,9 +3,11 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { PointsProvider } from '@/contexts/PointsContext'
 import { SocialProvider } from '@/contexts/SocialContext'
 import { DataProvider } from '@/contexts/DataContext'
+import { SearchProvider } from '@/contexts/SearchContext'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import RewardToast from '@/components/RewardToast'
+import SearchOverlay from '@/components/SearchOverlay'
 
 // Pages
 import Home from '@/pages/Home'
@@ -14,6 +16,7 @@ import Feed from '@/pages/Feed'
 import Login from '@/pages/Login'
 import Signup from '@/pages/Signup'
 import Dashboard from '@/pages/Dashboard'
+import NotificationsPage from '@/pages/NotificationsPage'
 
 // Sub-apps
 import VestDen from '@/apps/vestden/VestDen'
@@ -79,8 +82,10 @@ export default function App() {
         <DataProvider>
           <PointsProvider>
             <SocialProvider>
+              <SearchProvider>
               <div className="min-h-screen flex flex-col">
                 <Header />
+                <SearchOverlay />
                 <div className="flex-1">
                   <Routes>
                     {/* Core pages */}
@@ -104,7 +109,7 @@ export default function App() {
                     {/* Placeholders for additional routes */}
                     <Route path="/profile" element={<Dashboard />} />
                     <Route path="/messages" element={<Feed />} />
-                    <Route path="/notifications" element={<Feed />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/settings" element={<About />} />
 
                     {/* 404 */}
@@ -114,6 +119,7 @@ export default function App() {
                 <Footer />
                 <RewardToast />
               </div>
+              </SearchProvider>
             </SocialProvider>
           </PointsProvider>
         </DataProvider>

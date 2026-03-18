@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import BookingModal from '@/components/BookingModal'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -112,6 +113,7 @@ export default function SkillsCanvas() {
     const { isAuthenticated } = useAuth()
     const [search, setSearch] = useState('')
     const [availability, setAvailability] = useState('all')
+    const [bookingTalent, setBookingTalent] = useState(null)
 
     // Filter talents based on search and availability
     const filteredTalents = talents.filter(talent => {
@@ -124,9 +126,7 @@ export default function SkillsCanvas() {
     })
 
     const handleContact = (talent) => {
-        // In a real app, this would open a contact modal or navigate to messages
-        console.log('Contact talent:', talent.displayName)
-        alert(`Contact form for ${talent.displayName} - Coming soon!`)
+        setBookingTalent(talent)
     }
 
     // Calculate stats
@@ -232,6 +232,12 @@ export default function SkillsCanvas() {
                     </Card>
                 )}
             </div>
+            {bookingTalent && (
+                <BookingModal
+                    talent={bookingTalent}
+                    onClose={() => setBookingTalent(null)}
+                />
+            )}
         </main>
     )
 }
