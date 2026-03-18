@@ -155,6 +155,24 @@ export function AuthProvider({ children }) {
         }
     }
 
+    const loginWithMagicLink = async (email) => {
+        if (!isSupabaseConfigured()) {
+            return { error: { message: 'Magic link not available in development mode' } }
+        }
+
+        try {
+            const { error } = await supabase.auth.signInWithOtp({
+                email,
+                options: {
+                    emailRedirectTo: window.location.origin + '/dashboard'
+                }
+            })
+            return { error }
+        } catch (err) {
+            return { error: { message: err.message || 'Failed to send magic link' } }
+        }
+    }
+
     const signup = async (name, email, password) => {
         if (!isSupabaseConfigured()) {
             // Mock signup
@@ -284,6 +302,7 @@ export function AuthProvider({ children }) {
             isAuthenticated: !!user,
             isSupabaseConfigured: isSupabaseConfigured(),
             login,
+            loginWithMagicLink,
             signup,
             loginWithOAuth,
             logout,
