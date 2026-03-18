@@ -15,11 +15,13 @@ const BENEFITS = [
 
 export default function Signup() {
     const navigate = useNavigate()
-    const { signup, isLoading } = useAuth()
+    const { signup } = useAuth()
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [submitting, setSubmitting] = useState(false)
+    const [confirmationSent, setConfirmationSent] = useState(false)
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -30,11 +32,25 @@ export default function Signup() {
             return
         }
 
+        setSubmitting(true)
         try {
-            await signup(name, email, password)
-            navigate('/dashboard')
+            const result = await signup(name, email, password)
+
+            if (result.error) {
+                setError(result.error.message || 'Something went wrong. Please try again.')
+                setSubmitting(false)
+                return
+            }
+
+            if (result.needsConfirmation) {
+                setConfirmationSent(true)
+                setSubmitting(false)
+            } else {
+                navigate('/dashboard')
+            }
         } catch (err) {
             setError('Something went wrong. Please try again.')
+            setSubmitting(false)
         }
     }
 
@@ -82,77 +98,95 @@ export default function Signup() {
 
                     <Card>
                         <CardContent className="p-6">
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                {error && (
-                                    <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                                        {error}
+                            {confirmationSent ? (
+                                <div className="text-center py-6 space-y-4 animate-fade-in">
+                                    <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto">
+                                        <Mail className="w-8 h-8 text-success" />
                                     </div>
-                                )}
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-foreground">Full name</label>
-                                    <div className="relative">
-                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
-                                        <Input
-                                            type="text"
-                                            placeholder="John Doe"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            className="pl-10"
-                                            required
-                                        />
-                                    </div>
+                                    <h2 className="text-xl font-bold text-foreground">Check your email</h2>
+                                    <p className="text-muted text-sm max-w-xs mx-auto">
+                                        We've sent a confirmation link to <strong className="text-foreground">{email}</strong>.
+                                        Click the link to activate your account.
+                                    </p>
+                                    <Button variant="ghost" asChild>
+                                        <Link to="/login">Go to Sign in</Link>
+                                    </Button>
                                 </div>
+                            ) : (
+                                <>
+                                    <form onSubmit={handleSubmit} className="space-y-4">
+                                        {error && (
+                                            <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                                                {error}
+                                            </div>
+                                        )}
 
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-foreground">Email</label>
-                                    <div className="relative">
-                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
-                                        <Input
-                                            type="email"
-                                            placeholder="you@example.com"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            className="pl-10"
-                                            required
-                                        />
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-foreground">Full name</label>
+                                            <div className="relative">
+                                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+                                                <Input
+                                                    type="text"
+                                                    placeholder="John Doe"
+                                                    value={name}
+                                                    onChange={(e) => setName(e.target.value)}
+                                                    className="pl-10"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-foreground">Email</label>
+                                            <div className="relative">
+                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+                                                <Input
+                                                    type="email"
+                                                    placeholder="you@example.com"
+                                                    value={email}
+                                                    onChange={(e) => setEmail(e.target.value)}
+                                                    className="pl-10"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-foreground">Password</label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+                                                <Input
+                                                    type="password"
+                                                    placeholder="••••••••"
+                                                    value={password}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                    className="pl-10"
+                                                    required
+                                                    minLength={6}
+                                                />
+                                            </div>
+                                            <p className="text-xs text-muted">Must be at least 6 characters</p>
+                                        </div>
+
+                                        <Button type="submit" className="w-full" disabled={submitting}>
+                                            {submitting ? (
+                                                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating account...</>
+                                            ) : (
+                                                <>Create account <ArrowRight className="w-4 h-4 ml-2" /></>
+                                            )}
+                                        </Button>
+                                    </form>
+
+                                    <div className="mt-6 text-center">
+                                        <p className="text-sm text-muted">
+                                            Already have an account?{' '}
+                                            <Link to="/login" className="text-primary font-medium hover:underline">
+                                                Sign in
+                                            </Link>
+                                        </p>
                                     </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-foreground">Password</label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
-                                        <Input
-                                            type="password"
-                                            placeholder="••••••••"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            className="pl-10"
-                                            required
-                                            minLength={6}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-muted">Must be at least 6 characters</p>
-                                </div>
-
-                                <Button type="submit" className="w-full" disabled={isLoading}>
-                                    {isLoading ? (
-                                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating account...</>
-                                    ) : (
-                                        <>Create account <ArrowRight className="w-4 h-4 ml-2" /></>
-                                    )}
-                                </Button>
-                            </form>
-
-                            <div className="mt-6 text-center">
-                                <p className="text-sm text-muted">
-                                    Already have an account?{' '}
-                                    <Link to="/login" className="text-primary font-medium hover:underline">
-                                        Sign in
-                                    </Link>
-                                </p>
-                            </div>
+                                </>
+                            )}
                         </CardContent>
                     </Card>
 

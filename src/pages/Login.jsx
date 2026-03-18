@@ -8,20 +8,30 @@ import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function Login() {
     const navigate = useNavigate()
-    const { login, isLoading } = useAuth()
+    const { login } = useAuth()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [submitting, setSubmitting] = useState(false)
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
+        setSubmitting(true)
 
         try {
-            await login(email, password)
+            const result = await login(email, password)
+
+            if (result.error) {
+                setError(result.error.message || 'Invalid credentials. Please try again.')
+                setSubmitting(false)
+                return
+            }
+
             navigate('/dashboard')
         } catch (err) {
-            setError('Invalid credentials. Try any email/password.')
+            setError('Something went wrong. Please try again.')
+            setSubmitting(false)
         }
     }
 
@@ -82,8 +92,8 @@ export default function Login() {
                                 </div>
                             </div>
 
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? (
+                            <Button type="submit" className="w-full" disabled={submitting}>
+                                {submitting ? (
                                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...</>
                                 ) : (
                                     <>Sign in <ArrowRight className="w-4 h-4 ml-2" /></>

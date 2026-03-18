@@ -131,17 +131,28 @@ export function AuthProvider({ children }) {
         }
 
         setIsLoading(true)
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password
-        })
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            })
 
-        if (error) {
+            if (error) {
+                setIsLoading(false)
+                return { user: null, error }
+            }
+
+            // If we got a session, fetchProfile will be triggered by onAuthStateChange
+            // If not, reset loading
+            if (!data.session) {
+                setIsLoading(false)
+            }
+
+            return { user: data.user, error: null }
+        } catch (err) {
             setIsLoading(false)
-            return { user: null, error }
+            return { user: null, error: { message: err.message || 'Login failed' } }
         }
-
-        return { user: data.user, error: null }
     }
 
     const signup = async (name, email, password) => {
@@ -165,22 +176,37 @@ export function AuthProvider({ children }) {
         }
 
         setIsLoading(true)
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-                data: {
-                    full_name: name
+        try {
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: name
+                    }
                 }
+            })
+
+            if (error) {
+                setIsLoading(false)
+                return { user: null, error }
             }
-        })
 
-        if (error) {
+            // Supabase may require email confirmation — no session yet
+            // Always reset loading so the button doesn't hang
             setIsLoading(false)
-            return { user: null, error }
-        }
 
-        return { user: data.user, error: null }
+            // If email confirmation is required, data.session will be null
+            const needsConfirmation = !data.session
+            return {
+                user: data.user,
+                error: null,
+                needsConfirmation
+            }
+        } catch (err) {
+            setIsLoading(false)
+            return { user: null, error: { message: err.message || 'Signup failed' } }
+        }
     }
 
     const loginWithOAuth = async (provider) => {
