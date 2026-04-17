@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { getInitials } from '@/lib/utils'
+import CreateBoardModal from '@/components/CreateBoardModal'
+import AddTaskModal from '@/components/AddTaskModal'
 import {
     Users,
     Plus,
@@ -57,7 +59,7 @@ function TaskCard({ task, columnId }) {
     )
 }
 
-function BoardColumn({ column, boardId }) {
+function BoardColumn({ column, boardId, onAddTask }) {
     const columnStyles = {
         todo: { icon: Clock, color: 'text-muted' },
         progress: { icon: ArrowRight, color: 'text-collaboard' },
@@ -75,7 +77,13 @@ function BoardColumn({ column, boardId }) {
                     <h3 className="font-semibold text-foreground">{column.title}</h3>
                     <Badge variant="secondary" className="text-xs">{column.tasks.length}</Badge>
                 </div>
-                <Button variant="ghost" size="icon" className="w-7 h-7">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-7 h-7"
+                    aria-label={`Add task to ${column.title}`}
+                    onClick={() => onAddTask?.(column.id)}
+                >
                     <Plus className="w-4 h-4" />
                 </Button>
             </div>
@@ -143,6 +151,8 @@ export default function Collaboard() {
     const { isAuthenticated, user } = useAuth()
     const [searchParams] = useSearchParams()
     const [selectedBoard, setSelectedBoard] = useState(null)
+    const [createOpen, setCreateOpen] = useState(false)
+    const [addTaskState, setAddTaskState] = useState({ open: false, column: 'todo' })
 
     useEffect(() => {
         const boardId = searchParams.get('boardId')
@@ -179,10 +189,12 @@ export default function Collaboard() {
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline">
-                                <MessageSquare className="w-4 h-4 mr-2" /> Chat
+                            <Button variant="outline" asChild>
+                                <Link to="/messages">
+                                    <MessageSquare className="w-4 h-4 mr-2" /> Chat
+                                </Link>
                             </Button>
-                            <Button variant="collaboard">
+                            <Button variant="collaboard" onClick={() => setAddTaskState({ open: true, column: 'todo' })}>
                                 <Plus className="w-4 h-4 mr-2" /> Add Task
                             </Button>
                         </div>
@@ -192,7 +204,12 @@ export default function Collaboard() {
                         {/* Kanban Board */}
                         <div className="lg:col-span-3 flex gap-4 overflow-x-auto pb-4">
                             {board.columns.map(column => (
-                                <BoardColumn key={column.id} column={column} boardId={board.id} />
+                                <BoardColumn
+                                    key={column.id}
+                                    column={column}
+                                    boardId={board.id}
+                                    onAddTask={(colId) => setAddTaskState({ open: true, column: colId })}
+                                />
                             ))}
                         </div>
 
@@ -253,6 +270,13 @@ export default function Collaboard() {
                         </div>
                     </div>
                 </div>
+
+                <AddTaskModal
+                    open={addTaskState.open}
+                    onClose={() => setAddTaskState({ open: false, column: 'todo' })}
+                    boardId={board.id}
+                    defaultColumnId={addTaskState.column}
+                />
             </main>
         )
     }
@@ -273,7 +297,7 @@ export default function Collaboard() {
                     </div>
 
                     {isAuthenticated && (
-                        <Button variant="collaboard" size="lg">
+                        <Button variant="collaboard" size="lg" onClick={() => setCreateOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> Create Board
                         </Button>
                     )}
@@ -327,20 +351,41 @@ export default function Collaboard() {
                 {/* All Boards */}
                 <div>
                     <h2 className="text-xl font-bold text-foreground mb-4">All Boards</h2>
-                    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {boards.map((board, i) => (
-                            <div
-                                key={board.id}
-                                onClick={() => setSelectedBoard(board.id)}
-                                className="animate-fade-in"
-                                style={{ animationDelay: `${i * 50}ms` }}
-                            >
-                                <BoardCard board={board} />
-                            </div>
-                        ))}
-                    </div>
+                    {boards.length === 0 ? (
+                        <Card>
+                            <CardContent className="py-12 text-center">
+                                <Users className="w-12 h-12 text-muted mx-auto mb-4" />
+                                <p className="text-lg font-medium text-foreground mb-2">No boards yet</p>
+                                <p className="text-muted mb-4">Create one to start collaborating.</p>
+                                {isAuthenticated && (
+                                    <Button variant="collaboard" onClick={() => setCreateOpen(true)}>
+                                        <Plus className="w-4 h-4 mr-2" /> Create your first board
+                                    </Button>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {boards.map((board, i) => (
+                                <div
+                                    key={board.id}
+                                    onClick={() => setSelectedBoard(board.id)}
+                                    className="animate-fade-in"
+                                    style={{ animationDelay: `${i * 50}ms` }}
+                                >
+                                    <BoardCard board={board} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
+
+            <CreateBoardModal
+                open={createOpen}
+                onClose={() => setCreateOpen(false)}
+                onCreated={(board) => setSelectedBoard(board.id)}
+            />
         </main>
     )
 }
