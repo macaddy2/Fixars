@@ -27,8 +27,12 @@ export default function Signup() {
         e.preventDefault()
         setError('')
 
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters')
+        if (password.length < 8) {
+            setError('Password must be at least 8 characters')
+            return
+        }
+        if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+            setError('Password must include at least one letter and one number')
             return
         }
 
@@ -162,10 +166,10 @@ export default function Signup() {
                                                     onChange={(e) => setPassword(e.target.value)}
                                                     className="pl-10"
                                                     required
-                                                    minLength={6}
+                                                    minLength={8}
                                                 />
                                             </div>
-                                            <p className="text-xs text-muted">Must be at least 6 characters</p>
+                                            <p className="text-xs text-muted">At least 8 characters, with a letter and a number</p>
                                         </div>
 
                                         <Button type="submit" className="w-full" disabled={submitting}>

@@ -67,6 +67,9 @@ export default function NotificationDropdown() {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
+                aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
+                aria-expanded={isOpen}
+                aria-haspopup="menu"
                 className="relative p-2 rounded-full hover:bg-muted/10 transition-colors"
             >
                 <Bell className="w-5 h-5 text-muted" />
