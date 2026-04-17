@@ -75,9 +75,10 @@ export default function Dashboard() {
     }
 
     const nextLevel = getNextLevel(points)
-    const currentLevelData = LEVELS.find(l => l.name === level)
-    const progressToNext = nextLevel
-        ? ((points - currentLevelData.minPoints) / (nextLevel.minPoints - currentLevelData.minPoints)) * 100
+    const currentLevelData = LEVELS.find(l => l.name === level) || LEVELS[0]
+    const levelSpan = nextLevel ? nextLevel.minPoints - currentLevelData.minPoints : 0
+    const progressToNext = nextLevel && levelSpan > 0
+        ? Math.min(100, Math.max(0, ((points - currentLevelData.minPoints) / levelSpan) * 100))
         : 100
 
     const quickStats = [
