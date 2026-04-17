@@ -92,6 +92,7 @@ export default function Header() {
                     {/* Search */}
                     <button
                         onClick={toggleSearch}
+                        aria-label="Open search (Ctrl+K)"
                         className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted/10 hover:bg-muted/20 transition-colors text-sm text-muted border"
                     >
                         <Search className="w-4 h-4" />
@@ -128,6 +129,7 @@ export default function Header() {
                                 {/* Messages */}
                                 <Link
                                     to="/messages"
+                                    aria-label="Messages"
                                     className="p-2 rounded-full hover:bg-muted/10 transition-colors"
                                 >
                                     <MessageCircle className="w-5 h-5 text-muted" />
@@ -137,6 +139,9 @@ export default function Header() {
                                 <div className="relative">
                                     <button
                                         onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                        aria-label="User menu"
+                                        aria-expanded={userMenuOpen}
+                                        aria-haspopup="menu"
                                         className="flex items-center gap-2 p-1.5 rounded-full hover:bg-muted/10 transition-colors"
                                     >
                                         <Avatar className="w-8 h-8">
@@ -213,6 +218,8 @@ export default function Header() {
                         {/* Mobile menu button */}
                         <button
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                            aria-expanded={mobileMenuOpen}
                             className="md:hidden p-2 rounded-lg hover:bg-muted/10 transition-colors"
                         >
                             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
