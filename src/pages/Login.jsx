@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,13 +8,23 @@ import { Mail, Lock, ArrowRight, Loader2, Wand2, CheckCircle } from 'lucide-reac
 
 export default function Login() {
     const navigate = useNavigate()
-    const { login, loginWithMagicLink } = useAuth()
+    const location = useLocation()
+    const { login, loginWithMagicLink, isAuthenticated, isLoading } = useAuth()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [magicLinkSent, setMagicLinkSent] = useState(false)
     const [sendingMagicLink, setSendingMagicLink] = useState(false)
+
+    const redirectTo = location.state?.from || '/dashboard'
+
+    // Once auth context confirms we're signed in, navigate away from the login page
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate(redirectTo, { replace: true })
+        }
+    }, [isAuthenticated, navigate, redirectTo])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -26,7 +36,6 @@ export default function Login() {
 
             if (result.error) {
                 const msg = result.error.message || ''
-                // Handle unconfirmed email specifically
                 if (msg.toLowerCase().includes('email not confirmed') || msg.toLowerCase().includes('not confirmed')) {
                     setError('Email not confirmed yet. Use the "Sign in with Magic Link" button below, or check your inbox for the confirmation email.')
                 } else {
@@ -36,7 +45,8 @@ export default function Login() {
                 return
             }
 
-            navigate('/dashboard')
+            // Navigation happens in the useEffect once isAuthenticated flips true.
+            // Keep submitting=true until then so the button stays in its loading state.
         } catch (err) {
             setError('Something went wrong. Please try again.')
             setSubmitting(false)
