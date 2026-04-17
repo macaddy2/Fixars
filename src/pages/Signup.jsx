@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,13 +15,20 @@ const BENEFITS = [
 
 export default function Signup() {
     const navigate = useNavigate()
-    const { signup } = useAuth()
+    const { signup, isAuthenticated } = useAuth()
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [confirmationSent, setConfirmationSent] = useState(false)
+
+    // If signup produced an immediate session, navigate once auth state is ready
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/dashboard', { replace: true })
+        }
+    }, [isAuthenticated, navigate])
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -49,9 +56,8 @@ export default function Signup() {
             if (result.needsConfirmation) {
                 setConfirmationSent(true)
                 setSubmitting(false)
-            } else {
-                navigate('/dashboard')
             }
+            // Otherwise the useEffect above will navigate once isAuthenticated flips true.
         } catch (err) {
             setError('Something went wrong. Please try again.')
             setSubmitting(false)

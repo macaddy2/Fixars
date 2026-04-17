@@ -1,4 +1,4 @@
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -18,7 +18,8 @@ import {
     Star,
     ArrowRight,
     Bell,
-    Zap
+    Zap,
+    Loader2
 } from 'lucide-react'
 
 // Activity Feed Component
@@ -66,12 +67,23 @@ function ActivityFeed({ activities }) {
 }
 
 export default function Dashboard() {
-    const { user, isAuthenticated } = useAuth()
+    const { user, isAuthenticated, isLoading } = useAuth()
     const { points, level, getNextLevel, LEVELS } = usePoints()
     const { stakes, ideas, boards, talents, activities } = useData()
+    const location = useLocation()
+
+    // While auth is resolving, show a loader instead of redirecting — avoids
+    // bouncing newly-signed-in users back to /login before the profile loads.
+    if (isLoading) {
+        return (
+            <main className="min-h-[60vh] flex items-center justify-center">
+                <Loader2 className="w-6 h-6 text-muted animate-spin" />
+            </main>
+        )
+    }
 
     if (!isAuthenticated) {
-        return <Navigate to="/login" replace />
+        return <Navigate to="/login" replace state={{ from: location.pathname }} />
     }
 
     const nextLevel = getNextLevel(points)
