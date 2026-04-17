@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import BookingModal from '@/components/BookingModal'
+import ListSkillsModal from '@/components/ListSkillsModal'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -114,6 +115,7 @@ export default function SkillsCanvas() {
     const [search, setSearch] = useState('')
     const [availability, setAvailability] = useState('all')
     const [bookingTalent, setBookingTalent] = useState(null)
+    const [listOpen, setListOpen] = useState(false)
 
     // Filter talents based on search and availability
     const filteredTalents = talents.filter(talent => {
@@ -155,7 +157,7 @@ export default function SkillsCanvas() {
                     </div>
 
                     {isAuthenticated && (
-                        <Button variant="skillscanvas" size="lg">
+                        <Button variant="skillscanvas" size="lg" onClick={() => setListOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> List Your Skills
                         </Button>
                     )}
@@ -227,7 +229,12 @@ export default function SkillsCanvas() {
                         <CardContent className="py-12 text-center">
                             <Palette className="w-12 h-12 text-muted mx-auto mb-4" />
                             <p className="text-lg font-medium text-foreground mb-2">No talents found</p>
-                            <p className="text-muted">Try adjusting your search or filters</p>
+                            <p className="text-muted mb-4">Try adjusting your search or be the first to list your skills.</p>
+                            {isAuthenticated && (
+                                <Button variant="skillscanvas" onClick={() => setListOpen(true)}>
+                                    <Plus className="w-4 h-4 mr-2" /> List your skills
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 )}
@@ -238,6 +245,7 @@ export default function SkillsCanvas() {
                     onClose={() => setBookingTalent(null)}
                 />
             )}
+            <ListSkillsModal open={listOpen} onClose={() => setListOpen(false)} />
         </main>
     )
 }
