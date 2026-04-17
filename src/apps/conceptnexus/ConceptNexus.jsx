@@ -10,6 +10,7 @@ import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import AIRecommendations from '@/components/AIRecommendations'
+import SubmitIdeaModal from '@/components/SubmitIdeaModal'
 import {
     Lightbulb,
     Search,
@@ -125,6 +126,7 @@ export default function ConceptNexus() {
     const { awardPoints } = usePoints()
     const [search, setSearch] = useState('')
     const [status, setStatus] = useState('all')
+    const [submitOpen, setSubmitOpen] = useState(false)
 
     const handleVote = (ideaId, vote) => {
         voteIdea(ideaId, user.id, vote)
@@ -157,7 +159,7 @@ export default function ConceptNexus() {
                     </div>
 
                     {isAuthenticated && (
-                        <Button variant="conceptnexus" size="lg">
+                        <Button variant="conceptnexus" size="lg" onClick={() => setSubmitOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> Submit Idea
                         </Button>
                     )}
@@ -222,7 +224,12 @@ export default function ConceptNexus() {
                                 <CardContent className="py-12 text-center">
                                     <Lightbulb className="w-12 h-12 text-muted mx-auto mb-4" />
                                     <p className="text-lg font-medium text-foreground mb-2">No ideas found</p>
-                                    <p className="text-muted">Try adjusting your search or be the first to submit!</p>
+                                    <p className="text-muted mb-4">Try adjusting your search or be the first to submit!</p>
+                                    {isAuthenticated && (
+                                        <Button variant="conceptnexus" onClick={() => setSubmitOpen(true)}>
+                                            <Plus className="w-4 h-4 mr-2" /> Submit your idea
+                                        </Button>
+                                    )}
                                 </CardContent>
                             </Card>
                         )}
@@ -236,6 +243,8 @@ export default function ConceptNexus() {
                     </div>
                 </div>
             </div>
+
+            <SubmitIdeaModal open={submitOpen} onClose={() => setSubmitOpen(false)} />
         </main>
     )
 }
