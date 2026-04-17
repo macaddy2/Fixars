@@ -91,7 +91,7 @@ export default function Home() {
 
                     <div className="grid md:grid-cols-3 gap-6">
                         {TESTIMONIALS.map((t, i) => (
-                            <Card key={i} className="animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
+                            <Card key={t.name} className="animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
                                 <CardContent className="p-6">
                                     <div className="flex gap-1 mb-4">
                                         {[...Array(t.rating)].map((_, j) => (
