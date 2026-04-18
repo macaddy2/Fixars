@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,18 +22,28 @@ import {
     MessageCircle,
     Zap,
     Award,
-    Eye
+    Eye,
+    Loader2
 } from 'lucide-react'
 
 export default function Analytics() {
-    const { user, isAuthenticated } = useAuth()
+    const { user, isAuthenticated, isLoading } = useAuth()
     const { stakes, ideas, boards, talents, activities } = useData()
     const { points, history } = usePoints()
     const { posts, notifications } = useSocial()
     const [timeRange, setTimeRange] = useState('30d')
+    const location = useLocation()
+
+    if (isLoading) {
+        return (
+            <main className="min-h-[60vh] flex items-center justify-center">
+                <Loader2 className="w-6 h-6 text-muted animate-spin" />
+            </main>
+        )
+    }
 
     if (!isAuthenticated) {
-        return <Navigate to="/login" replace />
+        return <Navigate to="/login" replace state={{ from: location.pathname }} />
     }
 
     // Mock sparkline data generators
