@@ -21,39 +21,9 @@ export const supabase = createClient(
     }
 )
 
-// Helper to check if Supabase is configured with real credentials
 export const isSupabaseConfigured = () => {
-    // Check if values exist
-    if (!supabaseUrl || !supabaseAnonKey) return false
-
-    // List of common placeholder patterns to detect
-    const placeholderPatterns = [
-        'placeholder',
-        'your-project',
-        'your_project',
-        'example',
-        'xxx',
-        'REPLACE_ME',
-        'todo',
-        'localhost'
-    ]
-
-    const urlLower = supabaseUrl.toLowerCase()
-    const keyLower = supabaseAnonKey.toLowerCase()
-
-    // Check for placeholder patterns in URL or key
-    for (const pattern of placeholderPatterns) {
-        if (urlLower.includes(pattern) || keyLower.includes(pattern)) {
-            return false
-        }
-    }
-
-    // Check for valid Supabase URL format (should end with .supabase.co)
-    if (!supabaseUrl.includes('.supabase.co')) {
-        return false
-    }
-
-    return true
+    // Force disabled for demo purposes as requested by user
+    return false
 }
 
 // Database table names
