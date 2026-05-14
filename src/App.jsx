@@ -1,9 +1,17 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { AuthProvider } from '@/contexts/AuthContext'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { PointsProvider } from '@/contexts/PointsContext'
 import { SocialProvider } from '@/contexts/SocialContext'
 import { DataProvider } from '@/contexts/DataContext'
 import { SearchProvider } from '@/contexts/SearchContext'
+
+// New shell components
+import Sidebar from '@/components/Sidebar'
+import TopBar from '@/components/TopBar'
+import MobileHeader from '@/components/MobileHeader'
+import MobileNav from '@/components/MobileNav'
+
+// Legacy components (used on public pages)
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import RewardToast from '@/components/RewardToast'
@@ -19,6 +27,9 @@ import Dashboard from '@/pages/Dashboard'
 import NotificationsPage from '@/pages/NotificationsPage'
 import Analytics from '@/pages/Analytics'
 import ApiDocs from '@/pages/ApiDocs'
+import ProfilePage from '@/pages/ProfilePage'
+import SettingsPage from '@/pages/SettingsPage'
+import WalletPage from '@/pages/WalletPage'
 
 // Sub-apps
 import VestDen from '@/apps/vestden/VestDen'
@@ -77,6 +88,108 @@ function NotFound() {
   )
 }
 
+
+
+/**
+ * Layout wrapper that shows either the authenticated shell (sidebar+topbar)
+ * or the public layout (header+footer) depending on auth state and route.
+ */
+function AppLayout() {
+  const { user } = useAuth()
+  const location = useLocation()
+
+  // Public routes that use the old Header+Footer layout
+  const publicRoutes = ['/', '/login', '/signup', '/about', '/terms', '/privacy']
+  const isPublicRoute = publicRoutes.includes(location.pathname)
+
+  // If not authenticated OR on a public page, use classic layout
+  if (!user || isPublicRoute) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <SearchOverlay />
+        <div className="flex-1">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
+
+            {/* Authenticated routes also available here as fallback */}
+            <Route path="/apps" element={<Apps />} />
+            <Route path="/feed" element={<Feed />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/apps/vestden" element={<VestDen />} />
+            <Route path="/apps/conceptnexus" element={<ConceptNexus />} />
+            <Route path="/apps/collaboard" element={<Collaboard />} />
+            <Route path="/apps/skillscanvas" element={<SkillsCanvas />} />
+            <Route path="/apps/skillscanvas/talent/:id" element={<TalentProfile />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/developers" element={<ApiDocs />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/messages" element={<Feed />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </div>
+        <Footer />
+        <RewardToast />
+      </div>
+    )
+  }
+
+  // Authenticated — use new app shell
+  return (
+    <>
+      <div className="app-shell">
+        <Sidebar />
+        <main className="fx-main">
+          <MobileHeader />
+          <TopBar />
+          <SearchOverlay />
+          <section className="fx-content">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/apps" element={<Apps />} />
+              <Route path="/feed" element={<Feed />} />
+              <Route path="/wallet" element={<WalletPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+
+              {/* Sub-apps */}
+              <Route path="/apps/vestden" element={<VestDen />} />
+              <Route path="/apps/conceptnexus" element={<ConceptNexus />} />
+              <Route path="/apps/collaboard" element={<Collaboard />} />
+              <Route path="/apps/skillscanvas" element={<SkillsCanvas />} />
+              <Route path="/apps/skillscanvas/talent/:id" element={<TalentProfile />} />
+
+              {/* Account */}
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/developers" element={<ApiDocs />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/messages" element={<Feed />} />
+
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </section>
+        </main>
+      </div>
+      <MobileNav />
+      <RewardToast />
+    </>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -85,44 +198,7 @@ export default function App() {
           <PointsProvider>
             <SocialProvider>
               <SearchProvider>
-              <div className="min-h-screen flex flex-col">
-                <Header />
-                <SearchOverlay />
-                <div className="flex-1">
-                  <Routes>
-                    {/* Core pages */}
-                    <Route path="/" element={<Home />} />
-                    <Route path="/apps" element={<Apps />} />
-                    <Route path="/feed" element={<Feed />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/signup" element={<Signup />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/terms" element={<Terms />} />
-                    <Route path="/privacy" element={<Privacy />} />
-
-                    {/* Sub-apps */}
-                    <Route path="/apps/vestden" element={<VestDen />} />
-                    <Route path="/apps/conceptnexus" element={<ConceptNexus />} />
-                    <Route path="/apps/collaboard" element={<Collaboard />} />
-                    <Route path="/apps/skillscanvas" element={<SkillsCanvas />} />
-                    <Route path="/apps/skillscanvas/talent/:id" element={<TalentProfile />} />
-
-                    {/* Placeholders for additional routes */}
-                    <Route path="/profile" element={<Dashboard />} />
-                    <Route path="/messages" element={<Feed />} />
-                    <Route path="/notifications" element={<NotificationsPage />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/developers" element={<ApiDocs />} />
-                    <Route path="/settings" element={<About />} />
-
-                    {/* 404 */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </div>
-                <Footer />
-                <RewardToast />
-              </div>
+                <AppLayout />
               </SearchProvider>
             </SocialProvider>
           </PointsProvider>

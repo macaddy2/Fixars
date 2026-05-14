@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=1400"/>
+<title>Fixars · Adopted Mark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy-900: #0A1628;
+    --navy-800: #111E33;
+    --blue-700: #1E3FCF;
+    --blue-600: #2B55E8;
+    --blue-500: #3B6FD9;
+    --blue-400: #5B8BFF;
+    --cyan-400: #34C6E6;
+    --paper: #FAF8F3;
+    --ink-50:  #F4F3EE;
+    --ink-100: #E8E6DE;
+    --ink-200: #D4D1C4;
+    --ink-400: #7C7462;
+    --ink-500: #4A4538;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--paper); color: var(--navy-900); font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+  body { padding: 56px 72px 120px; }
+
+  .topbar { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 36px; margin-bottom: 44px; border-bottom: 1px solid var(--ink-200); }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-400); display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue-600); }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 76px; font-weight: 500; letter-spacing: -0.045em; line-height: 0.96; }
+  h1 .accent { background: linear-gradient(135deg, var(--cyan-400), var(--blue-700)); -webkit-background-clip: text; background-clip: text; color: transparent; font-style: italic; font-weight: 500; }
+  .sub { font-size: 15px; color: var(--ink-500); max-width: 600px; line-height: 1.55; margin-top: 14px; }
+  .topbar .right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+  .topbar .right a { font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 500; color: var(--navy-900); text-decoration: none; padding: 10px 14px; border: 1px solid var(--ink-200); border-radius: 999px; transition: all .15s; }
+  .topbar .right a:hover { border-color: var(--navy-900); background: white; }
+  .count { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-400); }
+
+  .section-head { margin: 56px 0 20px; }
+  .section-kicker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.16em; color: var(--blue-600); text-transform: uppercase; margin-bottom: 8px; }
+  .section-title { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 500; letter-spacing: -0.02em; }
+  .section-lede { font-size: 14.5px; color: var(--ink-500); max-width: 620px; line-height: 1.55; margin-top: 10px; text-wrap: pretty; }
+
+  /* Hero */
+  .hero {
+    background: white; border: 1px solid var(--ink-100); border-radius: 20px;
+    padding: 72px 64px; display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+    min-height: 420px;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: linear-gradient(to right, rgba(10,22,40,0.035) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(10,22,40,0.035) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .hero-lockup { display: flex; align-items: center; gap: 28px; position: relative; }
+  .hero-wordmark { font-family: 'Space Grotesk', sans-serif; font-weight: 500; font-size: 132px; letter-spacing: -0.055em; color: var(--navy-900); line-height: 1; }
+
+  /* Variant grid */
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; }
+  .card {
+    background: white; border: 1px solid var(--ink-100); border-radius: 14px;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .card-label { padding: 14px 18px 0; }
+  .card-label-kicker { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: var(--ink-400); }
+  .card-label-name { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 500; letter-spacing: -0.02em; margin-top: 2px; }
+  .card-preview { aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; margin-top: 12px; position: relative; }
+  .card-preview.paper { background: var(--paper); }
+  .card-preview.white { background: white; border-top: 1px solid var(--ink-100); border-bottom: 1px solid var(--ink-100); }
+  .card-preview.navy { background: var(--navy-900); }
+  .card-preview.blue { background: var(--blue-600); }
+  .card-preview.gradient { background: linear-gradient(135deg, var(--cyan-400) 0%, var(--blue-600) 50%, var(--blue-700) 100%); }
+  .card-note { padding: 14px 18px 18px; font-size: 13px; line-height: 1.55; color: var(--ink-500); }
+  .card-note strong { color: var(--navy-900); font-weight: 600; }
+
+  /* App icon card */
+  .icon-card { background: white; border: 1px solid var(--ink-100); border-radius: 14px; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+  .icon-square { width: 128px; height: 128px; border-radius: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(10,22,40,0.08); }
+  .icon-square.light { background: white; }
+  .icon-square.dark { background: var(--navy-900); }
+  .icon-square.grad { background: linear-gradient(135deg, var(--cyan-400) 0%, var(--blue-600) 50%, var(--blue-700) 100%); }
+  .icon-square.flat { background: var(--blue-600); }
+  .icon-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--ink-400); text-transform: uppercase; }
+
+  /* Size ladder */
+  .ladder { background: white; border: 1px solid var(--ink-100); border-radius: 16px; padding: 32px 36px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+  .ladder-item { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .ladder-px { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: var(--ink-400); }
+
+  /* Monochrome row */
+  .mono-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* Rationale */
+  .rationale {
+    background: var(--navy-900); color: white; border-radius: 18px;
+    padding: 36px 40px; margin-top: 56px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+  }
+  .rationale h3 { font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 10px; }
+  .rationale p { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.72); text-wrap: pretty; }
+  .rationale p + p { margin-top: 12px; }
+  .rat-list { display: flex; flex-direction: column; gap: 14px; }
+  .rat-item { display: grid; grid-template-columns: 32px 1fr; gap: 14px; padding: 14px 16px; background: rgba(255,255,255,0.04); border-radius: 10px; }
+  .rat-k { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; color: var(--cyan-400); text-transform: uppercase; padding-top: 2px; }
+  .rat-v { font-size: 13.5px; line-height: 1.55; color: rgba(255,255,255,0.85); }
+
+  /* Tagline row */
+  .taglines {
+    display: flex; gap: 48px; justify-content: center; align-items: center;
+    padding: 36px 0; margin-top: 32px;
+    border-top: 1px solid var(--ink-200); border-bottom: 1px solid var(--ink-200);
+  }
+  .tagline {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.28em;
+    text-transform: uppercase; color: var(--blue-600); font-weight: 500;
+  }
+  .tagline-sep { color: var(--ink-200); }
+</style>
+</head>
+<body>
+
+<!-- ============ SVG SYMBOLS ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Gradient for the gear+F mark -->
+    <linearGradient id="fx-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#34C6E6"/>
+      <stop offset="50%" stop-color="#2B55E8"/>
+      <stop offset="100%" stop-color="#1E3FCF"/>
+    </linearGradient>
+    <linearGradient id="fx-grad-soft" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#5B8BFF"/>
+      <stop offset="100%" stop-color="#1E3FCF"/>
+    </linearGradient>
+
+    <!-- ============ THE MARK — gear cradling F ============
+         Construction:
+         - 10-tooth gear (a nod to mechanical precision, looks less busy than 12)
+         - Circular inner cutout ~ 62% of bounds
+         - F sits inside: stem on the left, top arm extends with a slight forward lean
+         - Slight "swoosh" on the F's top arm to echo motion/progress (subtle, not the full flame)
+    -->
+    <symbol id="mark-solid" viewBox="0 0 120 120">
+      <!-- GEAR: 10 teeth, rounded outer -->
+      <path fill="currentColor" fill-rule="evenodd" d="
+        M 60 6
+        L 68 9 L 76 5 L 82 11
+        L 91 10 L 94 19 L 102 22
+        L 101 31 L 108 37 L 104 45
+        L 110 53 L 104 60 L 110 68
+        L 104 76 L 108 84 L 101 90
+        L 102 99 L 94 102 L 91 111
+        L 82 110 L 76 116 L 68 112
+        L 60 115 L 52 112 L 44 116
+        L 38 110 L 29 111 L 26 102
+        L 18 99 L 19 90 L 12 84
+        L 16 76 L 10 68 L 16 60
+        L 10 53 L 16 45 L 12 37
+        L 19 31 L 18 22 L 26 19
+        L 29 10 L 38 11 L 44 5
+        L 52 9 Z
+        M 60 36
+        A 24 24 0 0 0 60 84
+        A 24 24 0 0 0 60 36 Z"/>
+      <!-- F inside the inner circle, color from --fg (defaults to gradient/blue stop) -->
+      <g fill="var(--fg, white)">
+        <!-- Vertical stem of F -->
+        <rect x="49" y="42" width="9" height="40" rx="1.5"/>
+        <!-- Top arm (extends right, slight forward motion) -->
+        <path d="M 49 42 L 75 42 L 78 42 Q 80 42 80 44 L 80 49 Q 80 51 78 51 L 58 51 L 58 42 Z"/>
+        <!-- Middle crossbar (shorter, F, not E) -->
+        <rect x="49" y="58" width="15" height="7" rx="1.2"/>
+      </g>
+    </symbol>
+
+    <!-- Gradient mark: same geometry, filled with gradient -->
+    <symbol id="mark-gradient" viewBox="0 0 120 120">
+      <path fill="url(#fx-grad)" fill-rule="evenodd" d="
+        M 60 6 L 68 9 L 76 5 L 82 11 L 91 10 L 94 19 L 102 22 L 101 31 L 108 37 L 104 45 L 110 53 L 104 60 L 110 68 L 104 76 L 108 84 L 101 90 L 102 99 L 94 102 L 91 111 L 82 110 L 76 116 L 68 112 L 60 115 L 52 112 L 44 116 L 38 110 L 29 111 L 26 102 L 18 99 L 19 90 L 12 84 L 16 76 L 10 68 L 16 60 L 10 53 L 16 45 L 12 37 L 19 31 L 18 22 L 26 19 L 29 10 L 38 11 L 44 5 L 52 9 Z
+        M 60 36 A 24 24 0 0 0 60 84 A 24 24 0 0 0 60 36 Z"/>
+      <!-- F in a deeper tone inside gradient (uses fg var, default white) -->
+      <g fill="var(--fg, white)">
+        <rect x="49" y="42" width="9" height="40" rx="1.5"/>
+        <path d="M 49 42 L 78 42 Q 80 42 80 44 L 80 49 Q 80 51 78 51 L 58 51 L 58 42 Z"/>
+        <rect x="49" y="58" width="15" height="7" rx="1.2"/>
+      </g>
+    </symbol>
+
+    <!-- Mono outlined variant for monochrome use (1-color, stroke-based) -->
+    <symbol id="mark-mono" viewBox="0 0 120 120">
+      <path fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round" d="
+        M 60 6 L 68 9 L 76 5 L 82 11 L 91 10 L 94 19 L 102 22 L 101 31 L 108 37 L 104 45 L 110 53 L 104 60 L 110 68 L 104 76 L 108 84 L 101 90 L 102 99 L 94 102 L 91 111 L 82 110 L 76 116 L 68 112 L 60 115 L 52 112 L 44 116 L 38 110 L 29 111 L 26 102 L 18 99 L 19 90 L 12 84 L 16 76 L 10 68 L 16 60 L 10 53 L 16 45 L 12 37 L 19 31 L 18 22 L 26 19 L 29 10 L 38 11 L 44 5 L 52 9 Z"/>
+      <circle cx="60" cy="60" r="24" fill="none" stroke="currentColor" stroke-width="5"/>
+      <g fill="currentColor">
+        <rect x="49" y="42" width="9" height="40" rx="1.5"/>
+        <path d="M 49 42 L 78 42 Q 80 42 80 44 L 80 49 Q 80 51 78 51 L 58 51 L 58 42 Z"/>
+        <rect x="49" y="58" width="15" height="7" rx="1.2"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ============ TOPBAR ============ -->
+<header class="topbar">
+  <div>
+    <div class="eyebrow"><span class="dot"></span> Identity · adopted mark</div>
+    <h1>The <span class="accent">gear-cradling-F</span><br/>is the Fixars mark.</h1>
+    <p class="sub">Committing to a single direction. The gear means "fix" and infrastructure; the F monogram gives it a proper home. Gradient for hero surfaces, solid navy or blue for everything else, monochrome outline for stamps and print.</p>
+  </div>
+  <div class="topbar right">
+    <a href="Fixars Design System.html">Design system →</a>
+    <a href="Fixars Logo Explorations.html">All concepts</a>
+    <span class="count">01 mark · 3 treatments · ready to adopt</span>
+  </div>
+</header>
+
+<!-- ============ HERO: the full lockup ============ -->
+<section class="hero">
+  <div class="hero-lockup">
+    <svg width="220" height="220" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    <span class="hero-wordmark">Fixars</span>
+  </div>
+</section>
+
+<!-- Taglines row — picked up from the original reference -->
+<div class="taglines">
+  <span class="tagline">Services</span>
+  <span class="tagline-sep">·</span>
+  <span class="tagline">Connected</span>
+  <span class="tagline-sep">·</span>
+  <span class="tagline">Reliable</span>
+  <span class="tagline-sep">·</span>
+  <span class="tagline">All-in-one</span>
+</div>
+
+<!-- ============ TREATMENTS ============ -->
+<div class="section-head">
+  <div class="section-kicker">01 · Three treatments</div>
+  <h2 class="section-title">One mark, three contexts.</h2>
+  <p class="section-lede">The gradient carries hero and marketing surfaces; the solid is the workhorse for product UI, docs and co-marks; the monochrome outline handles print, watermarks, embossing and any low-fidelity context.</p>
+</div>
+
+<div class="grid-3">
+  <!-- Gradient -->
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Treatment · 01</div>
+      <div class="card-label-name">Gradient — hero</div>
+    </div>
+    <div class="card-preview white">
+      <svg width="180" height="180" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    </div>
+    <div class="card-note"><strong>Cyan → blue → deep blue</strong> diagonal gradient. Use on white/paper marketing surfaces, hero banners, pitch decks, large product moments. Never below 64px.</div>
+  </div>
+
+  <!-- Solid navy -->
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Treatment · 02</div>
+      <div class="card-label-name">Solid — workhorse</div>
+    </div>
+    <div class="card-preview paper">
+      <svg width="180" height="180" viewBox="0 0 120 120" style="color:var(--blue-600);--fg:white"><use href="#mark-solid"/></svg>
+    </div>
+    <div class="card-note"><strong>Flat Fixars blue</strong> with white F cutout. The default in product UI, docs, partner co-marks, and anywhere the gradient would be noisy. Works from 16px up.</div>
+  </div>
+
+  <!-- Mono -->
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Treatment · 03</div>
+      <div class="card-label-name">Monochrome — stamp</div>
+    </div>
+    <div class="card-preview paper">
+      <svg width="180" height="180" viewBox="0 0 120 120" style="color:var(--navy-900)"><use href="#mark-mono"/></svg>
+    </div>
+    <div class="card-note"><strong>Outlined 1-color</strong> version for print, watermarks, regulatory filings, and embossed/foil applications. Never tint — full ink or full white only.</div>
+  </div>
+</div>
+
+<!-- ============ MARK ON SURFACES ============ -->
+<div class="section-head">
+  <div class="section-kicker">02 · Color surfaces</div>
+  <h2 class="section-title">Every background, covered.</h2>
+</div>
+
+<div class="grid-4">
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Paper</div>
+      <div class="card-label-name">Primary</div>
+    </div>
+    <div class="card-preview paper">
+      <svg width="130" height="130" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Navy</div>
+      <div class="card-label-name">Reverse</div>
+    </div>
+    <div class="card-preview navy">
+      <svg width="130" height="130" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Blue</div>
+      <div class="card-label-name">Monotone</div>
+    </div>
+    <div class="card-preview blue">
+      <svg width="130" height="130" viewBox="0 0 120 120" style="color:white;--fg:var(--blue-600)"><use href="#mark-solid"/></svg>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Gradient</div>
+      <div class="card-label-name">On-brand</div>
+    </div>
+    <div class="card-preview gradient">
+      <svg width="130" height="130" viewBox="0 0 120 120" style="color:white;--fg:var(--blue-700)"><use href="#mark-solid"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ICONS ============ -->
+<div class="section-head">
+  <div class="section-kicker">03 · App icons</div>
+  <h2 class="section-title">Store-ready.</h2>
+  <p class="section-lede">Four icon variants cover every app-store scenario: light, dark, gradient (the brand moment), and flat blue (the OS fallback when gradients get compressed on small devices).</p>
+</div>
+
+<div class="grid-4">
+  <div class="icon-card">
+    <div class="icon-square light">
+      <svg width="88" height="88" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    </div>
+    <div class="icon-label">App Icon · Light</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-square dark">
+      <svg width="88" height="88" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    </div>
+    <div class="icon-label">App Icon · Dark</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-square grad">
+      <svg width="88" height="88" viewBox="0 0 120 120" style="color:white;--fg:var(--blue-700)"><use href="#mark-solid"/></svg>
+    </div>
+    <div class="icon-label">App Icon · Grad</div>
+  </div>
+  <div class="icon-card">
+    <div class="icon-square flat">
+      <svg width="88" height="88" viewBox="0 0 120 120" style="color:white;--fg:var(--blue-600)"><use href="#mark-solid"/></svg>
+    </div>
+    <div class="icon-label">App Icon · Flat</div>
+  </div>
+</div>
+
+<!-- ============ SIZE LADDER ============ -->
+<div class="section-head">
+  <div class="section-kicker">04 · Size ladder</div>
+  <h2 class="section-title">16px favicon → 220px hero.</h2>
+  <p class="section-lede">The mark stays recognizable across every product surface. Below 16px the gradient flattens to solid blue; below 24px drop the wordmark entirely.</p>
+</div>
+
+<div class="ladder">
+  <div class="ladder-item">
+    <svg width="16" height="16" viewBox="0 0 120 120" style="color:var(--blue-600);--fg:white"><use href="#mark-solid"/></svg>
+    <div class="ladder-px">16 · favicon</div>
+  </div>
+  <div class="ladder-item">
+    <svg width="24" height="24" viewBox="0 0 120 120" style="color:var(--blue-600);--fg:white"><use href="#mark-solid"/></svg>
+    <div class="ladder-px">24 · nav</div>
+  </div>
+  <div class="ladder-item">
+    <svg width="40" height="40" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    <div class="ladder-px">40 · card</div>
+  </div>
+  <div class="ladder-item">
+    <svg width="64" height="64" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    <div class="ladder-px">64 · header</div>
+  </div>
+  <div class="ladder-item">
+    <svg width="96" height="96" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    <div class="ladder-px">96 · section</div>
+  </div>
+  <div class="ladder-item">
+    <svg width="140" height="140" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    <div class="ladder-px">140 · feature</div>
+  </div>
+  <div class="ladder-item">
+    <svg width="200" height="200" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    <div class="ladder-px">200 · hero</div>
+  </div>
+</div>
+
+<!-- ============ LOCKUPS ============ -->
+<div class="section-head">
+  <div class="section-kicker">05 · Lockups</div>
+  <h2 class="section-title">Horizontal, stacked, mark-only.</h2>
+</div>
+
+<div class="grid-3">
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Lockup · Horizontal</div>
+      <div class="card-label-name">Default</div>
+    </div>
+    <div class="card-preview white" style="aspect-ratio:16/9;">
+      <div style="display:flex;align-items:center;gap:18px;">
+        <svg width="100" height="100" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+        <span style="font-family:'Space Grotesk';font-weight:500;font-size:72px;letter-spacing:-0.05em;color:var(--navy-900);line-height:1;">Fixars</span>
+      </div>
+    </div>
+    <div class="card-note">Baseline-aligned, gap = one gear-tooth width. Use everywhere by default.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Lockup · Stacked</div>
+      <div class="card-label-name">Compact</div>
+    </div>
+    <div class="card-preview white" style="aspect-ratio:16/9;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <svg width="96" height="96" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+        <span style="font-family:'Space Grotesk';font-weight:500;font-size:44px;letter-spacing:-0.05em;color:var(--navy-900);line-height:1;">Fixars</span>
+      </div>
+    </div>
+    <div class="card-note">For square containers, cards, splash screens, and loading states.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Lockup · Mark only</div>
+      <div class="card-label-name">Monogram</div>
+    </div>
+    <div class="card-preview white" style="aspect-ratio:16/9;">
+      <svg width="140" height="140" viewBox="0 0 120 120"><use href="#mark-gradient"/></svg>
+    </div>
+    <div class="card-note">When the wordmark is implied by context: app icons, favicons, avatars, repeating patterns.</div>
+  </div>
+</div>
+
+<!-- ============ MONOCHROME VARIANTS ============ -->
+<div class="section-head">
+  <div class="section-kicker">06 · Monochrome &amp; utility</div>
+  <h2 class="section-title">When brand color isn't available.</h2>
+</div>
+
+<div class="mono-row">
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Monochrome · Ink</div>
+      <div class="card-label-name">Print / regulatory</div>
+    </div>
+    <div class="card-preview paper">
+      <svg width="140" height="140" viewBox="0 0 120 120" style="color:var(--navy-900)"><use href="#mark-mono"/></svg>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Monochrome · Reverse</div>
+      <div class="card-label-name">Dark surfaces</div>
+    </div>
+    <div class="card-preview navy">
+      <svg width="140" height="140" viewBox="0 0 120 120" style="color:white"><use href="#mark-mono"/></svg>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">
+      <div class="card-label-kicker">Solid · Ink</div>
+      <div class="card-label-name">Newspaper / fax</div>
+    </div>
+    <div class="card-preview paper">
+      <svg width="140" height="140" viewBox="0 0 120 120" style="color:var(--navy-900);--fg:var(--paper)"><use href="#mark-solid"/></svg>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RATIONALE ============ -->
+<div class="rationale">
+  <div>
+    <h3>Why this mark, for Fixars.</h3>
+    <p>Across five original sketches, one motif recurred: a gear with something inside it. That intuition was right. A gear says "fix" more immediately than a shield (defense), a block (modularity), or an arrow (growth).</p>
+    <p>The F lives inside the gear because Fixars is the letter inside the machine — the operating system of African commerce, not a product sitting next to it. Gear + F is a <strong>brand thesis</strong>, not a decoration.</p>
+    <p>The gradient (cyan → blue → deep blue) is a nod to motion and depth without resorting to motion-blur clichés. The solid variant keeps it legal-safe, print-safe, and small-size-safe.</p>
+  </div>
+  <div class="rat-list">
+    <div class="rat-item"><div class="rat-k">01</div><div class="rat-v"><strong>Gear</strong> — represents fix, repair, engineering, infrastructure. The core verb in Fixars.</div></div>
+    <div class="rat-item"><div class="rat-k">02</div><div class="rat-v"><strong>F monogram</strong> — built into the gear's hub for strong recall at any size.</div></div>
+    <div class="rat-item"><div class="rat-k">03</div><div class="rat-v"><strong>Gradient</strong> — signals movement, modernity, and the all-in-one ecosystem promise.</div></div>
+    <div class="rat-item"><div class="rat-k">04</div><div class="rat-v"><strong>Trust reads</strong> — clean geometry, no sharp angles, balanced weights — looks credible to banks.</div></div>
+    <div class="rat-item"><div class="rat-k">05</div><div class="rat-v"><strong>App-friendly</strong> — sits naturally inside a rounded-square app tile; scales to 16px favicon.</div></div>
+  </div>
+</div>
+
+</body>
+</html>

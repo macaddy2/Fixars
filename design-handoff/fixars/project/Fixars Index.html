@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fixars — Design System Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --navy-900:#0A1628; --navy-800:#111E33; --navy-700:#1B2B44;
+    --blue-600:#1E5BFF; --blue-500:#3B82F6; --blue-50:#EEF4FF; --blue-100:#DCE8FF;
+    --ink-900:#0A1628; --ink-700:#2A3C56; --ink-500:#5A6B85; --ink-400:#8695AE;
+    --ink-300:#B4BECF; --ink-200:#D7DDE8; --ink-100:#EBEFF5; --ink-50:#F5F7FB;
+    --paper:#FFFFFF; --canvas:#F9FAFC;
+    --success:#10B981; --warning:#F59E0B; --danger:#EF4444;
+    --concept:#7C3AED; --invest:#10B981; --collab:#E87D4A; --skills:#06B6D4;
+    --concept-bg:#F1EAFE; --invest-bg:#E6F8F1; --collab-bg:#FCEEE4; --skills-bg:#E0F6FA;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{font-family:'Inter',sans-serif;color:var(--ink-900);background:var(--canvas);-webkit-font-smoothing:antialiased}
+  .display{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em}
+  .mono{font-family:'JetBrains Mono',monospace}
+
+  .top{max-width:1360px;margin:0 auto;padding:32px 48px 16px;display:flex;justify-content:space-between;align-items:center;}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand svg{display:block}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--blue-50);color:var(--blue-600);font-size:11px;font-weight:600;letter-spacing:0.02em;text-transform:uppercase}
+  .pill-dot{width:6px;height:6px;border-radius:50%;background:var(--blue-600)}
+  .meta{display:flex;gap:16px;align-items:center;font-size:12px;color:var(--ink-400)}
+
+  main{max-width:1360px;margin:0 auto;padding:24px 48px 120px}
+
+  .hero{padding:48px 0 56px;display:grid;grid-template-columns:1.2fr 1fr;gap:64px;align-items:end;border-bottom:1px solid var(--ink-100);margin-bottom:48px}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink-500);margin-bottom:16px}
+  .eyebrow-num{font-family:'JetBrains Mono',monospace;color:var(--blue-600);font-weight:500}
+  h1.title{font-family:'Space Grotesk',sans-serif;font-size:clamp(48px,6vw,88px);font-weight:500;letter-spacing:-0.04em;line-height:0.95;color:var(--navy-900)}
+  h1 .accent{color:var(--blue-600);font-style:italic;font-weight:400}
+  .lede{font-size:18px;color:var(--ink-500);line-height:1.55;max-width:520px;margin-top:20px}
+  .kbd-row{display:flex;gap:20px;margin-top:28px;font-size:12px;color:var(--ink-500)}
+  .kbd{display:inline-flex;align-items:center;gap:6px}
+  .kbd span{background:var(--paper);border:1px solid var(--ink-200);border-radius:6px;padding:3px 7px;font-family:'JetBrains Mono',monospace;font-size:11px;box-shadow:0 1px 0 var(--ink-200);color:var(--navy-900)}
+
+  .toc{display:flex;flex-direction:column;gap:2px}
+  .toc a{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--ink-100);text-decoration:none;color:var(--navy-900);font-size:15px;transition:all .15s}
+  .toc a:hover{padding-left:8px;color:var(--blue-600)}
+  .toc a .n{color:var(--ink-400);font-family:'JetBrains Mono',monospace;font-size:12px;margin-right:14px}
+  .toc a .lbl{flex:1;font-weight:500}
+  .toc a .cnt{color:var(--ink-400);font-size:12px}
+
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px;grid-auto-rows:minmax(240px,auto)}
+
+  .card{
+    position:relative;overflow:hidden;border-radius:20px;
+    background:var(--paper);border:1px solid var(--ink-100);
+    text-decoration:none;color:inherit;
+    transition:all .2s cubic-bezier(.2,.7,.2,1);
+    display:flex;flex-direction:column;
+    cursor:pointer;
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 20px 40px -16px rgba(10,22,40,0.18),0 8px 16px -8px rgba(10,22,40,0.08);border-color:var(--ink-200)}
+  .card:active{transform:translateY(-1px)}
+
+  .card-head{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:22px 22px 0;z-index:2;position:relative;
+  }
+  .card-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-400);letter-spacing:0.05em}
+  .card-arrow{
+    width:32px;height:32px;border-radius:50%;background:var(--ink-50);
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;color:var(--ink-500);
+  }
+  .card:hover .card-arrow{background:var(--blue-600);color:white;transform:rotate(-45deg)}
+
+  .card-preview{flex:1;position:relative;overflow:hidden;margin:12px 0}
+
+  .card-foot{padding:18px 22px 22px;border-top:1px solid var(--ink-100);background:linear-gradient(180deg,transparent,var(--canvas) 20%);position:relative;z-index:2;background:var(--paper)}
+  .card-title{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:20px;letter-spacing:-0.02em;color:var(--navy-900)}
+  .card-sub{font-size:12px;color:var(--ink-500);margin-top:4px;line-height:1.5}
+  .card-tags{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+  .tag{font-size:10px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--ink-50);color:var(--ink-500)}
+
+  /* spans */
+  .span-4{grid-column:span 4}
+  .span-6{grid-column:span 6}
+  .span-8{grid-column:span 8}
+  .span-12{grid-column:span 12}
+  .row-2{grid-row:span 2}
+
+  /* ——— Preview: Logo ——— */
+  .prev-logo{display:flex;align-items:center;justify-content:center;padding:24px;height:100%;background:var(--ink-50)}
+
+  /* ——— Preview: Color ——— */
+  .prev-color{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:2px;height:100%}
+  .prev-color > div{padding:18px;display:flex;flex-direction:column;justify-content:flex-end;color:white;font-size:11px}
+  .prev-color .pc-navy{background:var(--navy-900)}
+  .prev-color .pc-blue{background:var(--blue-600)}
+  .prev-color .pc-stack{display:grid;grid-template-rows:1fr 1fr;gap:2px}
+  .prev-color .pc-light{background:var(--ink-100);color:var(--navy-900);padding:14px;display:flex;flex-direction:column;justify-content:flex-end}
+  .prev-color .pc-paper{background:var(--paper);color:var(--navy-900);padding:14px;display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--ink-100)}
+  .prev-color .nm{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:16px;letter-spacing:-0.02em;margin-bottom:2px}
+  .prev-color .hx{font-family:'JetBrains Mono',monospace;font-size:10px;opacity:0.7}
+
+  /* ——— Preview: Typography ——— */
+  .prev-type{padding:24px;height:100%;background:var(--paper);display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+  .prev-type .giant{font-family:'Space Grotesk',sans-serif;font-size:clamp(90px,15vw,180px);font-weight:500;letter-spacing:-0.04em;line-height:0.82;color:var(--navy-900)}
+  .prev-type .giant .i{font-style:italic;color:var(--blue-600);font-weight:400}
+  .prev-type .scale-rows{display:flex;flex-direction:column;gap:2px}
+  .prev-type .sr{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em;line-height:1;color:var(--navy-900)}
+
+  /* ——— Preview: Spacing ——— */
+  .prev-spacing{padding:24px;background:var(--paper);height:100%;display:flex;flex-direction:column;justify-content:center;gap:6px}
+  .prev-spacing .spb{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--ink-500)}
+  .prev-spacing .spb .bar{background:var(--blue-600);height:10px;border-radius:2px}
+  .prev-spacing .spb .t{font-family:'JetBrains Mono',monospace;width:36px;color:var(--navy-900);font-size:11px}
+
+  /* ——— Preview: Components ——— */
+  .prev-comp{padding:22px;background:var(--canvas);height:100%;display:flex;flex-direction:column;gap:12px;justify-content:center}
+  .prev-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;border-radius:10px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;border:none;letter-spacing:-0.005em}
+  .b-p{background:var(--blue-600);color:white}
+  .b-s{background:var(--navy-900);color:white}
+  .b-o{background:transparent;color:var(--navy-900);border:1.5px solid var(--ink-200)}
+  .prev-badges{display:flex;gap:6px;flex-wrap:wrap}
+  .bd{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:600}
+  .bd-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+  .bd-s{background:#E6F8F1;color:#047857}
+  .bd-w{background:#FEF4E2;color:#B45309}
+  .bd-d{background:#FDECEC;color:#B91C1C}
+  .bd-i{background:#EEF4FF;color:#1D4ED8}
+
+  .prev-inputs{display:flex;flex-direction:column;gap:6px}
+  .prev-inp{padding:9px 11px;border:1.5px solid var(--ink-200);border-radius:8px;font-size:12px;background:var(--paper);color:var(--navy-900)}
+  .prev-inp.focus{border-color:var(--blue-600);box-shadow:0 0 0 4px rgba(30,91,255,0.15)}
+
+  /* ——— Preview: Sub-apps ——— */
+  .prev-sub{display:grid;grid-template-columns:1fr 1fr;gap:2px;height:100%}
+  .prev-sub > div{padding:18px;display:flex;flex-direction:column;justify-content:space-between;color:white;position:relative;overflow:hidden}
+  .prev-sub > div::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0),rgba(0,0,0,0.1));pointer-events:none}
+  .prev-sub .s-c{background:var(--concept)}
+  .prev-sub .s-i{background:var(--invest)}
+  .prev-sub .s-b{background:var(--collab)}
+  .prev-sub .s-s{background:var(--skills)}
+  .prev-sub .sa-glyph{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.2);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px}
+  .prev-sub .sa-nm{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:16px;letter-spacing:-0.02em}
+  .prev-sub .sa-sub{font-size:10px;opacity:0.75;letter-spacing:0.08em;text-transform:uppercase;font-weight:600}
+
+  /* ——— Preview: Icons ——— */
+  .prev-icons{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:18px;background:var(--paper);height:100%;align-content:center}
+  .prev-icons .ic{aspect-ratio:1;border:1px solid var(--ink-100);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--navy-900)}
+
+  /* ——— Preview: Viz ——— */
+  .prev-viz{padding:22px;background:var(--paper);height:100%;display:flex;flex-direction:column;gap:12px;justify-content:center}
+  .prev-viz .gauge-big{font-family:'Space Grotesk',sans-serif;font-size:56px;font-weight:500;letter-spacing:-0.03em;line-height:1;color:var(--navy-900)}
+  .prev-viz .bar-row{display:grid;grid-template-columns:80px 1fr 30px;gap:10px;align-items:center;font-size:10px}
+  .prev-viz .bar-row .bg{height:6px;background:var(--ink-100);border-radius:3px;overflow:hidden}
+  .prev-viz .bar-row .bg > div{height:100%}
+
+  /* ——— Preview: Mobile ——— */
+  .prev-mob{padding:16px 24px 0;background:linear-gradient(180deg,var(--canvas),var(--ink-50));height:100%;display:flex;justify-content:center;gap:10px;align-items:flex-end;overflow:hidden}
+  .mini-phone{
+    width:100px;aspect-ratio:9/19.5;background:var(--navy-900);border-radius:18px;padding:3px;
+    box-shadow:0 10px 28px -8px rgba(10,22,40,0.25);
+    flex-shrink:0;
+    transform:translateY(14px);
+  }
+  .mini-phone.offset{transform:translateY(-6px)}
+  .mini-phone.offset2{transform:translateY(20px)}
+  .mini-phone .scr{width:100%;height:100%;border-radius:15px;overflow:hidden;background:var(--paper);padding:8px 6px 0;font-size:6px;line-height:1.2;color:var(--navy-900)}
+
+  /* ——— Preview: Principles ——— */
+  .prev-princ{padding:22px;background:var(--navy-900);color:white;height:100%;display:flex;flex-direction:column;justify-content:center;gap:14px;position:relative;overflow:hidden}
+  .prev-princ::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 100% 0%,rgba(30,91,255,0.35),transparent 55%);pointer-events:none}
+  .prev-princ > *{position:relative;z-index:1}
+  .prev-princ .pq{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:500;letter-spacing:-0.02em;line-height:1.15}
+  .prev-princ .pq .accent{color:var(--blue-500);font-style:italic;font-weight:400}
+
+  /* Footer bar */
+  .footbar{display:flex;justify-content:space-between;padding:32px 0 0;margin-top:48px;border-top:1px solid var(--ink-100);font-size:12px;color:var(--ink-400)}
+  .footbar .right{display:flex;gap:20px}
+</style>
+</head>
+<body>
+
+<!-- Shared wordmark symbol -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="wm" viewBox="0 0 220 60">
+      <g fill="currentColor">
+        <path d="M0 8 L0 52 L10 52 L10 34 L26 34 L26 26 L10 26 L10 16 L30 16 L30 8 Z"/>
+        <rect x="36" y="8" width="9" height="9" rx="2"/>
+        <rect x="36" y="20" width="9" height="32"/>
+        <path d="M51 20 L60 20 L66 28 L72 20 L81 20 L70.5 35 L82 52 L72 52 L65.5 42 L59 52 L49 52 L60 35 Z"/>
+        <path d="M88 32 Q88 20 101 20 Q114 20 114 32 L114 52 L106 52 L106 48 Q103 53 97 53 Q87 53 87 44 Q87 35 98 35 L106 35 L106 32 Q106 27 101 27 Q96 27 96 31 L88 31 Z M106 41 L99 41 Q94 41 94 44 Q94 47 98 47 Q106 47 106 42 Z"/>
+        <path d="M120 20 L128 20 L128 24 Q131 19 138 20 L138 28 Q128 27 128 36 L128 52 L120 52 Z"/>
+        <path d="M142 42 L150 42 Q150 46 155 46 Q160 46 160 43 Q160 40 154 39 Q143 37 143 29 Q143 20 154 20 Q166 20 167 29 L159 29 Q159 26 154 26 Q150 26 150 29 Q150 32 156 33 Q167 35 167 43 Q167 53 155 53 Q142 53 142 42 Z"/>
+      </g>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="top">
+  <div class="brand">
+    <svg width="88" height="24" viewBox="0 0 220 60" style="color:var(--navy-900)"><use href="#wm"/></svg>
+    <span style="font-size:12px;color:var(--ink-400);margin-left:8px;border-left:1px solid var(--ink-200);padding-left:12px;">Design System · Index</span>
+  </div>
+  <div class="meta">
+    <span class="pill"><span class="pill-dot"></span> v1.0 · Apr 2026</span>
+    <a href="Fixars Design System.html" style="color:var(--ink-500);text-decoration:none;font-size:12px;">View full system →</a>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <div>
+    <div class="eyebrow"><span class="eyebrow-num">00 /</span> Index</div>
+    <h1 class="title">Ten <span class="accent">rooms</span>.<br/>One system.</h1>
+    <p class="lede">Every section of the Fixars design system, as its own click-through screen. Hover a card for a live preview; click to open.</p>
+    <div class="kbd-row">
+      <span class="kbd"><span>↵</span> Open section</span>
+      <span class="kbd"><span>ESC</span> Back to index</span>
+      <span class="kbd"><span>← →</span> Nav between sections</span>
+    </div>
+  </div>
+  <nav class="toc" aria-label="Table of contents">
+    <a href="Fixars Design System.html#logo"><span class="n">01</span><span class="lbl">Identity</span><span class="cnt">Wordmark · Glyph · Rules</span></a>
+    <a href="Fixars Design System.html#color"><span class="n">02</span><span class="lbl">Color</span><span class="cnt">Scales · Semantic</span></a>
+    <a href="Fixars Design System.html#type"><span class="n">03</span><span class="lbl">Typography</span><span class="cnt">Grotesk · Inter · Mono</span></a>
+    <a href="Fixars Design System.html#spacing"><span class="n">04</span><span class="lbl">Spacing · Radii · Shadow</span><span class="cnt">4pt grid</span></a>
+    <a href="Fixars Design System.html#components"><span class="n">05</span><span class="lbl">Components</span><span class="cnt">Buttons · Inputs · Cards</span></a>
+    <a href="Fixars Design System.html#subapps"><span class="n">06</span><span class="lbl">Sub-apps</span><span class="cnt">4 districts</span></a>
+    <a href="Fixars Design System.html#icons"><span class="n">07</span><span class="lbl">Iconography</span><span class="cnt">1.75px · outline</span></a>
+    <a href="Fixars Design System.html#viz"><span class="n">08</span><span class="lbl">Data visualization</span><span class="cnt">Credit score · charts</span></a>
+    <a href="Fixars Design System.html#mobile"><span class="n">09</span><span class="lbl">Mobile UI</span><span class="cnt">4 live screens</span></a>
+    <a href="Fixars Design System.html"><span class="n">10</span><span class="lbl">Principles</span><span class="cnt">How we decide</span></a>
+  </nav>
+</section>
+
+<div class="grid">
+
+  <!-- 01 IDENTITY — span 6, row-2 -->
+  <a href="Fixars Design System.html#logo" class="card span-6 row-2">
+    <div class="card-head">
+      <span class="card-num">01 / IDENTITY</span>
+      <span class="card-arrow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg>
+      </span>
+    </div>
+    <div class="card-preview prev-logo">
+      <svg width="60%" viewBox="0 0 220 60" style="color:var(--navy-900);max-width:340px;"><use href="#wm"/></svg>
+    </div>
+    <div class="card-foot">
+      <div class="card-title">The mark</div>
+      <div class="card-sub">Wordmark, glyph variations, clear space and usage rules.</div>
+      <div class="card-tags"><span class="tag">Logo</span><span class="tag">Glyph</span><span class="tag">Rules</span></div>
+    </div>
+  </a>
+
+  <!-- 02 COLOR — span 6 -->
+  <a href="Fixars Design System.html#color" class="card span-6">
+    <div class="card-head">
+      <span class="card-num">02 / COLOR</span>
+      <span class="card-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>
+    </div>
+    <div class="card-preview prev-color">
+      <div class="pc-navy"><div class="nm">Navy</div><div class="hx">#0A1628</div></div>
+      <div class="pc-blue"><div class="nm">Blue</div><div class="hx">#1E5BFF</div></div>
+      <div class="pc-stack">
+        <div class="pc-light"><div class="nm" style="font-size:13px">Mist</div><div class="hx">#EBEFF5</div></div>
+        <div class="pc-paper"><div class="nm" style="font-size:13px">Paper</div><div class="hx">#FFFFFF</div></div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="card-title">A two-hue system</div>
+      <div class="card-sub">Navy + Fixars Blue, plus neutrals and semantic tokens.</div>
+      <div class="card-tags"><span class="tag">Scales</span><span class="tag">Semantic</span><span class="tag">4 tokens</span></div>
+    </div>
+  </a>
+
+  <!-- 03 TYPOGRAPHY — span 6 -->
+  <a href="Fixars Design System.html#type" class="card span-6">
+    <div class="card-head">
+      <span class="card-num">03 / TYPOGRAPHY</span>
+      <span class="card-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>
+    </div>
+    <div class="card-preview prev-type">
+      <div class="giant">A<span class="i">a</span></div>
+      <div class="scale-rows">
+        <div class="sr" style="font-size:22px;font-weight:500;">Space Grotesk · 500</div>
+        <div class="sr" style="font-family:'Inter';font-size:15px;font-weight:400;color:var(--ink-500)">Inter · 400 — body copy that stays legible at 11px.</div>
+        <div class="sr mono" style="font-size:13px;color:var(--ink-500)">FCS_0482_NG · ₦284,500</div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="card-title">Two families, one voice</div>
+      <div class="card-sub">Space Grotesk display · Inter UI · JetBrains Mono for numerals.</div>
+      <div class="card-tags"><span class="tag">8 styles</span><span class="tag">3 families</span></div>
+    </div>
+  </a>
+
+  <!-- 04 SPACING — span 4 -->
+  <a href="Fixars Design System.html#spacing" class="card span-4">
+    <div class="card-head">
+      <span class="card-num">04 / SPACING</span>
+      <span class="card-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>
+    </div>
+    <div class="card-preview prev-spacing">
+      <div class="spb"><span class="t">s-2</span><div class="bar" style="width:8px"></div></div>
+      <div class="spb"><span class="t">s-4</span><div class="bar" style="width:16px"></div></div>
+      <div class="spb"><span class="t">s-6</span><div class="bar" style="width:24px"></div></div>
+      <div class="spb"><span class="t">s-8</span><div class="bar" style="width:32px"></div></div>
+      <div class="spb"><span class="t">s-10</span><div class="bar" style="width:40px"></div></div>
+      <div class="spb"><span class="t">s-12</span><div class="bar" style="width:48px"></div></div>
+      <div class="spb"><span class="t">s-16</span><div class="bar" style="width:64px"></div></div>
+      <div class="spb"><span class="t">s-20</span><div class="bar" style="width:80px"></div></div>
+    </div>
+    <div class="card-foot">
+      <div class="card-title">Measured to four</div>
+      <div class="card-sub">4pt grid · radii · 5-step elevation scale.</div>
+    </div>
+  </a>
+
+  <!-- 05 COMPONENTS — span 4 -->
+  <a href="Fixars Design System.html#components" class="card span-4">
+    <div class="card-head">
+      <span class="card-num">05 / COMPONENTS</span>
+      <span class="card-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>
+    </div>
+    <div class="card-preview prev-comp">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="prev-btn b-p">Stake ₦10,000</button>
+        <button class="prev-btn b-o">Cancel</button>
+      </div>
+      <div class="prev-badges">
+        <span class="bd bd-s"><span class="bd-dot"></span>Verified</span>
+        <span class="bd bd-w"><span class="bd-dot"></span>Pending</span>
+        <span class="bd bd-i"><span class="bd-dot"></span>In review</span>
+      </div>
+      <div class="prev-inputs">
+        <div class="prev-inp focus">₦ 10,000</div>
+        <div class="prev-inp" style="color:var(--ink-400)">BVN verification</div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="card-title">The working parts</div>
+      <div class="card-sub">Buttons · inputs · badges · cards · alerts · controls.</div>
+    </div>
+  </a>
+
+  <!-- 06 SUB-APPS — span 4 -->
+  <a href="Fixars Design System.html#subapps" class="card span-4">
+    <div class="card-head">
+      <span class="card-num">06 / SUB-APPS</span>
+      <span class="card-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>
+    </div>
+    <div class="card-preview prev-sub">
+      <div class="s-c">
+        <div class="sa-glyph">C</div>
+        <div><div class="sa-sub">App 01</div><div class="sa-nm">ConceptNexus</div></div>
+      </div>
+      <div class="s-i">
+        <div class="sa-glyph">I</div>
+        <div><div class="sa-sub">App 02</div><div class="sa-nm">vestDen</div></div>
+      </div>
+      <div class="s-b">
+        <div class="sa-glyph">B</div>
+        <div><div class="sa-sub">App 03</div><div class="sa-nm">CollaBoard</div></div>
+      </div>
+      <div class="s-s">
+        <div class="sa-glyph">S</div>
+        <div><div class="sa-sub">App 04</div><div class="sa-nm">SkillsCanvas</div></div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="card-title">Four districts. One city.</div>
+      <div class="card-sub">Shared shell with per-app accents and glyphs.</div>
+    </div>
+  </a>
+
+  <!-- 07 ICONS — span 4 -->
+  <a href="Fixars Design System.html#icons" class="card span-4">
+    <div class="card-head">
+      <span class="card-num">07 / ICONS</span>
+      <span class="card-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>
+    </div>
+    <div class="card-preview prev-icons">
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div>
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></div>
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div>
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 7-8"/><path d="M14 8h5v5"/></svg></div>
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7l-10 10-5-5"/></svg></div>
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg></div>
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></div>
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/></svg></div>
+      <div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg></div>
+    </div>
+    <div class="card-foot">
+      <div class="card-title">Line. Rounded. 1.75px.</div>
+      <div class="card-sub">Outline set · 24×24 grid · rounded caps.</div>
+    </div>
+  </a>
+
+  <!-- 08 DATA VIZ — span 6 -->
+  <a href="Fixars Design System.html#viz" class="card span-6">
+    <div class="card-head">
+      <span class="card-num">08 / DATA VIZ</span>
+      <span class="card-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>
+    </div>
+    <div class="card-preview prev-viz">
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;">
+        <div>
+          <div class="gauge-big">742</div>
+          <div style="font-size:11px;color:var(--success);font-weight:600;margin-top:4px;">Excellent · +18</div>
+        </div>
+        <svg viewBox="0 0 140 90" style="width:100%;">
+          <defs>
+            <linearGradient id="g2" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#EF4444"/><stop offset="0.33" stop-color="#F59E0B"/><stop offset="0.66" stop-color="#3B82F6"/><stop offset="1" stop-color="#10B981"/>
+            </linearGradient>
+          </defs>
+          <path d="M15 75 A55 55 0 0 1 125 75" stroke="#EBEFF5" stroke-width="10" fill="none" stroke-linecap="round"/>
+          <path d="M15 75 A55 55 0 0 1 125 75" stroke="url(#g2)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="173" stroke-dashoffset="30"/>
+        </svg>
+      </div>
+      <div>
+        <div class="bar-row"><span style="color:var(--ink-500)">Payment</span><div class="bg"><div style="width:92%;background:var(--success)"></div></div><span class="mono">92</span></div>
+        <div class="bar-row"><span style="color:var(--ink-500)">Projects</span><div class="bg"><div style="width:78%;background:var(--blue-600)"></div></div><span class="mono">78</span></div>
+        <div class="bar-row"><span style="color:var(--ink-500)">Network</span><div class="bg"><div style="width:70%;background:var(--skills)"></div></div><span class="mono">70</span></div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="card-title">Numbers the brand can wear</div>
+      <div class="card-sub">Credit score gauge · chart palettes · sparklines.</div>
+    </div>
+  </a>
+
+  <!-- 09 MOBILE — span 6 -->
+  <a href="Fixars Design System.html#mobile" class="card span-6">
+    <div class="card-head">
+      <span class="card-num">09 / MOBILE UI</span>
+      <span class="card-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>
+    </div>
+    <div class="card-preview prev-mob">
+      <div class="mini-phone offset2">
+        <div class="scr">
+          <div style="font-size:5px;color:var(--ink-400);">9:41</div>
+          <div style="background:var(--navy-900);color:white;padding:6px 5px;border-radius:6px;margin-top:4px;">
+            <div style="font-size:4px;opacity:0.55">Wallet</div>
+            <div style="font-family:'Space Grotesk';font-size:9px;font-weight:500;">₦284,500</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:4px;">
+            <div style="background:var(--concept-bg);padding:4px;border-radius:4px;"><div style="width:8px;height:8px;background:var(--concept);border-radius:2px;"></div><div style="font-size:4px;margin-top:2px;font-weight:600;">Concept</div></div>
+            <div style="background:var(--invest-bg);padding:4px;border-radius:4px;"><div style="width:8px;height:8px;background:var(--invest);border-radius:2px;"></div><div style="font-size:4px;margin-top:2px;font-weight:600;">Invest</div></div>
+            <div style="background:var(--collab-bg);padding:4px;border-radius:4px;"><div style="width:8px;height:8px;background:var(--collab);border-radius:2px;"></div><div style="font-size:4px;margin-top:2px;font-weight:600;">Board</div></div>
+            <div style="background:var(--skills-bg);padding:4px;border-radius:4px;"><div style="width:8px;height:8px;background:var(--skills);border-radius:2px;"></div><div style="font-size:4px;margin-top:2px;font-weight:600;">Skills</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="mini-phone">
+        <div class="scr">
+          <div style="font-size:4px;color:var(--invest);font-weight:600;letter-spacing:0.05em;">INVESTDEN</div>
+          <div style="font-family:'Space Grotesk';font-size:8px;font-weight:500;line-height:1.15;margin-top:3px;">SolarShare Lagos</div>
+          <div style="background:var(--invest-bg);padding:4px;border-radius:4px;margin-top:4px;">
+            <div style="height:3px;background:var(--ink-100);border-radius:2px;"><div style="height:100%;width:70%;background:var(--invest);border-radius:2px"></div></div>
+            <div style="font-size:4px;color:var(--navy-900);margin-top:2px;font-family:'JetBrains Mono';">₦8.4M / ₦12M</div>
+          </div>
+          <div style="background:var(--invest);color:white;padding:4px;border-radius:3px;font-size:4px;text-align:center;margin-top:5px;font-weight:700;">Stake ₦10,000</div>
+        </div>
+      </div>
+      <div class="mini-phone offset">
+        <div class="scr">
+          <div style="font-size:4px;color:var(--concept);font-weight:600;letter-spacing:0.05em;">CONCEPT</div>
+          <div style="font-family:'Space Grotesk';font-size:7px;font-weight:500;line-height:1.2;margin-top:3px;">Offline micro-credit</div>
+          <div style="text-align:center;margin-top:4px;">
+            <div style="font-family:'Space Grotesk';font-size:14px;font-weight:500;color:var(--concept);">84</div>
+            <div style="font-size:4px;color:var(--ink-400)">/ 100</div>
+          </div>
+          <div style="background:var(--concept);color:white;padding:3px;border-radius:3px;font-size:4px;text-align:center;margin-top:4px;font-weight:700;">Refine →</div>
+        </div>
+      </div>
+      <div class="mini-phone offset2">
+        <div class="scr">
+          <div style="font-size:4px;color:var(--skills);font-weight:600;letter-spacing:0.05em;">SKILLS</div>
+          <div style="display:flex;gap:3px;align-items:center;margin-top:3px;">
+            <div style="width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--skills),var(--blue-500));"></div>
+            <div>
+              <div style="font-family:'Space Grotesk';font-size:6px;font-weight:500;">Tolu O.</div>
+              <div style="font-size:4px;color:var(--ink-400)">FCS 742</div>
+            </div>
+          </div>
+          <div style="background:var(--paper);border:1px solid var(--ink-100);padding:3px;border-radius:3px;margin-top:4px;font-size:4px;">React · <span style="color:var(--success);font-weight:700;font-family:mono">94</span></div>
+          <div style="background:var(--paper);border:1px solid var(--ink-100);padding:3px;border-radius:3px;margin-top:2px;font-size:4px;">SQL · <span style="color:var(--success);font-weight:700;font-family:mono">89</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-foot">
+      <div class="card-title">Africa is mobile-first</div>
+      <div class="card-sub">Four live screens using only tokens from the system.</div>
+    </div>
+  </a>
+
+  <!-- 10 PRINCIPLES — span 12 -->
+  <a href="Fixars Design System.html" class="card span-12">
+    <div class="card-head">
+      <span class="card-num" style="color:rgba(255,255,255,0.6)">10 / PRINCIPLES</span>
+      <span class="card-arrow" style="background:rgba(255,255,255,0.1);color:white"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14m0 0-6-6m6 6-6 6"/></svg></span>
+    </div>
+    <div class="card-preview prev-princ" style="margin:0;padding:40px 48px;min-height:260px;">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:32px;height:100%;align-content:center;">
+        <div>
+          <div class="mono" style="font-size:11px;color:var(--blue-500);margin-bottom:12px;">01</div>
+          <div class="pq">Trust over <span class="accent">style</span>.</div>
+        </div>
+        <div>
+          <div class="mono" style="font-size:11px;color:var(--blue-500);margin-bottom:12px;">02</div>
+          <div class="pq"><span class="accent">Numbers</span> first.</div>
+        </div>
+        <div>
+          <div class="mono" style="font-size:11px;color:var(--blue-500);margin-bottom:12px;">03</div>
+          <div class="pq"><span class="accent">Offline</span>-aware.</div>
+        </div>
+        <div>
+          <div class="mono" style="font-size:11px;color:var(--blue-500);margin-bottom:12px;">04</div>
+          <div class="pq">One city,<br/><span class="accent">four</span> districts.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-foot" style="background:var(--navy-800);color:white;border-top:1px solid rgba(255,255,255,0.08)">
+      <div class="card-title" style="color:white">How we decide</div>
+      <div class="card-sub" style="color:rgba(255,255,255,0.55)">When a token has no clear answer, return to these four.</div>
+    </div>
+  </a>
+
+</div>
+
+<div class="footbar">
+  <div>Fixars Design System · Index · v1.0</div>
+  <div class="right">
+    <a href="Fixars Design System.html" class="mono" style="color:var(--ink-500);text-decoration:none">full system →</a>
+    <span class="mono">design@fixars.io</span>
+  </div>
+</div>
+
+</main>
+
+<script>
+  // Make the whole card overrides the style background when card itself is dark
+  document.querySelectorAll('.card').forEach(card => {
+    if (card.querySelector('.prev-princ')) {
+      card.style.background = 'var(--navy-900)';
+      card.style.borderColor = 'var(--navy-700)';
+    }
+  });
+
+  // Left/right arrow keys to nav between sections is cute: implement on subpage return via hash. Here just support Enter on focused card.
+  document.querySelectorAll('.card').forEach((card, i) => {
+    card.setAttribute('tabindex', '0');
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter') card.click();
+    });
+  });
+</script>
+
+</body>
+</html>
