@@ -1,14 +1,8 @@
 import { Link, Navigate, useLocation } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { getInitials, formatNumber } from '@/lib/utils'
-import AIRecommendations from '@/components/AIRecommendations'
 import { fetchPaymentHistory, formatCurrency } from '@/lib/payments'
 import {
     TrendingUp,
@@ -17,55 +11,209 @@ import {
     Palette,
     Star,
     ArrowRight,
+    ArrowUpRight,
     Bell,
     Zap,
-    Loader2
+    Loader2,
+    Wallet,
+    ChevronRight,
+    Sparkles
 } from 'lucide-react'
 
-// Activity Feed Component
-function ActivityFeed({ activities }) {
+/* ====================================================================
+   Dashboard — Phase 2 Redesign
+   Matches the Fixars design handoff:  wallet balance hero, 2×2 sub-app
+   tiles, recent stakes carousel, community feed, FCS score card.
+   ==================================================================== */
+
+// ─── Sub-app Quick Tiles ────────────────────────────────────────────
+function SubAppTile({ icon: Icon, name, label, color, gradient, value, to }) {
+    return (
+        <Link to={to} className="fx-subapp-tile" style={{ '--tile-color': color }}>
+            <div className="tile-icon" style={{ background: gradient }}>
+                <Icon size={22} color="white" />
+            </div>
+            <div className="tile-body">
+                <span className="tile-name">{name}</span>
+                <span className="tile-label">{label}</span>
+            </div>
+            <span className="tile-value display">{value}</span>
+            <ChevronRight size={16} className="tile-arrow" />
+        </Link>
+    )
+}
+
+// ─── Wallet Balance Hero ────────────────────────────────────────────
+function WalletCard({ points, level, progressToNext, nextLevel }) {
+    return (
+        <div className="fx-wallet-hero">
+            <div className="wallet-hero-bg" />
+            <div className="wallet-hero-content">
+                <div className="wallet-top">
+                    <div className="wallet-label">
+                        <Wallet size={16} />
+                        <span>Fixars Points</span>
+                    </div>
+                    <Link to="/wallet" className="wallet-link">
+                        View Wallet <ArrowRight size={14} />
+                    </Link>
+                </div>
+                <div className="wallet-balance display">{formatNumber(points)}</div>
+                <div className="wallet-level">
+                    <div className="wallet-level-labels">
+                        <span className="wallet-level-current">{level}</span>
+                        <span className="wallet-level-next">{nextLevel?.name || 'Max'}</span>
+                    </div>
+                    <div className="wallet-progress-track">
+                        <div className="wallet-progress-fill" style={{ width: `${progressToNext}%` }} />
+                    </div>
+                    {nextLevel && (
+                        <span className="wallet-level-hint">
+                            {formatNumber(nextLevel.minPoints - points)} pts to {nextLevel.name}
+                        </span>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ─── Community Feed Card ────────────────────────────────────────────
+function FeedCard({ activities }) {
     const getIcon = (type) => {
         switch (type) {
-            case 'launch': return <Lightbulb className="w-4 h-4 text-conceptnexus" />
-            case 'stake': return <TrendingUp className="w-4 h-4 text-vestden" />
-            case 'skill': return <Palette className="w-4 h-4 text-skillscanvas" />
-            default: return <Zap className="w-4 h-4 text-primary" />
+            case 'launch': return <Lightbulb size={14} style={{ color: 'var(--color-concept)' }} />
+            case 'stake': return <TrendingUp size={14} style={{ color: 'var(--color-invest)' }} />
+            case 'skill': return <Palette size={14} style={{ color: 'var(--color-skills)' }} />
+            default: return <Zap size={14} style={{ color: 'var(--color-blue-600)' }} />
         }
     }
 
     return (
-        <Card>
-            <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center justify-between">
-                    Community Feed
-                    <div className="flex gap-1">
-                        <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                    </div>
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    {activities.map((act) => (
-                        <div key={act.id} className="flex gap-3 text-sm">
-                            <div className="mt-1 shrink-0">
-                                {getIcon(act.type)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-foreground leading-snug">
-                                    <span className="font-bold">{act.user}</span> {act.message}
-                                </p>
-                                <p className="text-xs text-muted mt-0.5">
-                                    {new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                            </div>
+        <div className="fx-dash-card">
+            <div className="dash-card-header">
+                <h3 className="dash-card-title">Community Feed</h3>
+                <div className="live-dot" />
+            </div>
+            <div className="dash-feed-list">
+                {activities.slice(0, 5).map((act) => (
+                    <div key={act.id} className="dash-feed-item">
+                        <div className="feed-item-icon">{getIcon(act.type)}</div>
+                        <div className="feed-item-body">
+                            <p><strong>{act.user}</strong> {act.message}</p>
+                            <span className="feed-item-time">
+                                {new Date(act.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                         </div>
-                    ))}
-                </div>
-            </CardContent>
-        </Card>
+                    </div>
+                ))}
+            </div>
+            <Link to="/feed" className="dash-card-footer-link">
+                View all activity <ArrowRight size={14} />
+            </Link>
+        </div>
     )
 }
 
+// ─── Recent Stakes (horizontal scroll) ──────────────────────────────
+function RecentStakes({ stakes }) {
+    return (
+        <div className="fx-dash-card">
+            <div className="dash-card-header">
+                <h3 className="dash-card-title">Recent Stakes</h3>
+                <Link to="/apps/vestden" className="dash-card-link">
+                    View all <ArrowRight size={14} />
+                </Link>
+            </div>
+            <div className="dash-stakes-scroll">
+                {stakes.slice(0, 4).map((stake) => {
+                    const pct = Math.round((stake.currentAmount / stake.targetAmount) * 100)
+                    return (
+                        <div key={stake.id} className="dash-stake-card">
+                            <div className="stake-card-icon" style={{ background: 'linear-gradient(140deg, #10B981, #047857)' }}>
+                                <TrendingUp size={18} color="white" />
+                            </div>
+                            <span className="stake-card-title">{stake.title}</span>
+                            <div className="stake-card-bar-wrap">
+                                <div className="stake-card-bar">
+                                    <div className="stake-card-bar-fill" style={{ width: `${pct}%` }} />
+                                </div>
+                                <span className="stake-card-pct mono">{pct}%</span>
+                            </div>
+                            <span className="stake-card-amount mono">{formatNumber(stake.currentAmount)} / {formatNumber(stake.targetAmount)}</span>
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    )
+}
+
+// ─── Trending Ideas ─────────────────────────────────────────────────
+function TrendingIdeas({ ideas }) {
+    return (
+        <div className="fx-dash-card">
+            <div className="dash-card-header">
+                <h3 className="dash-card-title">Trending Ideas</h3>
+                <Link to="/apps/conceptnexus" className="dash-card-link">
+                    View all <ArrowRight size={14} />
+                </Link>
+            </div>
+            <div className="dash-ideas-list">
+                {ideas.slice(0, 3).map((idea) => (
+                    <div key={idea.id} className="dash-idea-row">
+                        <div className="idea-row-icon" style={{ background: 'linear-gradient(140deg, #7C3AED, #5B21B6)' }}>
+                            <Lightbulb size={16} color="white" />
+                        </div>
+                        <div className="idea-row-body">
+                            <span className="idea-row-title">{idea.title}</span>
+                            <span className="idea-row-creator">{idea.creatorName}</span>
+                        </div>
+                        <div className="idea-row-score">
+                            <span className="idea-score-value display">{idea.validationScore}%</span>
+                            <span className="idea-score-label">validated</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+// ─── Featured Talents ───────────────────────────────────────────────
+function FeaturedTalents({ talents }) {
+    return (
+        <div className="fx-dash-card">
+            <div className="dash-card-header">
+                <h3 className="dash-card-title">Featured Talents</h3>
+                <Link to="/apps/skillscanvas" className="dash-card-link">
+                    Browse all <ArrowRight size={14} />
+                </Link>
+            </div>
+            <div className="dash-talents-list">
+                {talents.slice(0, 4).map((talent) => (
+                    <div key={talent.id} className="dash-talent-row">
+                        <div className="talent-avatar">
+                            {getInitials(talent.displayName)}
+                        </div>
+                        <div className="talent-body">
+                            <span className="talent-name">{talent.displayName}</span>
+                            <span className="talent-skill">{talent.skills[0]?.name}</span>
+                        </div>
+                        <div className="talent-rating">
+                            <Star size={12} fill="var(--color-warning)" color="var(--color-warning)" />
+                            <span>{talent.rating}</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+// ═════════════════════════════════════════════════════════════════════
+//  Dashboard — Main Export
+// ═════════════════════════════════════════════════════════════════════
 export default function Dashboard() {
     const { user, isAuthenticated, isLoading } = useAuth()
     const { points, level, getNextLevel, LEVELS } = usePoints()
@@ -93,257 +241,71 @@ export default function Dashboard() {
         ? Math.min(100, Math.max(0, ((points - currentLevelData.minPoints) / levelSpan) * 100))
         : 100
 
-    const quickStats = [
+    const subApps = [
         {
-            label: 'Active Stakes',
-            value: stakes.filter(s => s.status === 'active').length,
-            icon: TrendingUp,
-            color: 'vestden',
-            link: '/apps/vestden'
+            icon: TrendingUp, name: 'VestDen', label: 'Active stakes',
+            color: 'var(--color-invest)', gradient: 'linear-gradient(140deg, #10B981, #047857)',
+            value: stakes.filter(s => s.status === 'active').length, to: '/apps/vestden'
         },
         {
-            label: 'My Ideas',
-            value: ideas.filter(i => i.creatorId === user.id).length,
-            icon: Lightbulb,
-            color: 'conceptnexus',
-            link: '/apps/conceptnexus'
+            icon: Lightbulb, name: 'ConceptNexus', label: 'My ideas',
+            color: 'var(--color-concept)', gradient: 'linear-gradient(140deg, #7C3AED, #5B21B6)',
+            value: ideas.filter(i => i.creatorId === user.id).length, to: '/apps/conceptnexus'
         },
         {
-            label: 'Active Boards',
-            value: boards.filter(b => b.members.some(m => m.userId === user.id)).length,
-            icon: Users,
-            color: 'collaboard',
-            link: '/apps/collaboard'
+            icon: Users, name: 'CollaBoard', label: 'Active boards',
+            color: 'var(--color-collab)', gradient: 'linear-gradient(140deg, #E87D4A, #C2410C)',
+            value: boards.filter(b => b.members.some(m => m.userId === user.id)).length, to: '/apps/collaboard'
         },
         {
-            label: 'Skills Listed',
-            value: user.skills?.length || 0,
-            icon: Palette,
-            color: 'skillscanvas',
-            link: '/apps/skillscanvas'
+            icon: Palette, name: 'SkillsCanvas', label: 'Skills listed',
+            color: 'var(--color-skills)', gradient: 'linear-gradient(140deg, #06B6D4, #0E7490)',
+            value: user.skills?.length || 0, to: '/apps/skillscanvas'
         }
     ]
 
     return (
-        <main className="py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Welcome Header */}
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
-                    <div className="flex items-center gap-4">
-                        <Avatar className="w-16 h-16">
-                            <AvatarImage src={user.avatar} />
-                            <AvatarFallback className="text-xl">{getInitials(user.name)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <h1 className="text-2xl font-bold text-foreground">Welcome back, {user.name.split(' ')[0]}!</h1>
-                            <p className="text-muted">Here's what's happening across your Fixars apps</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-3">
-                        <Button variant="outline" asChild>
-                            <Link to="/notifications">
-                                <Bell className="w-4 h-4 mr-2" /> Notifications
-                            </Link>
-                        </Button>
-                        <Button asChild>
-                            <Link to="/apps">
-                                <Zap className="w-4 h-4 mr-2" /> Explore Apps
-                            </Link>
-                        </Button>
-                    </div>
+        <div className="fx-dashboard">
+            {/* ── Welcome Banner ── */}
+            <section className="dash-welcome">
+                <div className="dash-welcome-avatar">
+                    {getInitials(user.name)}
                 </div>
+                <div className="dash-welcome-text">
+                    <h1 className="display">Welcome back, {user.name.split(' ')[0]}!</h1>
+                    <p>Here's what's happening across your Fixars apps</p>
+                </div>
+                <div className="dash-welcome-actions">
+                    <Link to="/notifications" className="fx-btn-outline">
+                        <Bell size={16} /> Notifications
+                    </Link>
+                    <Link to="/apps" className="fx-btn-primary">
+                        <Sparkles size={16} /> Explore Apps
+                    </Link>
+                </div>
+            </section>
 
-                <div className="grid lg:grid-cols-3 gap-6">
-                    {/* Main Content */}
-                    <div className="lg:col-span-2 space-y-6">
-                        {/* Quick Stats */}
-                        <div className="grid sm:grid-cols-2 gap-4">
-                            {quickStats.map((stat) => (
-                                <Link key={stat.label} to={stat.link}>
-                                    <Card className="hover:-translate-y-1 transition-all duration-300">
-                                        <CardContent className="p-5">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-sm text-muted mb-1">{stat.label}</p>
-                                                    <p className="text-3xl font-bold text-foreground">{stat.value}</p>
-                                                </div>
-                                                <div className={`w-12 h-12 rounded-2xl bg-${stat.color}/10 flex items-center justify-center`}>
-                                                    <stat.icon className={`w-6 h-6 text-${stat.color}`} />
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                            ))}
-                        </div>
-
-                        {/* Recent Activity */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center justify-between">
-                                    Recent Stakes
-                                    <Link to="/apps/vestden">
-                                        <Button variant="ghost" size="sm">
-                                            View all <ArrowRight className="w-4 h-4 ml-1" />
-                                        </Button>
-                                    </Link>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {stakes.slice(0, 3).map((stake) => (
-                                        <div key={stake.id} className="flex items-center gap-4 p-4 rounded-xl bg-muted/5 hover:bg-muted/10 transition-colors">
-                                            <div className="w-12 h-12 rounded-xl gradient-vestden flex items-center justify-center">
-                                                <TrendingUp className="w-6 h-6 text-white" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-foreground truncate">{stake.title}</p>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <Progress value={(stake.currentAmount / stake.targetAmount) * 100} className="h-2 flex-1" />
-                                                    <span className="text-xs text-muted whitespace-nowrap">
-                                                        {formatNumber(stake.currentAmount)} / {formatNumber(stake.targetAmount)}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <Badge variant={stake.status === 'funded' ? 'success' : 'default'}>
-                                                {stake.status}
-                                            </Badge>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Top Ideas */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center justify-between">
-                                    Trending Ideas
-                                    <Link to="/apps/conceptnexus">
-                                        <Button variant="ghost" size="sm">
-                                            View all <ArrowRight className="w-4 h-4 ml-1" />
-                                        </Button>
-                                    </Link>
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {ideas.slice(0, 3).map((idea) => (
-                                        <div key={idea.id} className="flex items-center gap-4 p-4 rounded-xl bg-muted/5 hover:bg-muted/10 transition-colors">
-                                            <div className="w-12 h-12 rounded-xl gradient-conceptnexus flex items-center justify-center">
-                                                <Lightbulb className="w-6 h-6 text-white" />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-foreground truncate">{idea.title}</p>
-                                                <p className="text-sm text-muted">{idea.creatorName}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-bold text-foreground">{idea.validationScore}%</p>
-                                                <p className="text-xs text-muted">validated</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Sidebar */}
-                    <div className="space-y-6">
-                        {/* Points Card */}
-                        <Card className="overflow-hidden">
-                            <div className="h-2 gradient-primary" />
-                            <CardContent className="p-6">
-                                <div className="text-center mb-4">
-                                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-warning/10 mb-3">
-                                        <Star className="w-8 h-8 text-warning fill-warning" />
-                                    </div>
-                                    <p className="text-3xl font-bold text-foreground">{formatNumber(points)}</p>
-                                    <p className="text-muted">Fixars Points</p>
-                                </div>
-
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-foreground font-medium">{level}</span>
-                                        <span className="text-muted">{nextLevel?.name || 'Max Level'}</span>
-                                    </div>
-                                    <Progress value={progressToNext} />
-                                    {nextLevel && (
-                                        <p className="text-xs text-muted text-center">
-                                            {nextLevel.minPoints - points} points to next level
-                                        </p>
-                                    )}
-                                </div>
-
-                                <Button variant="outline" className="w-full mt-4" asChild>
-                                    <Link to="/profile">View Profile</Link>
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        <ActivityFeed activities={activities} />
-
-                        {/* AI Recommendations */}
-                        <AIRecommendations compact />
-
-                        {/* Recent Transactions */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Recent Transactions</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    {[{ id: 1, name: 'AI Recipe Generator', amount: 2500, time: '2d ago' }, { id: 2, name: 'Solar Grid Network', amount: 1000, time: '5d ago' }].map(txn => (
-                                        <div key={txn.id} className="flex items-center justify-between text-sm">
-                                            <div>
-                                                <p className="font-medium text-foreground truncate">{txn.name}</p>
-                                                <p className="text-xs text-muted">{txn.time}</p>
-                                            </div>
-                                            <Badge variant="outline" className="font-mono">{formatCurrency(txn.amount)}</Badge>
-                                        </div>
-                                    ))}
-                                </div>
-                                <Button variant="ghost" size="sm" className="w-full mt-3" asChild>
-                                    <Link to="/apps/vestden">
-                                        View all <ArrowRight className="w-4 h-4 ml-1" />
-                                    </Link>
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        {/* Top Talents */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Featured Talents</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-3">
-                                    {talents.slice(0, 3).map((talent) => (
-                                        <div key={talent.id} className="flex items-center gap-3">
-                                            <Avatar>
-                                                <AvatarFallback>{getInitials(talent.displayName)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-foreground text-sm truncate">{talent.displayName}</p>
-                                                <p className="text-xs text-muted truncate">{talent.skills[0]?.name}</p>
-                                            </div>
-                                            <div className="flex items-center gap-1 text-warning">
-                                                <Star className="w-3 h-3 fill-current" />
-                                                <span className="text-xs font-medium">{talent.rating}</span>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <Button variant="ghost" size="sm" className="w-full mt-3" asChild>
-                                    <Link to="/apps/skillscanvas">
-                                        Browse all talents <ArrowRight className="w-4 h-4 ml-1" />
-                                    </Link>
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </div>
+            {/* ── Top Row: Wallet + Sub-App Tiles ── */}
+            <div className="dash-top-row">
+                <WalletCard points={points} level={level} progressToNext={progressToNext} nextLevel={nextLevel} />
+                <div className="dash-subapp-grid">
+                    {subApps.map((app) => (
+                        <SubAppTile key={app.name} {...app} />
+                    ))}
                 </div>
             </div>
-        </main>
+
+            {/* ── Middle Row: Stakes + Trending Ideas ── */}
+            <div className="dash-mid-row">
+                <RecentStakes stakes={stakes} />
+                <TrendingIdeas ideas={ideas} />
+            </div>
+
+            {/* ── Bottom Row: Feed + Talents ── */}
+            <div className="dash-bottom-row">
+                <FeedCard activities={activities} />
+                <FeaturedTalents talents={talents} />
+            </div>
+        </div>
     )
 }

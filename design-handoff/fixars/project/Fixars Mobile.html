@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Fixars · Mobile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --navy-900:#0A1628; --navy-800:#111E33; --navy-700:#1B2B44; --navy-600:#2A3C56;
+  --blue-600:#1E5BFF; --blue-500:#3B82F6; --blue-400:#5B9DFF; --blue-50:#EEF3FF; --blue-100:#DBE7FF;
+  --ink-900:#0A1628; --ink-700:#2A3C56; --ink-500:#5A6B85; --ink-400:#8695AE;
+  --ink-300:#B4BECF; --ink-200:#D7DDE8; --ink-100:#EBEFF5; --ink-50:#F5F7FB;
+  --paper:#FFFFFF; --canvas:#F5F7FB;
+  --success:#16A34A; --success-bg:#DCFCE7;
+  --warning:#D97706; --warning-bg:#FEF3C7;
+  --danger:#C24A3E;  --danger-bg:#FBE8E5;
+  --concept:#7C3AED; --concept-bg:#F1EAFE;
+  --invest:#10B981;  --invest-bg:#E6F8F1;
+  --collab:#E87D4A;  --collab-bg:#FCEEE4;
+  --skills:#06B6D4;  --skills-bg:#E0F6FA;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--canvas);color:var(--ink-900);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;height:100%;overflow:hidden}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;padding:0}
+.display{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* ===== app shell ===== */
+.app{height:100vh;display:flex;flex-direction:column;position:relative;max-width:430px;margin:0 auto;background:var(--canvas);overflow:hidden}
+
+/* status bar (only visible when run standalone) */
+.fake-status{display:none}
+@media (min-width:430px){
+  .app{box-shadow:0 0 0 1px var(--ink-200), 0 30px 80px rgba(10,22,40,.15);border-radius:32px;height:844px;margin-top:24px;overflow:hidden}
+  body{background:#E5E9F2;display:flex;justify-content:center;align-items:flex-start;padding:24px 12px}
+}
+
+/* ===== TOP CHROME ===== */
+.top{padding:14px 18px 8px;display:flex;align-items:center;gap:10px;background:var(--paper);position:relative;z-index:5}
+.top.acc-concept{background:linear-gradient(180deg,var(--concept-bg) 0%,var(--paper) 100%)}
+.top.acc-invest{background:linear-gradient(180deg,var(--invest-bg) 0%,var(--paper) 100%)}
+.top.acc-collab{background:linear-gradient(180deg,var(--collab-bg) 0%,var(--paper) 100%)}
+.top.acc-skills{background:linear-gradient(180deg,var(--skills-bg) 0%,var(--paper) 100%)}
+.top.acc-dark{background:var(--navy-900);color:white}
+.top .back{width:36px;height:36px;border-radius:10px;background:var(--ink-50);display:flex;align-items:center;justify-content:center;color:var(--ink-700)}
+.top.acc-dark .back{background:rgba(255,255,255,.08);color:white}
+.top .ttl{flex:1;font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:17px;letter-spacing:-0.015em}
+.top .actions{display:flex;gap:6px}
+.top .icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--ink-50);color:var(--ink-700);position:relative}
+.top.acc-dark .icon{background:rgba(255,255,255,.08);color:white}
+.top .icon .dot{position:absolute;top:7px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--danger);border:2px solid var(--paper)}
+
+.brand-row{display:flex;align-items:center;gap:10px;flex:1}
+.brand-row img{height:30px;width:auto}
+.brand-row .nm{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;letter-spacing:-0.025em}
+.greet{font-size:11px;color:var(--ink-500);margin-top:1px;font-weight:500}
+
+/* ===== content viewport ===== */
+.body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:14px 18px 100px}
+.body::-webkit-scrollbar{display:none}
+
+/* ===== bottom tabs ===== */
+.tabs{position:absolute;bottom:0;left:0;right:0;background:rgba(255,255,255,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--ink-100);padding:9px 6px calc(env(safe-area-inset-bottom,14px) + 6px);z-index:8}
+.tabs-row{display:grid;grid-template-columns:1fr 1fr 56px 1fr 1fr;align-items:end;gap:2px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;font-size:10px;font-weight:600;color:var(--ink-400);transition:.15s;border-radius:10px}
+.tab.active{color:var(--blue-600)}
+.tab svg{width:22px;height:22px}
+.tab-create{align-self:center;width:54px;height:54px;border-radius:18px;background:linear-gradient(135deg,var(--blue-600),var(--concept));color:white;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 22px rgba(30,91,255,.35);margin-top:-22px;border:4px solid var(--paper)}
+.tab-create svg{width:26px;height:26px}
+
+/* ===== blocks ===== */
+.hero{margin-bottom:16px}
+.hero h1{font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:500;letter-spacing:-0.025em;line-height:1.15;margin:8px 0 4px}
+.hero p{margin:0;font-size:13px;color:var(--ink-500);line-height:1.45}
+
+/* points/wallet header chip */
+.bal-card{background:linear-gradient(135deg,var(--navy-900),var(--navy-700));color:white;border-radius:20px;padding:18px;position:relative;overflow:hidden;margin-bottom:16px}
+.bal-card::after{content:"";position:absolute;right:-30px;top:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(30,91,255,.3),transparent 70%)}
+.bal-card .label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6);font-weight:600;position:relative;z-index:1}
+.bal-card .val{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:500;margin-top:4px;letter-spacing:-0.02em;position:relative;z-index:1}
+.bal-card .row{display:flex;gap:18px;margin-top:4px;position:relative;z-index:1}
+.bal-card .row .sub{font-size:11px;color:rgba(255,255,255,.6)}
+.bal-card .row .sub b{display:block;font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:15px;color:white;letter-spacing:-0.02em;margin-top:2px}
+.bal-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:14px;position:relative;z-index:1}
+.bal-actions .a{background:rgba(255,255,255,.1);color:white;padding:9px 4px;border-radius:10px;font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.bal-actions .a svg{width:16px;height:16px}
+.bal-actions .a.primary{background:white;color:var(--navy-900)}
+
+/* sub-app tiles */
+.section-title{display:flex;justify-content:space-between;align-items:baseline;margin:18px 0 10px}
+.section-title h3{margin:0;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:500;letter-spacing:-0.015em}
+.section-title .more{font-size:11px;color:var(--blue-600);font-weight:600}
+
+.sa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sa-tile{aspect-ratio:1.05/1;border-radius:18px;padding:14px;color:white;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;cursor:pointer}
+.sa-tile::after{content:"";position:absolute;right:-24px;bottom:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1)}
+.sa-tile.concept{background:linear-gradient(140deg,#7C3AED,#5B21B6)}
+.sa-tile.invest{background:linear-gradient(140deg,#10B981,#047857)}
+.sa-tile.collab{background:linear-gradient(140deg,#F97B47,#C2410C)}
+.sa-tile.skills{background:linear-gradient(140deg,#06B6D4,#0E7490)}
+.sa-tile .gl{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);position:relative;z-index:1}
+.sa-tile .nm{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;letter-spacing:-0.015em;position:relative;z-index:1}
+.sa-tile .tg{font-size:10px;opacity:.85;margin-top:1px;position:relative;z-index:1}
+.sa-tile .meta{font-family:'JetBrains Mono',monospace;font-size:10px;opacity:.85;position:relative;z-index:1;margin-top:6px}
+
+/* horizontal scroll cards (today / opportunities) */
+.h-scroll{display:flex;gap:10px;overflow-x:auto;margin:0 -18px;padding:4px 18px 8px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch}
+.h-scroll::-webkit-scrollbar{display:none}
+.h-scroll > *{scroll-snap-align:start;flex-shrink:0}
+
+.opp-card{width:240px;background:var(--paper);border:1px solid var(--ink-100);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.opp-card .tag{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px;width:fit-content}
+.tag-concept{background:var(--concept-bg);color:var(--concept)}
+.tag-invest{background:var(--invest-bg);color:var(--invest)}
+.tag-collab{background:var(--collab-bg);color:var(--collab)}
+.tag-skills{background:var(--skills-bg);color:var(--skills)}
+.tag-success{background:var(--success-bg);color:var(--success)}
+.tag-warning{background:var(--warning-bg);color:var(--warning)}
+.tag-ink{background:var(--ink-100);color:var(--ink-700)}
+.opp-card .ti{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:14px;line-height:1.25;letter-spacing:-0.01em}
+.opp-card .ds{font-size:11px;color:var(--ink-500);line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.opp-card .mt{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--ink-400);font-family:'JetBrains Mono',monospace}
+.opp-card .mt .n{color:var(--navy-900);font-weight:600}
+
+/* feed-style list */
+.list{display:flex;flex-direction:column;gap:10px}
+.list-card{background:var(--paper);border:1px solid var(--ink-100);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.list-card .row1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.list-card .ti{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:14px;line-height:1.3;letter-spacing:-0.01em}
+.list-card .ds{font-size:12px;color:var(--ink-500);line-height:1.45}
+.list-card .meta{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--ink-100);font-size:11px;color:var(--ink-500)}
+.list-card .meta .num{font-family:'JetBrains Mono',monospace;color:var(--navy-900);font-weight:600}
+
+.progress{height:5px;background:var(--ink-100);border-radius:3px;overflow:hidden}
+.progress > div{height:100%;border-radius:3px}
+
+/* avatars */
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:11px;font-weight:600;flex-shrink:0}
+.av-lg{width:64px;height:64px;font-size:20px;font-family:'Space Grotesk',sans-serif}
+
+/* feed posts */
+.post{background:var(--paper);border:1px solid var(--ink-100);border-radius:14px;padding:14px;margin-bottom:10px}
+.post .head{display:flex;align-items:center;gap:10px}
+.post .head .nm{font-weight:600;font-size:13px}
+.post .head .mta{font-size:10px;color:var(--ink-400)}
+.post .body{margin-top:10px;font-size:13px;line-height:1.5}
+.post .acts{display:flex;gap:10px;margin-top:10px;padding-top:9px;border-top:1px solid var(--ink-100);font-size:11px;color:var(--ink-500)}
+.post .acts span{display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border-radius:6px}
+.post .tag{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;margin-left:auto}
+
+/* composer */
+.composer{background:var(--paper);border:1px solid var(--ink-100);border-radius:14px;padding:12px;margin-bottom:12px}
+.composer .ipt{display:flex;gap:9px;align-items:flex-start}
+.composer textarea{flex:1;border:none;outline:none;font-family:inherit;font-size:13px;color:var(--ink-900);background:transparent;resize:none;min-height:42px;padding:6px 0}
+.composer .ipt textarea::placeholder{color:var(--ink-400)}
+.composer .chips{display:flex;gap:6px;margin-top:8px;padding-top:9px;border-top:1px solid var(--ink-100);overflow-x:auto}
+.composer .chips::-webkit-scrollbar{display:none}
+.composer .chip{display:inline-flex;align-items:center;gap:5px;padding:5px 9px;border-radius:999px;border:1px solid var(--ink-200);background:var(--paper);font-size:11px;font-weight:600;color:var(--ink-500);flex-shrink:0}
+.composer .chip .dot{width:6px;height:6px;border-radius:50%}
+.composer .chip.concept .dot{background:var(--concept)}
+.composer .chip.invest .dot{background:var(--invest)}
+.composer .chip.collab .dot{background:var(--collab)}
+.composer .chip.skills .dot{background:var(--skills)}
+
+/* stats row (sub-app pages) */
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{background:var(--paper);border:1px solid var(--ink-100);border-radius:12px;padding:12px}
+.stat .k{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400);font-weight:600;margin-bottom:4px}
+.stat .v{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:500;letter-spacing:-0.02em}
+.stat .t{font-size:10px;margin-top:2px}
+.stat .t.up{color:var(--success)}
+.stat .t.down{color:var(--danger)}
+
+/* profile */
+.profile-head{background:var(--paper);border:1px solid var(--ink-100);border-radius:18px;padding:18px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;margin-bottom:14px}
+.fcs-ring{position:relative;width:84px;height:84px}
+.fcs-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.fcs-ring .cm{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif}
+.fcs-ring .cm .n{font-size:22px;font-weight:600;letter-spacing:-0.02em}
+.fcs-ring .cm .l{font-size:8px;color:var(--ink-400);letter-spacing:.08em;text-transform:uppercase;font-weight:700;margin-top:-2px}
+.profile-head .nm{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:18px;letter-spacing:-0.02em}
+.profile-head .meta{font-size:11px;color:var(--ink-500)}
+.profile-head .badges{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.badge-pill{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--ink-100);color:var(--ink-700)}
+.badge-pill.gold{background:var(--warning-bg);color:var(--warning)}
+
+/* tx rows */
+.tx{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--ink-100)}
+.tx:last-child{border-bottom:none}
+.tx .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-weight:600;font-size:11px}
+.tx .body{flex:1;min-width:0}
+.tx .t{font-size:12px;font-weight:500;line-height:1.3}
+.tx .m{font-size:10px;color:var(--ink-400);margin-top:1px}
+.tx .v{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;text-align:right}
+.tx .v.up{color:var(--success)}
+.tx .v.down{color:var(--danger)}
+
+/* idea detail */
+.idea-hero{background:var(--paper);border:1px solid var(--ink-100);border-radius:18px;padding:16px;margin-bottom:14px}
+.idea-hero .tag{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px;margin-bottom:8px}
+.idea-hero h2{margin:0 0 6px;font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:19px;line-height:1.2;letter-spacing:-0.02em}
+.idea-hero .ds{font-size:13px;color:var(--ink-500);line-height:1.5}
+.kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;background:var(--paper);border:1px solid var(--ink-100);border-radius:14px;overflow:hidden;margin-bottom:14px}
+.kv-grid .cell{padding:12px 14px;border-right:1px solid var(--ink-100);border-bottom:1px solid var(--ink-100)}
+.kv-grid .cell:nth-child(2n){border-right:none}
+.kv-grid .cell:nth-last-child(-n+2){border-bottom:none}
+.kv-grid .cell .k{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400);font-weight:600}
+.kv-grid .cell .v{font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:500;letter-spacing:-0.02em;margin-top:3px}
+.cta-stack{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:13px 16px;border-radius:12px;font-size:13px;font-weight:600;border:1px solid transparent}
+.btn-primary{background:var(--blue-600);color:white}
+.btn-primary.concept{background:var(--concept)}
+.btn-primary.invest{background:var(--invest)}
+.btn-primary.collab{background:var(--collab)}
+.btn-primary.skills{background:var(--skills)}
+.btn-ghost{background:var(--paper);color:var(--ink-900);border-color:var(--ink-200)}
+
+/* segment */
+.segment{display:inline-flex;background:var(--ink-100);padding:3px;border-radius:10px;margin-bottom:14px;width:100%}
+.segment button{flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:600;color:var(--ink-500)}
+.segment button.on{background:var(--paper);color:var(--navy-900);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+
+/* sheet (modal) */
+.sheet-mask{position:absolute;inset:0;background:rgba(10,22,40,.5);z-index:30;display:none;align-items:flex-end;justify-content:center}
+.sheet-mask.open{display:flex}
+.sheet{background:var(--paper);width:100%;max-height:88%;border-radius:22px 22px 0 0;display:flex;flex-direction:column;animation:rise .25s ease}
+@keyframes rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-grab{align-self:center;width:36px;height:4px;border-radius:3px;background:var(--ink-200);margin:8px 0}
+.sheet-head{padding:0 18px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--ink-100)}
+.sheet-head h3{margin:0;font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:17px;letter-spacing:-0.015em}
+.sheet-head .x{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ink-400);background:var(--ink-50)}
+.sheet-body{padding:14px 18px;overflow-y:auto;flex:1}
+.sheet-foot{padding:12px 18px calc(env(safe-area-inset-bottom,16px) + 14px);border-top:1px solid var(--ink-100);display:flex;gap:8px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:10px;color:var(--ink-500);text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:5px}
+.field input,.field textarea,.field select{width:100%;border:1px solid var(--ink-200);border-radius:10px;padding:11px 12px;font-family:inherit;font-size:13px;color:var(--ink-900);background:var(--paper);outline:none}
+.field textarea{min-height:80px;resize:vertical}
+.field .help{font-size:10px;color:var(--ink-400);margin-top:4px;line-height:1.4}
+.tag-pick{display:flex;gap:6px;flex-wrap:wrap}
+.tag-pick button{padding:7px 10px;border-radius:999px;border:1px solid var(--ink-200);font-size:11px;font-weight:600;color:var(--ink-500);background:var(--paper);display:inline-flex;align-items:center;gap:5px}
+.tag-pick button .dot{width:6px;height:6px;border-radius:50%}
+.tag-pick button.on{color:white;border-color:transparent}
+.tag-pick button.on.concept{background:var(--concept)}
+.tag-pick button.on.invest{background:var(--invest)}
+.tag-pick button.on.collab{background:var(--collab)}
+.tag-pick button.on.skills{background:var(--skills)}
+.tag-pick button .dot.concept{background:var(--concept)}
+.tag-pick button .dot.invest{background:var(--invest)}
+.tag-pick button .dot.collab{background:var(--collab)}
+.tag-pick button .dot.skills{background:var(--skills)}
+
+/* toast */
+.toast{position:absolute;bottom:100px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--navy-900);color:white;padding:10px 16px;border-radius:10px;font-size:12px;font-weight:500;z-index:40;transition:.25s;opacity:0;white-space:nowrap;max-width:80%}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* page transitions */
+.page{display:none;animation:fade .18s ease}
+.page.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* settings list */
+.menu{background:var(--paper);border:1px solid var(--ink-100);border-radius:14px;overflow:hidden}
+.menu .item{display:flex;align-items:center;gap:12px;padding:14px;border-bottom:1px solid var(--ink-100);font-size:13px}
+.menu .item:last-child{border-bottom:none}
+.menu .item .ic{width:34px;height:34px;border-radius:10px;background:var(--ink-50);display:flex;align-items:center;justify-content:center;color:var(--ink-700);flex-shrink:0}
+.menu .item .nm{flex:1}
+.menu .item .arr{color:var(--ink-300)}
+.menu .item .vl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-500)}
+
+/* notification banner */
+.banner{background:linear-gradient(135deg,var(--blue-50),#fff);border:1px solid var(--blue-100);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.banner .ic{width:32px;height:32px;border-radius:10px;background:var(--blue-600);color:white;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.banner .t{font-size:12px;font-weight:600;line-height:1.3}
+.banner .m{font-size:11px;color:var(--ink-500);margin-top:1px}
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#0A1628">
+  <svg viewBox="0 0 1200 1600" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1200" height="1600" fill="#0A1628"/>
+    <g transform="translate(600 700)">
+      <g transform="translate(-220 -220)">
+        <defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B82F6"/><stop offset="1" stop-color="#1E5BFF"/></linearGradient></defs>
+        <path fill="url(#tg)" d="M220 0 L260 0 L275 35 L320 25 L335 55 L375 75 L375 115 L410 130 L400 170 L425 200 L400 230 L410 270 L375 285 L375 325 L335 345 L320 375 L275 365 L260 400 L220 400 L205 365 L160 375 L145 345 L105 325 L105 285 L70 270 L80 230 L55 200 L80 170 L70 130 L105 115 L105 75 L145 55 L160 25 L205 35 Z"/>
+        <circle cx="220" cy="200" r="80" fill="#0A1628"/>
+        <path fill="url(#tg)" d="M230 200 L230 320 L260 320 L260 240 L290 240 L290 270 L320 270 L320 200 Z" opacity="0.95"/>
+      </g>
+    </g>
+    <text x="600" y="1100" font-family="system-ui" font-size="90" font-weight="600" fill="white" text-anchor="middle" letter-spacing="-2">Fixars</text>
+    <text x="600" y="1170" font-family="system-ui" font-size="36" font-weight="500" fill="rgba(255,255,255,0.5)" text-anchor="middle" letter-spacing="3">MOBILE · LOADING</text>
+  </svg>
+</template>
+<div class="app">
+
+  <!-- ====== HOME PAGE ====== -->
+  <section class="page on" id="p-home">
+    <header class="top">
+      <div class="brand-row">
+        <img src="assets/fixars-mark.png" alt=""/>
+        <div>
+          <div class="nm display">Fixars</div>
+          <div class="greet">Hey, Amaka 👋</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="icon" data-sheet="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+        <button class="icon" data-sheet="notif"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="dot"></span></button>
+      </div>
+    </header>
+
+    <main class="body">
+      <div class="bal-card">
+        <div class="label">Wallet balance</div>
+        <div class="val">₦284,500</div>
+        <div class="row">
+          <div class="sub">Staked<b>₦142,000</b></div>
+          <div class="sub">Earned<b>₦18,400</b></div>
+          <div class="sub">FCS Points<b>1,240</b></div>
+        </div>
+        <div class="bal-actions">
+          <button class="a primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Top up</button>
+          <button class="a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 11l5-5 5 5M12 6v14"/></svg>Send</button>
+          <button class="a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 13l-5 5-5-5M12 18V4"/></svg>Receive</button>
+          <button class="a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17V7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10M3 17l4-4 4 4 6-6 4 4"/></svg>Invest</button>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <h3>The four sub-apps</h3>
+        <button class="more" data-tab="apps">See all →</button>
+      </div>
+      <div class="sa-grid">
+        <button class="sa-tile concept" data-tab="concept">
+          <div class="gl">C</div>
+          <div>
+            <div class="nm">ConceptNexus</div>
+            <div class="tg">Validate ideas</div>
+            <div class="meta">1,240 active</div>
+          </div>
+        </button>
+        <button class="sa-tile invest" data-tab="invest">
+          <div class="gl">V</div>
+          <div>
+            <div class="nm">vestDen</div>
+            <div class="tg">Fund campaigns</div>
+            <div class="meta">₦142M staked</div>
+          </div>
+        </button>
+        <button class="sa-tile collab" data-tab="collab">
+          <div class="gl">B</div>
+          <div>
+            <div class="nm">CollaBoard</div>
+            <div class="tg">Ship together</div>
+            <div class="meta">312 sprints</div>
+          </div>
+        </button>
+        <button class="sa-tile skills" data-tab="skills">
+          <div class="gl">S</div>
+          <div>
+            <div class="nm">SkillsCanvas</div>
+            <div class="tg">Verified talent</div>
+            <div class="meta">8.2k builders</div>
+          </div>
+        </button>
+      </div>
+
+      <div class="section-title">
+        <h3>Today's opportunities</h3>
+        <button class="more">Filter</button>
+      </div>
+      <div class="h-scroll">
+        <div class="opp-card" data-go="idea">
+          <span class="tag tag-concept">● Concept · validating</span>
+          <div class="ti">Solar lockers for market traders</div>
+          <div class="ds">Shared phone-charging + storage powered by rooftop panels.</div>
+          <div class="mt"><span class="n">2,105 backers</span><span>91</span></div>
+        </div>
+        <div class="opp-card">
+          <span class="tag tag-invest">● vestDen · 70% funded</span>
+          <div class="ti">SolarShare Lagos · phase 2</div>
+          <div class="ds">Clean-energy micro-grid for 240 households in Ikorodu.</div>
+          <div class="mt"><span class="n">₦8.4M / ₦12M</span><span>14.2%</span></div>
+        </div>
+        <div class="opp-card">
+          <span class="tag tag-collab">● CollaBoard · hiring</span>
+          <div class="ti">CredKit USSD build sprint</div>
+          <div class="ds">Need 2 mobile devs &amp; 1 backend for 4-week sprint.</div>
+          <div class="mt"><span class="n">₦920k escrow</span><span>3 slots</span></div>
+        </div>
+        <div class="opp-card">
+          <span class="tag tag-skills">● SkillsCanvas · new</span>
+          <div class="ti">Postgres expert badge</div>
+          <div class="ds">Verify your skills through 5 paid milestones.</div>
+          <div class="mt"><span class="n">12 reviewers</span><span>BADGE</span></div>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <h3>From your network</h3>
+        <button class="more" data-tab="feed">Open feed →</button>
+      </div>
+      <div class="post">
+        <div class="head">
+          <div class="av" style="background:var(--concept)">AN</div>
+          <div>
+            <div class="nm">Adaeze N.</div>
+            <div class="mta">staked an idea · 2h</div>
+          </div>
+          <span class="tag tag-concept">CONCEPT</span>
+        </div>
+        <div class="body">Just published "Solar lockers for market traders" on ConceptNexus — would love validators from Lagos and Onitsha 🌞</div>
+        <div class="acts">
+          <span>♥ 24</span>
+          <span>💬 8</span>
+          <span style="margin-left:auto">★ Validate</span>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== APPS PAGE ====== -->
+  <section class="page" id="p-apps">
+    <header class="top">
+      <div class="brand-row"><div class="ttl">Apps</div></div>
+      <button class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+    </header>
+    <main class="body">
+      <div class="hero">
+        <h1>The Fixars suite.</h1>
+        <p>Four apps. One identity. Move ideas from validation to funding to execution without leaving the ecosystem.</p>
+      </div>
+      <div class="sa-grid" style="grid-template-columns:1fr;gap:12px">
+        <button class="sa-tile concept" data-tab="concept" style="aspect-ratio:auto;min-height:120px;flex-direction:row;align-items:center;gap:14px">
+          <div class="gl" style="width:48px;height:48px;font-size:22px;border-radius:13px">C</div>
+          <div style="flex:1;text-align:left">
+            <div class="nm" style="font-size:18px">ConceptNexus</div>
+            <div class="tg">Idea validation · Stress-test before funding</div>
+            <div class="meta">1,240 ideas · 18.4k validators</div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+        <button class="sa-tile invest" data-tab="invest" style="aspect-ratio:auto;min-height:120px;flex-direction:row;align-items:center;gap:14px">
+          <div class="gl" style="width:48px;height:48px;font-size:22px;border-radius:13px">V</div>
+          <div style="flex:1;text-align:left">
+            <div class="nm" style="font-size:18px">vestDen</div>
+            <div class="tg">Capital · Den of investors</div>
+            <div class="meta">₦142M staked · 28 active campaigns</div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+        <button class="sa-tile collab" data-tab="collab" style="aspect-ratio:auto;min-height:120px;flex-direction:row;align-items:center;gap:14px">
+          <div class="gl" style="width:48px;height:48px;font-size:22px;border-radius:13px">B</div>
+          <div style="flex:1;text-align:left">
+            <div class="nm" style="font-size:18px">CollaBoard</div>
+            <div class="tg">Execution · Escrowed sprints</div>
+            <div class="meta">312 sprints · ₦42M in escrow</div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+        <button class="sa-tile skills" data-tab="skills" style="aspect-ratio:auto;min-height:120px;flex-direction:row;align-items:center;gap:14px">
+          <div class="gl" style="width:48px;height:48px;font-size:22px;border-radius:13px">S</div>
+          <div style="flex:1;text-align:left">
+            <div class="nm" style="font-size:18px">SkillsCanvas</div>
+            <div class="tg">Talent · Verified by work</div>
+            <div class="meta">8,240 builders · 41 skills</div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <div class="section-title"><h3>How they flow together</h3></div>
+      <div class="banner">
+        <div class="ic" style="background:var(--concept)">1</div>
+        <div><div class="t">Validate on ConceptNexus</div><div class="m">Community stress-tests the idea</div></div>
+      </div>
+      <div class="banner">
+        <div class="ic" style="background:var(--invest)">2</div>
+        <div><div class="t">Raise on vestDen</div><div class="m">Validated ideas attract capital</div></div>
+      </div>
+      <div class="banner">
+        <div class="ic" style="background:var(--collab)">3</div>
+        <div><div class="t">Ship on CollaBoard</div><div class="m">Milestone-paid teams build the thing</div></div>
+      </div>
+      <div class="banner">
+        <div class="ic" style="background:var(--skills)">4</div>
+        <div><div class="t">Build trust on SkillsCanvas</div><div class="m">Completed milestones become verified skills</div></div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== FEED PAGE ====== -->
+  <section class="page" id="p-feed">
+    <header class="top">
+      <div class="brand-row"><div class="ttl">Feed</div></div>
+      <button class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg></button>
+    </header>
+    <main class="body">
+      <div class="composer">
+        <div class="ipt">
+          <div class="av" style="background:linear-gradient(135deg,var(--blue-600),var(--concept))">AO</div>
+          <textarea placeholder="Share an update, validate an idea, or back a campaign…"></textarea>
+        </div>
+        <div class="chips">
+          <button class="chip concept"><span class="dot"></span>Concept</button>
+          <button class="chip invest"><span class="dot"></span>vestDen</button>
+          <button class="chip collab"><span class="dot"></span>CollaBoard</button>
+          <button class="chip skills"><span class="dot"></span>Skills</button>
+        </div>
+      </div>
+
+      <div class="post">
+        <div class="head"><div class="av" style="background:var(--invest)">TM</div><div><div class="nm">Tunde M.</div><div class="mta">opened a campaign · 5h</div></div><span class="tag tag-invest">VESTDEN</span></div>
+        <div class="body">SolarShare Lagos phase 2 just hit ₦8.4M of ₦12M. 42 days left. Running ahead of plan — thanks to all 428 backers.</div>
+        <div class="acts"><span>♥ 87</span><span>💬 14</span><span style="margin-left:auto">↗ Share</span></div>
+      </div>
+
+      <div class="post">
+        <div class="head"><div class="av" style="background:var(--skills)">KA</div><div><div class="nm">Kemi A.</div><div class="mta">verified a skill · 1d</div></div><span class="tag tag-skills">SKILLS</span></div>
+        <div class="body">Got my Postgres "Expert" badge verified through 8 paid CollaBoard projects. SkillsCanvas + CollaBoard is a quietly insane combo — every skill is provable, with receipts.</div>
+        <div class="acts"><span>♥ 41</span><span>💬 6</span><span style="margin-left:auto">★ Endorse</span></div>
+      </div>
+
+      <div class="post">
+        <div class="head"><div class="av" style="background:var(--navy-900)">FX</div><div><div class="nm">Fixars Team</div><div class="mta">announcement · 1d</div></div><span class="tag tag-ink">OFFICIAL</span></div>
+        <div class="body"><b>Cross-app handoffs are here.</b><br/>Validate on ConceptNexus → fund on vestDen → execute on CollaBoard → staff on SkillsCanvas — without copy-pasting anything.</div>
+        <div class="acts"><span>♥ 312</span><span>💬 48</span><span style="margin-left:auto">↗ Share</span></div>
+      </div>
+
+      <div class="post">
+        <div class="head"><div class="av" style="background:var(--collab)">BT</div><div><div class="nm">Bisi T.</div><div class="mta">milestone shipped · 2d</div></div><span class="tag tag-collab">COLLAB</span></div>
+        <div class="body">AgriCold pilot — 4 of 6 milestones cleared. ₦480k released from escrow. Cold-chain sensors live across 12 farms. 🥶</div>
+        <div class="acts"><span>♥ 54</span><span>💬 9</span><span style="margin-left:auto">↗ Share</span></div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== WALLET PAGE ====== -->
+  <section class="page" id="p-wallet">
+    <header class="top">
+      <div class="brand-row"><div class="ttl">Wallet</div></div>
+      <button class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="5" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/></svg></button>
+    </header>
+    <main class="body">
+      <div class="bal-card">
+        <div class="label">Total balance</div>
+        <div class="val">₦284,500</div>
+        <div class="row">
+          <div class="sub">Available<b>₦142,500</b></div>
+          <div class="sub">In escrow<b>₦98,000</b></div>
+          <div class="sub">Staked<b>₦44,000</b></div>
+        </div>
+        <div class="bal-actions">
+          <button class="a primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Top up</button>
+          <button class="a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 11l5-5 5 5M12 6v14"/></svg>Send</button>
+          <button class="a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 13l-5 5-5-5M12 18V4"/></svg>Receive</button>
+          <button class="a"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/></svg>Card</button>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="k">This month</div><div class="v">+₦18,420</div><div class="t up">▲ 24%</div></div>
+        <div class="stat"><div class="k">Active backings</div><div class="v">7</div><div class="t">3 sub-apps</div></div>
+      </div>
+
+      <div class="segment">
+        <button class="on">Activity</button>
+        <button>Stakes</button>
+        <button>Earnings</button>
+      </div>
+
+      <div class="list-card" style="padding:0">
+        <div style="padding:14px">
+          <div class="tx">
+            <div class="ic" style="background:var(--invest-bg);color:var(--invest)">▲</div>
+            <div class="body"><div class="t">vestDen · SolarShare Phase 2</div><div class="m">Milestone 3 payout</div></div>
+            <div class="v up">+ ₦24,800</div>
+          </div>
+          <div class="tx">
+            <div class="ic" style="background:var(--concept-bg);color:var(--concept)">★</div>
+            <div class="body"><div class="t">ConceptNexus stake</div><div class="m">Validated "Solar lockers"</div></div>
+            <div class="v down">− ₦5,000</div>
+          </div>
+          <div class="tx">
+            <div class="ic" style="background:var(--collab-bg);color:var(--collab)">⬢</div>
+            <div class="body"><div class="t">CollaBoard · CredKit USSD</div><div class="m">Sprint payout · 2 milestones</div></div>
+            <div class="v up">+ ₦68,000</div>
+          </div>
+          <div class="tx">
+            <div class="ic" style="background:var(--skills-bg);color:var(--skills)">●</div>
+            <div class="body"><div class="t">Skill verification fee</div><div class="m">Postgres expert badge</div></div>
+            <div class="v down">− ₦2,500</div>
+          </div>
+          <div class="tx">
+            <div class="ic" style="background:var(--ink-100);color:var(--ink-700)">↓</div>
+            <div class="body"><div class="t">Top-up · Paystack</div><div class="m">Yesterday</div></div>
+            <div class="v up">+ ₦100,000</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== PROFILE PAGE ====== -->
+  <section class="page" id="p-profile">
+    <header class="top">
+      <div class="brand-row"><div class="ttl">Profile</div></div>
+      <button class="icon" data-tab="settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </header>
+    <main class="body">
+      <div class="profile-head">
+        <div class="fcs-ring">
+          <svg viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="42" stroke="#EBEFF5" stroke-width="8" fill="none"/>
+            <circle cx="50" cy="50" r="42" stroke="url(#g)" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="263" stroke-dashoffset="68"/>
+            <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1E5BFF"/><stop offset="1" stop-color="#7C3AED"/></linearGradient></defs>
+          </svg>
+          <div class="cm"><span class="n">742</span><span class="l">FCS</span></div>
+        </div>
+        <div>
+          <div class="nm">Amaka Okafor</div>
+          <div class="meta">Lagos · Product strategist · joined Jan 2025</div>
+        </div>
+        <div class="badges">
+          <span class="badge-pill gold">★ Top 5%</span>
+          <span class="badge-pill">3 sub-apps active</span>
+          <span class="badge-pill">12 validations</span>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="k">Ideas backed</div><div class="v">28</div><div class="t up">▲ 6 this month</div></div>
+        <div class="stat"><div class="k">Total staked</div><div class="v">₦142k</div><div class="t">since '25</div></div>
+        <div class="stat"><div class="k">Sprints joined</div><div class="v">11</div><div class="t up">9 shipped</div></div>
+        <div class="stat"><div class="k">Verified skills</div><div class="v">4</div><div class="t">Postgres · React · UX · Data</div></div>
+      </div>
+
+      <div class="section-title"><h3>Verified skills</h3><button class="more">Manage</button></div>
+      <div class="list">
+        <div class="list-card">
+          <div class="row1">
+            <div class="ti">PostgreSQL</div>
+            <span class="tag tag-skills">EXPERT</span>
+          </div>
+          <div class="progress"><div style="width:92%;background:var(--skills)"></div></div>
+          <div class="meta"><span>Verified via 8 CollaBoard projects</span><span class="num">92</span></div>
+        </div>
+        <div class="list-card">
+          <div class="row1">
+            <div class="ti">Product strategy</div>
+            <span class="tag tag-skills">PROVEN</span>
+          </div>
+          <div class="progress"><div style="width:78%;background:var(--skills)"></div></div>
+          <div class="meta"><span>Verified via 5 ConceptNexus validations</span><span class="num">78</span></div>
+        </div>
+      </div>
+
+      <div class="section-title"><h3>Recent activity</h3></div>
+      <div class="list-card" style="padding:0">
+        <div style="padding:14px">
+          <div class="tx">
+            <div class="ic" style="background:var(--invest-bg);color:var(--invest)">▲</div>
+            <div class="body"><div class="t">Backed SolarShare phase 2</div><div class="m">2 hours ago</div></div>
+            <div class="v">₦25k</div>
+          </div>
+          <div class="tx">
+            <div class="ic" style="background:var(--concept-bg);color:var(--concept)">★</div>
+            <div class="body"><div class="t">Validated "Solar lockers"</div><div class="m">Yesterday</div></div>
+            <div class="v">+18 FCS</div>
+          </div>
+          <div class="tx">
+            <div class="ic" style="background:var(--collab-bg);color:var(--collab)">⬢</div>
+            <div class="body"><div class="t">Joined CredKit USSD sprint</div><div class="m">3 days ago</div></div>
+            <div class="v">team</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== CONCEPT NEXUS ====== -->
+  <section class="page" id="p-concept">
+    <header class="top acc-concept">
+      <button class="back" data-tab="home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="ttl">ConceptNexus</div>
+      <button class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+    </header>
+    <main class="body">
+      <div class="hero">
+        <span class="tag tag-concept" style="display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px;background:var(--concept-bg);color:var(--concept)">● Idea validation</span>
+        <h1>Stress-test before <em style="font-style:normal;color:var(--concept)">you fund</em>.</h1>
+        <p>Submit ideas, get community-weighted validation, earn FCS points for thoughtful critique.</p>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="k">Ideas in motion</div><div class="v">1,240</div><div class="t up">▲ 84 this week</div></div>
+        <div class="stat"><div class="k">Validators</div><div class="v">18.4k</div><div class="t">42 verified panels</div></div>
+      </div>
+
+      <div class="segment">
+        <button class="on">Trending</button>
+        <button>Following</button>
+        <button>Your ideas</button>
+      </div>
+
+      <div class="list">
+        <div class="list-card" data-go="idea">
+          <div class="row1"><span class="tag tag-success">● Validated</span><span class="badge-pill gold">★ 91</span></div>
+          <div class="ti">Solar lockers for market sellers</div>
+          <div class="ds">Shared phone-charging + dry storage lockers powered by rooftop panels. Pay-per-use via mobile money.</div>
+          <div class="meta"><span>2,105 validators · by Adaeze N.</span><span class="num">+24 FCS</span></div>
+        </div>
+        <div class="list-card">
+          <div class="row1"><span class="tag tag-warning">● Validating</span><span class="badge-pill gold">★ 84</span></div>
+          <div class="ti">Offline micro-credit for informal traders</div>
+          <div class="ds">USSD-first lending product for market traders without smartphones. Trust score from buyer reviews.</div>
+          <div class="meta"><span>1,240 validators · by Kunle O.</span><span class="num">+18 FCS</span></div>
+        </div>
+        <div class="list-card">
+          <div class="row1"><span class="tag tag-success">● Validated</span><span class="badge-pill gold">★ 88</span></div>
+          <div class="ti">Last-mile cold-chain for poultry</div>
+          <div class="ds">Battery-cooled crates rented to neighborhood butchers. Reduces spoilage by 38% in pilot.</div>
+          <div class="meta"><span>1,670 validators · by Bisi T.</span><span class="num">+22 FCS</span></div>
+        </div>
+        <div class="list-card">
+          <div class="row1"><span class="tag tag-warning">● Validating</span><span class="badge-pill">★ 76</span></div>
+          <div class="ti">Voice-first bookkeeping in Yorùbá</div>
+          <div class="ds">Trader records sales by talking to her phone. Auto-categorized, exportable for credit.</div>
+          <div class="meta"><span>540 validators · by Femi A.</span><span class="num">+12 FCS</span></div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== VESTDEN ====== -->
+  <section class="page" id="p-invest">
+    <header class="top acc-invest">
+      <button class="back" data-tab="home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="ttl">vestDen</div>
+      <button class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 14l4-4 4 4 5-5"/></svg></button>
+    </header>
+    <main class="body">
+      <div class="hero">
+        <span class="tag tag-invest" style="display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px;background:var(--invest-bg);color:var(--invest)">● Capital · Den of investors</span>
+        <h1>Fund the <em style="font-style:normal;color:var(--invest)">validated</em> future.</h1>
+        <p>From ₦5,000 to ₦5M, every stake is tracked, escrowed, and milestone-paid.</p>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="k">Total staked</div><div class="v">₦142M</div><div class="t up">▲ 18% MoM</div></div>
+        <div class="stat"><div class="k">Avg IRR</div><div class="v">14.2%</div><div class="t up">across 28 active</div></div>
+      </div>
+
+      <div class="segment">
+        <button class="on">Open</button>
+        <button>Funded</button>
+        <button>Your stakes</button>
+      </div>
+
+      <div class="list">
+        <div class="list-card">
+          <div class="row1">
+            <span class="tag tag-warning">● Closing in 8d</span>
+            <span class="num mono" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--invest);font-weight:600">18.5% IRR</span>
+          </div>
+          <div class="ti">CredKit USSD lending</div>
+          <div class="ds">Working-capital loans for informal traders via USSD on any phone.</div>
+          <div class="progress"><div style="width:95%;background:var(--invest)"></div></div>
+          <div class="meta"><span>₦14.2M / ₦15M · 1,142 backers</span><span class="num">95%</span></div>
+        </div>
+        <div class="list-card">
+          <div class="row1">
+            <span class="tag tag-invest">● Open · 42d left</span>
+            <span class="mono" style="font-size:11px;color:var(--invest);font-weight:600">14.2% IRR</span>
+          </div>
+          <div class="ti">SolarShare Lagos · phase 2</div>
+          <div class="ds">Clean-energy micro-grid for 240 households in Ikorodu.</div>
+          <div class="progress"><div style="width:70%;background:var(--invest)"></div></div>
+          <div class="meta"><span>₦8.4M / ₦12M · 428 backers</span><span class="num">70%</span></div>
+        </div>
+        <div class="list-card">
+          <div class="row1">
+            <span class="tag tag-invest">● Open · 28d left</span>
+            <span class="mono" style="font-size:11px;color:var(--invest);font-weight:600">11.8% IRR</span>
+          </div>
+          <div class="ti">AgriCold rural network</div>
+          <div class="ds">Cold-storage rentals for fish and poultry farmers across 6 states.</div>
+          <div class="progress"><div style="width:58%;background:var(--invest)"></div></div>
+          <div class="meta"><span>₦4.7M / ₦8M · 312 backers</span><span class="num">58%</span></div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== COLLABOARD ====== -->
+  <section class="page" id="p-collab">
+    <header class="top acc-collab">
+      <button class="back" data-tab="home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="ttl">CollaBoard</div>
+      <button class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="6" r="2.5"/><path d="M3 20a6 6 0 0 1 12 0M14 14a4 4 0 0 1 7 3v3"/></svg></button>
+    </header>
+    <main class="body">
+      <div class="hero">
+        <span class="tag tag-collab" style="display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px;background:var(--collab-bg);color:var(--collab)">● Execution · Escrowed sprints</span>
+        <h1>Ship with verified <em style="font-style:normal;color:var(--collab)">teams</em>.</h1>
+        <p>Milestone-based escrow keeps money safe and teams paid as they ship.</p>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="k">In escrow</div><div class="v">₦42M</div><div class="t">across 312 sprints</div></div>
+        <div class="stat"><div class="k">Ship rate</div><div class="v">91%</div><div class="t up">▲ 4pts vs '24</div></div>
+      </div>
+
+      <div class="list">
+        <div class="list-card">
+          <div class="row1"><span class="tag tag-success">● Active</span><span class="num mono" style="font-size:11px;color:var(--collab);font-weight:600">₦1.84M</span></div>
+          <div class="ti">SolarShare Lagos · build sprint</div>
+          <div class="ds">Install + commission 80kW rooftop array, 6-week sprint.</div>
+          <div style="display:flex;gap:-4px">
+            <div class="av" style="background:var(--blue-600)">AO</div>
+            <div class="av" style="background:var(--invest);margin-left:-8px;border:2px solid white">TM</div>
+            <div class="av" style="background:var(--skills);margin-left:-8px;border:2px solid white">KA</div>
+            <div class="av" style="background:var(--ink-300);margin-left:-8px;border:2px solid white;font-size:10px">+1</div>
+          </div>
+          <div class="progress"><div style="width:50%;background:var(--collab)"></div></div>
+          <div class="meta"><span>2 of 4 milestones · 6w sprint</span><span class="num">50%</span></div>
+        </div>
+        <div class="list-card">
+          <div class="row1"><span class="tag tag-success">● Active</span><span class="num mono" style="font-size:11px;color:var(--collab);font-weight:600">₦920k</span></div>
+          <div class="ti">CredKit MVP · USSD flow</div>
+          <div class="ds">Ship USSD service codes for 4 networks. Backed by vestDen funds.</div>
+          <div class="progress"><div style="width:33%;background:var(--collab)"></div></div>
+          <div class="meta"><span>1 of 3 milestones</span><span class="num">33%</span></div>
+        </div>
+        <div class="list-card">
+          <div class="row1"><span class="tag tag-warning">● In review</span><span class="num mono" style="font-size:11px;color:var(--collab);font-weight:600">₦2.40M</span></div>
+          <div class="ti">AgriCold cold-chain pilot</div>
+          <div class="ds">Two-month pilot: 12 farms, 8 trucks, sensor reporting.</div>
+          <div class="progress"><div style="width:67%;background:var(--collab)"></div></div>
+          <div class="meta"><span>4 of 6 milestones</span><span class="num">67%</span></div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== SKILLSCANVAS ====== -->
+  <section class="page" id="p-skills">
+    <header class="top acc-skills">
+      <button class="back" data-tab="home"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="ttl">SkillsCanvas</div>
+      <button class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg></button>
+    </header>
+    <main class="body">
+      <div class="hero">
+        <span class="tag tag-skills" style="display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px;background:var(--skills-bg);color:var(--skills)">● Talent · Verified by work</span>
+        <h1>Skills <em style="font-style:normal;color:var(--skills)">aren't claimed</em>. They're proven.</h1>
+        <p>Every badge is earned through paid CollaBoard milestones, with receipts.</p>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat"><div class="k">Builders</div><div class="v">8,240</div><div class="t up">▲ 412 this week</div></div>
+        <div class="stat"><div class="k">Verified skills</div><div class="v">41</div><div class="t">across 7 stacks</div></div>
+      </div>
+
+      <div class="list">
+        <div class="list-card">
+          <div class="row1">
+            <div style="display:flex;align-items:center;gap:10px"><div class="av" style="background:var(--blue-600)">TO</div><div><div class="ti" style="font-size:14px">Tolu Okafor</div><div style="font-size:11px;color:var(--ink-500)">Full-stack · Lagos · ₦12k/hr</div></div></div>
+            <span class="tag tag-skills">FCS 742</span>
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="badge-pill" style="background:var(--skills-bg);color:var(--skills)">React</span><span class="badge-pill" style="background:var(--skills-bg);color:var(--skills)">Postgres</span><span class="badge-pill" style="background:var(--skills-bg);color:var(--skills)">Mobile money</span></div>
+          <div class="meta"><span>14 verified projects · ★ 4.9</span><span class="num">+ Invite</span></div>
+        </div>
+        <div class="list-card">
+          <div class="row1">
+            <div style="display:flex;align-items:center;gap:10px"><div class="av" style="background:var(--concept)">KA</div><div><div class="ti" style="font-size:14px">Kemi Adesanya</div><div style="font-size:11px;color:var(--ink-500)">Product designer · Abuja · ₦9k/hr</div></div></div>
+            <span class="tag tag-skills">FCS 689</span>
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="badge-pill" style="background:var(--skills-bg);color:var(--skills)">Figma</span><span class="badge-pill" style="background:var(--skills-bg);color:var(--skills)">Research</span><span class="badge-pill" style="background:var(--skills-bg);color:var(--skills)">Systems</span></div>
+          <div class="meta"><span>22 verified projects · ★ 4.8</span><span class="num">+ Invite</span></div>
+        </div>
+        <div class="list-card">
+          <div class="row1">
+            <div style="display:flex;align-items:center;gap:10px"><div class="av" style="background:var(--collab)">BE</div><div><div class="ti" style="font-size:14px">Bisi Eze</div><div style="font-size:11px;color:var(--ink-500)">Mobile engineer · Lagos · ₦14k/hr</div></div></div>
+            <span class="tag tag-skills">FCS 718</span>
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="badge-pill" style="background:var(--skills-bg);color:var(--skills)">Flutter</span><span class="badge-pill" style="background:var(--skills-bg);color:var(--skills)">Swift</span><span class="badge-pill" style="background:var(--skills-bg);color:var(--skills)">Kotlin</span></div>
+          <div class="meta"><span>9 verified projects · ★ 4.9</span><span class="num">+ Invite</span></div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== IDEA DETAIL (push view) ====== -->
+  <section class="page" id="p-idea">
+    <header class="top acc-concept">
+      <button class="back" data-tab="concept"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="ttl">Idea</div>
+      <button class="icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+    </header>
+    <main class="body">
+      <div class="idea-hero">
+        <span class="tag tag-success" style="background:var(--success-bg);color:var(--success);display:inline-flex;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 7px;border-radius:999px">● Validated · 91 score</span>
+        <h2>Solar lockers for market sellers</h2>
+        <div class="ds">Shared phone-charging + dry storage lockers powered by rooftop panels. Pay-per-use via mobile money. Pilot in Balogun Market saw 84% utilization, ₦480/day average revenue per locker.</div>
+      </div>
+      <div class="kv-grid">
+        <div class="cell"><div class="k">Score</div><div class="v">91 / 100</div></div>
+        <div class="cell"><div class="k">Validators</div><div class="v">2,105</div></div>
+        <div class="cell"><div class="k">Author</div><div class="v" style="font-size:14px">Adaeze N.</div></div>
+        <div class="cell"><div class="k">Stage</div><div class="v" style="font-size:14px">Pre-vestDen</div></div>
+      </div>
+
+      <div class="section-title"><h3>Validation breakdown</h3></div>
+      <div class="list-card">
+        <div class="meta" style="border:none;padding:0;font-size:12px"><span>Problem severity</span><span class="num">92</span></div>
+        <div class="progress"><div style="width:92%;background:var(--concept)"></div></div>
+        <div class="meta" style="border:none;padding:0;font-size:12px"><span>Market clarity</span><span class="num">88</span></div>
+        <div class="progress"><div style="width:88%;background:var(--concept)"></div></div>
+        <div class="meta" style="border:none;padding:0;font-size:12px"><span>Unit economics</span><span class="num">94</span></div>
+        <div class="progress"><div style="width:94%;background:var(--concept)"></div></div>
+      </div>
+
+      <div class="cta-stack">
+        <button class="btn btn-primary concept" data-toast="You staked 5,000 FCS · idea moved up">Validate this idea · 5,000 FCS</button>
+        <button class="btn btn-ghost">View on vestDen pipeline</button>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== SETTINGS ====== -->
+  <section class="page" id="p-settings">
+    <header class="top">
+      <button class="back" data-tab="profile"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 6-6 6 6 6"/></svg></button>
+      <div class="ttl">Settings</div>
+      <div style="width:36px"></div>
+    </header>
+    <main class="body">
+      <div class="menu" style="margin-bottom:12px">
+        <div class="item">
+          <div class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></div>
+          <div class="nm">Identity &amp; KYC</div>
+          <span class="vl">Verified</span>
+        </div>
+        <div class="item">
+          <div class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6z"/></svg></div>
+          <div class="nm">Security &amp; 2FA</div>
+          <svg class="arr" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+        <div class="item">
+          <div class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div>
+          <div class="nm">Payment methods</div>
+          <span class="vl">3 cards</span>
+        </div>
+        <div class="item">
+          <div class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/></svg></div>
+          <div class="nm">Notifications</div>
+          <svg class="arr" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+      </div>
+
+      <div class="menu" style="margin-bottom:12px">
+        <div class="item">
+          <div class="ic" style="background:var(--concept-bg);color:var(--concept)">C</div>
+          <div class="nm">ConceptNexus preferences</div>
+          <svg class="arr" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+        <div class="item">
+          <div class="ic" style="background:var(--invest-bg);color:var(--invest)">V</div>
+          <div class="nm">vestDen risk profile</div>
+          <span class="vl">Moderate</span>
+        </div>
+        <div class="item">
+          <div class="ic" style="background:var(--collab-bg);color:var(--collab)">B</div>
+          <div class="nm">CollaBoard availability</div>
+          <span class="vl">10 hrs/wk</span>
+        </div>
+        <div class="item">
+          <div class="ic" style="background:var(--skills-bg);color:var(--skills)">S</div>
+          <div class="nm">Skill visibility</div>
+          <span class="vl">Public</span>
+        </div>
+      </div>
+
+      <div class="menu">
+        <div class="item">
+          <div class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg></div>
+          <div class="nm">Help &amp; support</div>
+          <svg class="arr" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
+        </div>
+        <div class="item" style="color:var(--danger)">
+          <div class="ic" style="background:var(--danger-bg);color:var(--danger)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></div>
+          <div class="nm">Sign out</div>
+        </div>
+      </div>
+    </main>
+  </section>
+
+  <!-- ====== BOTTOM TABS ====== -->
+  <nav class="tabs">
+    <div class="tabs-row">
+      <button class="tab active" data-tab="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Home
+      </button>
+      <button class="tab" data-tab="apps">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Apps
+      </button>
+      <button class="tab-create" data-sheet="create" aria-label="Create">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+      <button class="tab" data-tab="wallet">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M16 12h2"/></svg>
+        Wallet
+      </button>
+      <button class="tab" data-tab="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        Profile
+      </button>
+    </div>
+  </nav>
+
+  <!-- ====== SHEET (modal) ====== -->
+  <div class="sheet-mask" id="sheet-mask">
+    <div class="sheet" id="sheet"></div>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  const pages = document.querySelectorAll('.page');
+  const tabs = document.querySelectorAll('.tab');
+  function show(name){
+    pages.forEach(p => p.classList.toggle('on', p.id === 'p'+'-'+name));
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    document.querySelector('.app .body')?.scrollTo?.(0, 0);
+    pages.forEach(p => p.querySelector('.body')?.scrollTo?.(0,0));
+  }
+  document.querySelectorAll('[data-tab]').forEach(b => b.addEventListener('click', e => {
+    e.preventDefault();
+    show(b.dataset.tab);
+    history.replaceState(null, '', '#'+b.dataset.tab);
+  }));
+  // Hash-routing so iframes can deep-link (e.g. Fixars Mobile.html#concept)
+  const initialHash = (location.hash || '').replace('#','');
+  const validPages = ['home','apps','feed','wallet','profile','concept','invest','collab','skills','idea','settings'];
+  if (validPages.includes(initialHash)) show(initialHash);
+  window.addEventListener('hashchange', () => {
+    const h = (location.hash || '').replace('#','');
+    if (validPages.includes(h)) show(h);
+  });
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
+
+  // sheets
+  const sheets = {
+    create: () => `
+      <div class="sheet-grab"></div>
+      <div class="sheet-head"><h3>Create</h3><button class="x" data-close>×</button></div>
+      <div class="sheet-body">
+        <p style="font-size:12px;color:var(--ink-500);margin:0 0 14px">What are you launching today?</p>
+        <div class="tag-pick">
+          <button class="on concept"><span class="dot concept"></span>Submit an idea</button>
+          <button class="invest"><span class="dot invest"></span>Open a campaign</button>
+          <button class="collab"><span class="dot collab"></span>Post a sprint</button>
+          <button class="skills"><span class="dot skills"></span>Claim a skill</button>
+        </div>
+        <div class="field" style="margin-top:16px"><label>Title</label><input placeholder="e.g. Solar lockers for market sellers"/></div>
+        <div class="field"><label>The problem in one line</label><textarea placeholder="Who hurts, how often, how badly?"></textarea></div>
+        <div class="field"><label>Tag the right sub-app</label>
+          <select><option>ConceptNexus — validate first</option><option>vestDen — raise capital</option><option>CollaBoard — find a team</option><option>SkillsCanvas — verify a skill</option></select>
+          <div class="help">Cross-app handoffs are automatic — validated ideas can graduate to vestDen with one tap.</div>
+        </div>
+      </div>
+      <div class="sheet-foot"><button class="btn btn-ghost" data-close style="flex:1">Save draft</button><button class="btn btn-primary" data-toast="Published to ConceptNexus" style="flex:1.5">Publish</button></div>
+    `,
+    notif: () => `
+      <div class="sheet-grab"></div>
+      <div class="sheet-head"><h3>Notifications</h3><button class="x" data-close>×</button></div>
+      <div class="sheet-body">
+        <div class="tx"><div class="ic" style="background:var(--invest-bg);color:var(--invest)">▲</div><div class="body"><div class="t">SolarShare payout received</div><div class="m">+₦24,800 · 2h ago</div></div></div>
+        <div class="tx"><div class="ic" style="background:var(--concept-bg);color:var(--concept)">★</div><div class="body"><div class="t">Adaeze N. validated your idea</div><div class="m">+8 FCS · 5h ago</div></div></div>
+        <div class="tx"><div class="ic" style="background:var(--collab-bg);color:var(--collab)">⬢</div><div class="body"><div class="t">Sprint milestone approved</div><div class="m">CredKit USSD · M1 · 1d ago</div></div></div>
+        <div class="tx"><div class="ic" style="background:var(--skills-bg);color:var(--skills)">●</div><div class="body"><div class="t">Postgres skill upgraded to Expert</div><div class="m">2 days ago</div></div></div>
+      </div>
+    `,
+    search: () => `
+      <div class="sheet-grab"></div>
+      <div class="sheet-head"><h3>Search</h3><button class="x" data-close>×</button></div>
+      <div class="sheet-body">
+        <div class="field"><input placeholder="Ideas, campaigns, people, skills…" autofocus/></div>
+        <p style="font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-400);font-weight:700;margin:4px 0 8px">Recent</p>
+        <div class="tag-pick"><button>solar</button><button>USSD</button><button>cold-chain</button><button>Lagos</button><button>postgres</button></div>
+      </div>
+    `
+  };
+  function openSheet(name){
+    const mask = document.getElementById('sheet-mask');
+    const sheet = document.getElementById('sheet');
+    sheet.innerHTML = sheets[name] ? sheets[name]() : '';
+    mask.classList.add('open');
+    sheet.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeSheet));
+    sheet.querySelectorAll('[data-toast]').forEach(b => b.addEventListener('click', () => { closeSheet(); toast(b.dataset.toast); }));
+    // tag-pick toggles
+    sheet.querySelectorAll('.tag-pick button').forEach(b => b.addEventListener('click', () => {
+      sheet.querySelectorAll('.tag-pick button').forEach(x => x.classList.remove('on','concept','invest','collab','skills'));
+      b.classList.add('on');
+      const dot = b.querySelector('.dot');
+      if (dot){
+        ['concept','invest','collab','skills'].forEach(c => { if (dot.classList.contains(c)) b.classList.add(c); });
+      }
+    }));
+  }
+  function closeSheet(){ document.getElementById('sheet-mask').classList.remove('open'); }
+  document.querySelectorAll('[data-sheet]').forEach(b => b.addEventListener('click', () => openSheet(b.dataset.sheet)));
+  document.getElementById('sheet-mask').addEventListener('click', e => { if (e.target.id === 'sheet-mask') closeSheet(); });
+
+  let toastT;
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastT);
+    toastT = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+})();
+</script>
+</body>
+</html>

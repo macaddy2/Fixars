@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Fixars · Full prototype showcase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+<!-- Bundled child prototypes — loaded as blobs at runtime via window.__resources -->
+<meta name="ext-resource-dependency" content="_bundle/Fixars Mobile.bundle.html" data-resource-id="mobileApp"/>
+<meta name="ext-resource-dependency" content="_bundle/Fixars Prototype.bundle.html" data-resource-id="webApp"/>
+<style>
+  html,body{margin:0;padding:0;background:#0A1628;font-family:'Inter',sans-serif;color:#0A1628}
+  iframe{border:none;display:block;background:white}
+
+  /* Brand strip cards */
+  .brand-card{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;font-family:'Inter',sans-serif;text-align:center;height:100%;background:white;border-radius:8px}
+  .brand-card.dark{background:#0A1628;color:white}
+  .brand-card .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#5A6B85;margin-top:24px;font-weight:600}
+  .brand-card.dark .lbl{color:rgba(255,255,255,.5)}
+  .brand-card .swatch{width:100%;height:8px;border-radius:4px;margin-top:14px}
+
+  /* Persona post-it style */
+  .persona{padding:24px;background:white;border-radius:8px;height:100%;display:flex;flex-direction:column;gap:10px;font-family:'Inter',sans-serif}
+  .persona .pill{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;width:fit-content}
+  .persona h4{margin:0;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:500;letter-spacing:-0.015em}
+  .persona p{margin:0;font-size:13px;color:#5A6B85;line-height:1.5}
+  .persona .quote{font-family:'Space Grotesk',sans-serif;font-style:italic;font-size:15px;color:#0A1628;line-height:1.4;padding:10px 0 0;border-top:1px solid #EBEFF5;margin-top:6px}
+  .persona .meta{margin-top:auto;font-size:11px;color:#8695AE;font-family:'JetBrains Mono',monospace;display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid #EBEFF5}
+
+  /* System notes */
+  .sys-note{background:white;border-radius:8px;padding:24px;height:100%;display:flex;flex-direction:column;gap:14px}
+  .sys-note h4{margin:0;font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:500;letter-spacing:-0.015em}
+  .sys-note .row{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;border-bottom:1px solid #EBEFF5;padding-bottom:9px}
+  .sys-note .row:last-child{border:none;padding:0}
+  .sys-note .row .k{color:#5A6B85}
+  .sys-note .row .v{font-family:'JetBrains Mono',monospace;color:#0A1628;font-weight:600}
+
+  /* Header for canvas (above) */
+  .stage-header{position:fixed;top:14px;left:14px;z-index:200;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);padding:8px 14px 8px 10px;border-radius:14px;color:white;pointer-events:none}
+  .stage-header img{height:24px}
+  .stage-header .nm{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;letter-spacing:-0.015em}
+  .stage-header .tag{font-size:10px;color:rgba(255,255,255,.55);letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+
+  /* device iframe wrappers — get rounded by IOSDevice/AndroidDevice */
+  .ios-iframe{width:100%;height:100%;background:white}
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="android-frame.jsx"></script>
+<script type="text/babel" src="browser-window.jsx"></script>
+</head>
+<body>
+
+<template id="__bundler_thumbnail" data-bg-color="#0A1628">
+  <svg viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1600" height="1000" fill="#0A1628"/>
+    <defs><linearGradient id="tg3" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B82F6"/><stop offset="1" stop-color="#1E5BFF"/></linearGradient></defs>
+    <g transform="translate(800 400)">
+      <g transform="translate(-200 -200)">
+        <path fill="url(#tg3)" d="M200 0 L240 0 L255 35 L300 25 L313 55 L350 75 L350 113 L385 128 L375 165 L398 195 L375 225 L385 263 L350 278 L350 315 L313 335 L300 365 L255 355 L240 390 L200 390 L185 355 L140 365 L127 335 L90 315 L90 278 L55 263 L65 225 L42 195 L65 165 L55 128 L90 113 L90 75 L127 55 L140 25 L185 35 Z"/>
+        <circle cx="200" cy="195" r="74" fill="#0A1628"/>
+        <path fill="url(#tg3)" d="M208 195 L208 305 L235 305 L235 235 L265 235 L265 262 L295 262 L295 195 Z" opacity="0.95"/>
+      </g>
+    </g>
+    <text x="800" y="700" font-family="system-ui" font-size="92" font-weight="600" fill="white" text-anchor="middle" letter-spacing="-3">Fixars</text>
+    <text x="800" y="760" font-family="system-ui" font-size="26" font-weight="500" fill="rgba(255,255,255,0.55)" text-anchor="middle" letter-spacing="6">FULL PROTOTYPE · WEB + MOBILE</text>
+    <text x="800" y="870" font-family="system-ui" font-size="20" font-weight="500" fill="rgba(255,255,255,0.35)" text-anchor="middle" letter-spacing="2">unpacking standalone bundle…</text>
+  </svg>
+</template>
+
+<div class="stage-header">
+  <img src="assets/fixars-mark.png" alt=""/>
+  <div>
+    <div class="nm">Fixars · Full prototype</div>
+    <div class="tag">Web + mobile · scroll, pan, zoom</div>
+  </div>
+</div>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const MOBILE = (path) => `${window.__resources?.mobileApp || 'Fixars Mobile.html'}#${path}`;
+const WEB = (path) => `${window.__resources?.webApp || 'Fixars Prototype.html'}#${path}`;
+
+// iPhone screen at 390 width
+const PHONE_W = 390;
+const PHONE_H = 844;
+// Device frame includes extra chrome; total a bit bigger
+const IOS_W = 414;
+const IOS_H = 880;
+const AND_W = 412;
+const AND_H = 892;
+// Desktop browser
+const DESK_W = 1440;
+const DESK_H = 900;
+const DESK_FRAME_W = DESK_W + 4;
+const DESK_FRAME_H = DESK_H + 80; // tabbar + toolbar
+
+function MobileFrame({ page = 'home', dark = false }){
+  return (
+    <IOSDevice width={IOS_W} height={IOS_H} dark={dark}>
+      <iframe className="ios-iframe" src={MOBILE(page)} style={{width:'100%',height:'100%',border:'none'}} />
+    </IOSDevice>
+  );
+}
+
+function AndroidPhone({ page = 'home' }){
+  return (
+    <AndroidDevice width={AND_W} height={AND_H}>
+      <iframe className="ios-iframe" src={MOBILE(page)} style={{width:'100%',height:'100%',border:'none'}} />
+    </AndroidDevice>
+  );
+}
+
+function WebFrame({ page = 'home' }){
+  return (
+    <ChromeWindow width={DESK_FRAME_W} height={DESK_FRAME_H}
+      tabs={[{title:'Fixars · Operating system for African innovation', active:true}, {title:'vestDen — campaigns'}, {title:'ConceptNexus'}]}
+      activeIndex={0}
+      url="fixars.africa">
+      <iframe src={WEB(page)} style={{width:'100%',height:'100%',border:'none',display:'block'}} />
+    </ChromeWindow>
+  );
+}
+
+function BrandCard({ src, label, dark = false, padding = 32, style = {} }){
+  return (
+    <div className={"brand-card" + (dark ? " dark" : "")} style={style}>
+      <img src={src} alt="" style={{maxWidth:'80%',maxHeight:`calc(100% - 60px - ${padding}px)`,objectFit:'contain'}}/>
+      <div className="lbl">{label}</div>
+    </div>
+  );
+}
+
+function Persona({tag, tagBg, tagColor, name, role, quote, fcs, sub}){
+  return (
+    <div className="persona">
+      <span className="pill" style={{background:tagBg, color:tagColor}}>● {tag}</span>
+      <h4>{name}</h4>
+      <p>{role}</p>
+      <div className="quote">"{quote}"</div>
+      <div className="meta"><span>FCS · {fcs}</span><span>{sub}</span></div>
+    </div>
+  );
+}
+
+function App(){
+  return (
+    <DesignCanvas storageKey="fixars-showcase-v3" background="#0A1628" gridColor="rgba(255,255,255,0.05)">
+
+      <DCSection id="brand" title="Brand · final marks"
+        subtitle="The final logo system applied across surfaces. Gear + F monogram in a deep-blue gradient on light surfaces; reversed for dark.">
+        <DCArtboard id="lockup" label="Primary lockup" width={520} height={300}>
+          <BrandCard src="assets/fixars-lockup.png" label="Primary lockup · light" />
+        </DCArtboard>
+        <DCArtboard id="mark" label="Icon mark" width={300} height={300}>
+          <BrandCard src="assets/fixars-mark.png" label="Icon mark"/>
+        </DCArtboard>
+        <DCArtboard id="appicon-light" label="App icon · light" width={300} height={300}>
+          <div style={{height:'100%',background:'#E8ECF3',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <img src="assets/fixars-app-light.png" alt="" style={{width:'70%',borderRadius:'22%',boxShadow:'0 12px 28px rgba(10,22,40,.18)'}}/>
+          </div>
+        </DCArtboard>
+        <DCArtboard id="appicon-dark" label="App icon · dark" width={300} height={300}>
+          <div style={{height:'100%',background:'#E8ECF3',borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <img src="assets/fixars-app-dark.png" alt="" style={{width:'70%',borderRadius:'22%',boxShadow:'0 12px 28px rgba(10,22,40,.18)'}}/>
+          </div>
+        </DCArtboard>
+        <DCArtboard id="wordmark" label="Wordmark" width={460} height={300}>
+          <BrandCard src="assets/fixars-wordmark.png" label="Wordmark"/>
+        </DCArtboard>
+        <DCArtboard id="mono" label="Monochrome mark" width={300} height={300}>
+          <BrandCard src="assets/fixars-mark-mono.png" label="Monochrome"/>
+        </DCArtboard>
+        <DCArtboard id="brand-system" label="System summary" width={360} height={300}>
+          <div className="sys-note">
+            <h4>The system in one card</h4>
+            <div className="row"><span className="k">Primary</span><span className="v">#1E5BFF → #3B6BFF</span></div>
+            <div className="row"><span className="k">Ink</span><span className="v">#0A1628</span></div>
+            <div className="row"><span className="k">Display</span><span className="v">Space Grotesk</span></div>
+            <div className="row"><span className="k">Body</span><span className="v">Inter</span></div>
+            <div className="row"><span className="k">Mono</span><span className="v">JetBrains Mono</span></div>
+          </div>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="web" title="Web · desktop application"
+        subtitle="Responsive single-page app. Collapsible nav rail, sub-app pages, wallet, feed, profile. Click anywhere in the iframe — it's live and interactive.">
+        <DCArtboard id="web-home" label="Home · dashboard" width={DESK_FRAME_W} height={DESK_FRAME_H}>
+          <WebFrame page="home"/>
+        </DCArtboard>
+        <DCArtboard id="web-apps" label="Apps · suite overview" width={DESK_FRAME_W} height={DESK_FRAME_H}>
+          <WebFrame page="apps"/>
+        </DCArtboard>
+        <DCArtboard id="web-concept" label="ConceptNexus" width={DESK_FRAME_W} height={DESK_FRAME_H}>
+          <WebFrame page="concept"/>
+        </DCArtboard>
+        <DCArtboard id="web-invest" label="vestDen" width={DESK_FRAME_W} height={DESK_FRAME_H}>
+          <WebFrame page="invest"/>
+        </DCArtboard>
+        <DCArtboard id="web-collab" label="CollaBoard" width={DESK_FRAME_W} height={DESK_FRAME_H}>
+          <WebFrame page="collab"/>
+        </DCArtboard>
+        <DCArtboard id="web-skills" label="SkillsCanvas" width={DESK_FRAME_W} height={DESK_FRAME_H}>
+          <WebFrame page="skills"/>
+        </DCArtboard>
+        <DCArtboard id="web-feed" label="Feed" width={DESK_FRAME_W} height={DESK_FRAME_H}>
+          <WebFrame page="feed"/>
+        </DCArtboard>
+        <DCArtboard id="web-wallet" label="Wallet" width={DESK_FRAME_W} height={DESK_FRAME_H}>
+          <WebFrame page="wallet"/>
+        </DCArtboard>
+        <DCArtboard id="web-profile" label="Profile · FCS 742" width={DESK_FRAME_W} height={DESK_FRAME_H}>
+          <WebFrame page="profile"/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="mobile-core" title="Mobile · core flows"
+        subtitle="iOS Liquid-Glass frame around the live mobile prototype. Tap the bottom nav, swipe horizontal cards, open the create sheet — everything is wired.">
+        <DCArtboard id="m-home" label="Home" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="home"/>
+        </DCArtboard>
+        <DCArtboard id="m-apps" label="Apps suite" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="apps"/>
+        </DCArtboard>
+        <DCArtboard id="m-feed" label="Feed" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="feed"/>
+        </DCArtboard>
+        <DCArtboard id="m-wallet" label="Wallet" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="wallet"/>
+        </DCArtboard>
+        <DCArtboard id="m-profile" label="Profile" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="profile"/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="mobile-subapps" title="Mobile · the four sub-apps"
+        subtitle="Each sub-app earns its own colour identity in the header, but the layout grammar (stats → segmented filter → cards) stays consistent.">
+        <DCArtboard id="m-concept" label="ConceptNexus" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="concept"/>
+        </DCArtboard>
+        <DCArtboard id="m-idea" label="Idea detail" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="idea"/>
+        </DCArtboard>
+        <DCArtboard id="m-invest" label="vestDen" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="invest"/>
+        </DCArtboard>
+        <DCArtboard id="m-collab" label="CollaBoard" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="collab"/>
+        </DCArtboard>
+        <DCArtboard id="m-skills" label="SkillsCanvas" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="skills"/>
+        </DCArtboard>
+        <DCArtboard id="m-settings" label="Settings" width={IOS_W} height={IOS_H}>
+          <MobileFrame page="settings"/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="android" title="Mobile · Android"
+        subtitle="The same prototype rendered inside a Material 3 Android frame. The web codebase ships to both.">
+        <DCArtboard id="a-home" label="Home · Android" width={AND_W} height={AND_H}>
+          <AndroidPhone page="home"/>
+        </DCArtboard>
+        <DCArtboard id="a-concept" label="ConceptNexus · Android" width={AND_W} height={AND_H}>
+          <AndroidPhone page="concept"/>
+        </DCArtboard>
+        <DCArtboard id="a-invest" label="vestDen · Android" width={AND_W} height={AND_H}>
+          <AndroidPhone page="invest"/>
+        </DCArtboard>
+        <DCArtboard id="a-wallet" label="Wallet · Android" width={AND_W} height={AND_H}>
+          <AndroidPhone page="wallet"/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCSection id="personas" title="Who's on it"
+        subtitle="Three archetypes the prototype is designed around — they cross sub-app boundaries every day.">
+        <DCArtboard id="p1" label="Builder" width={340} height={340}>
+          <Persona tag="Builder" tagBg="#F1EAFE" tagColor="#7C3AED"
+            name="Amaka Okafor" role="Product strategist · Lagos"
+            quote="I validate on ConceptNexus, stake my own ideas on vestDen, and pull in verified hands from SkillsCanvas — without leaving Fixars."
+            fcs="742" sub="3 sub-apps active"/>
+        </DCArtboard>
+        <DCArtboard id="p2" label="Investor" width={340} height={340}>
+          <Persona tag="Investor" tagBg="#E6F8F1" tagColor="#10B981"
+            name="Tunde Makinde" role="Diaspora investor · London"
+            quote="Every naira I stake on vestDen is escrowed and milestone-paid through CollaBoard. I can audit any project to the receipt."
+            fcs="612" sub="₦2.4M deployed"/>
+        </DCArtboard>
+        <DCArtboard id="p3" label="Talent" width={340} height={340}>
+          <Persona tag="Talent" tagBg="#E0F6FA" tagColor="#06B6D4"
+            name="Bisi Eze" role="Mobile engineer · Lagos"
+            quote="My skill badges aren't self-claimed — they come from paid CollaBoard milestones. Investors can see the receipts."
+            fcs="718" sub="9 sprints shipped"/>
+        </DCArtboard>
+      </DCSection>
+
+      <DCPostIt top={120} left={40} rotate={-3} width={210}>
+        <strong>👋 Welcome.</strong><br/>
+        Pan with mouse or trackpad. Pinch / scroll to zoom. Double-click any artboard to focus.
+      </DCPostIt>
+
+      <DCPostIt top={120} left={300} rotate={2} width={230}>
+        <strong>Live iframes.</strong><br/>
+        Every screen is the real prototype. Click around — the apps respond.
+      </DCPostIt>
+
+    </DesignCanvas>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App/>);
+</script>
+</body>
+</html>
