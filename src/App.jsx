@@ -92,13 +92,25 @@ function NotFound() {
 
 /**
  * Layout wrapper that shows either the authenticated shell (sidebar+topbar)
- * or the public layout (header+footer) depending on auth state and route.
+ * or the public layout depending on auth state and route.
+ * The home route ("/") renders the full-page splash without any Header/Footer wrapper.
  */
 function AppLayout() {
   const { user } = useAuth()
   const location = useLocation()
 
-  // If not authenticated, use classic layout
+  // The landing page is always rendered standalone (no app chrome)
+  if (!user && location.pathname === '/') {
+    return (
+      <>
+        <SearchOverlay />
+        <Home />
+        <RewardToast />
+      </>
+    )
+  }
+
+  // If not authenticated on other public pages, use classic header+footer layout
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -106,7 +118,6 @@ function AppLayout() {
         <SearchOverlay />
         <div className="flex-1">
           <Routes>
-            <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/about" element={<About />} />
