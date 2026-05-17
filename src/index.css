@@ -691,6 +691,13 @@ body {
 .splash-nav-cta{display:flex;gap:10px}
 .splash-hero{display:grid;grid-template-columns:1.05fr .95fr;gap:64px;padding:48px 48px 96px;max-width:1320px;margin:0 auto;align-items:center;position:relative}
 .splash-h1{font-family:'Space Grotesk',sans-serif;font-size:64px;font-weight:500;letter-spacing:-0.035em;line-height:1.02;margin:0;color:var(--color-navy-900)}
+:root[data-theme="dark"] .splash-h1{color:#F4F7FB}
+:root[data-theme="dark"] .splash-sub{color:rgba(244,247,251,0.65)}
+:root[data-theme="dark"] .splash-stats .v{color:#F4F7FB}
+:root[data-theme="dark"] .splash-stats{border-top-color:rgba(255,255,255,0.08)}
+:root[data-theme="dark"] .splash-nav .brand-name{color:#F4F7FB}
+:root[data-theme="dark"] .splash{background:var(--color-navy-900)}
+:root[data-theme="dark"] .trust-strip{color:rgba(244,247,251,0.75)}
 .splash-h1 em{font-style:normal;background:linear-gradient(135deg,var(--color-blue-600),var(--color-concept));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:600}
 .splash-sub{font-size:18px;color:var(--color-ink-500);line-height:1.55;margin:24px 0 32px;max-width:520px}
 .splash-cta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:36px}
