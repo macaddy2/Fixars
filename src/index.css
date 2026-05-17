@@ -100,24 +100,22 @@
 }
 
 /* Dark mode */
-@media (prefers-color-scheme: dark) {
-  @theme {
-    --color-background: #0A1628;
-    --color-foreground: #F4F7FB;
-    --color-paper: #111E33;
-    --color-canvas: #0A1628;
-    --color-muted: #8695AE;
-    --color-muted-foreground: #5A6B85;
-    --color-border: #1B2B44;
-    --color-input: #1B2B44;
-    --color-card: #111E33;
-    --color-card-foreground: #F4F7FB;
-    --color-popover: #111E33;
-    --color-popover-foreground: #F4F7FB;
-    --color-ink-50: #162338;
-    --color-ink-100: #1B2B44;
-    --color-ink-200: #1B2B44;
-  }
+:root[data-theme="dark"] {
+  --color-background: #0A1628;
+  --color-foreground: #F4F7FB;
+  --color-paper: #111E33;
+  --color-canvas: #0A1628;
+  --color-muted: #8695AE;
+  --color-muted-foreground: #5A6B85;
+  --color-border: #1B2B44;
+  --color-input: #1B2B44;
+  --color-card: #111E33;
+  --color-card-foreground: #F4F7FB;
+  --color-popover: #111E33;
+  --color-popover-foreground: #F4F7FB;
+  --color-ink-50: #162338;
+  --color-ink-100: #1B2B44;
+  --color-ink-200: #1B2B44;
 }
 
 /* ===== Base Reset ===== */
@@ -152,10 +150,6 @@ body {
   display: grid;
   grid-template-columns: 64px 1fr;
   min-height: 100vh;
-  transition: grid-template-columns 0.22s ease;
-}
-.app-shell:has(.fx-sidebar:hover) {
-  grid-template-columns: 240px 1fr;
 }
 
 /* ===== Sidebar ===== */
@@ -171,8 +165,11 @@ body {
   flex-direction: column;
   gap: 4px;
   width: 240px;
-  transition: width 0.22s ease;
+  transition: width 0.22s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.22s ease;
   z-index: 20;
+}
+.fx-sidebar:hover {
+  box-shadow: 4px 0 24px rgba(0,0,0,0.15);
 }
 .app-shell:not(:has(.fx-sidebar:hover)) .fx-sidebar {
   width: 64px;

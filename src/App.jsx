@@ -98,12 +98,8 @@ function AppLayout() {
   const { user } = useAuth()
   const location = useLocation()
 
-  // Public routes that use the old Header+Footer layout
-  const publicRoutes = ['/', '/login', '/signup', '/about', '/terms', '/privacy']
-  const isPublicRoute = publicRoutes.includes(location.pathname)
-
-  // If not authenticated OR on a public page, use classic layout
-  if (!user || isPublicRoute) {
+  // If not authenticated, use classic layout
+  if (!user) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
