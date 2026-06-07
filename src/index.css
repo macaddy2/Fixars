@@ -113,9 +113,20 @@
   --color-card-foreground: #F4F7FB;
   --color-popover: #111E33;
   --color-popover-foreground: #F4F7FB;
-  --color-ink-50: #162338;
-  --color-ink-100: #1B2B44;
+  --color-ink-900: #F4F7FB;
+  --color-ink-700: #D7DDE8;
+  --color-ink-500: #8695AE;
+  --color-ink-400: #5A6B85;
+  --color-ink-300: #3E5271;
   --color-ink-200: #1B2B44;
+  --color-ink-100: #1B2B44;
+  --color-ink-50: #162338;
+  /* Translucent app tints so semantic backgrounds flip in dark mode */
+  --color-blue-50: rgba(30, 91, 255, 0.12);
+  --color-concept-bg: rgba(124, 58, 237, 0.16);
+  --color-invest-bg: rgba(16, 185, 129, 0.16);
+  --color-collab-bg: rgba(232, 125, 74, 0.16);
+  --color-skills-bg: rgba(6, 182, 212, 0.16);
 }
 
 /* ===== Base Reset ===== */
@@ -351,7 +362,7 @@ body {
   background: rgba(255,255,255,0.85);
   backdrop-filter: saturate(180%) blur(12px);
   -webkit-backdrop-filter: saturate(180%) blur(12px);
-  border-bottom: 1px solid var(--color-ink-100);
+  border-bottom: 1px solid var(--color-border);
   padding: 14px 32px;
   display: flex;
   align-items: center;
@@ -359,6 +370,9 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
+}
+:root[data-theme="dark"] .fx-topbar {
+  background: rgba(17, 30, 51, 0.85);
 }
 .fx-topbar .topbar-search {
   flex: 1;
@@ -684,20 +698,13 @@ body {
 .splash-nav{display:flex;align-items:center;justify-content:space-between;padding:22px 48px;position:relative;z-index:5}
 .splash-nav .brand{display:flex;align-items:center;gap:10px;text-decoration:none}
 .splash-nav .brand img{height:32px}
-.splash-nav .brand-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;letter-spacing:-0.02em;color:var(--color-navy-900)}
+.splash-nav .brand-name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:20px;letter-spacing:-0.02em;color:var(--color-ink-900)}
 .splash-nav-links{display:flex;gap:28px;font-size:13px;font-weight:500;color:var(--color-ink-700)}
 .splash-nav-links a{cursor:pointer;text-decoration:none;color:inherit}
 .splash-nav-links a:hover{color:var(--color-blue-600)}
 .splash-nav-cta{display:flex;gap:10px}
 .splash-hero{display:grid;grid-template-columns:1.05fr .95fr;gap:64px;padding:48px 48px 96px;max-width:1320px;margin:0 auto;align-items:center;position:relative}
-.splash-h1{font-family:'Space Grotesk',sans-serif;font-size:64px;font-weight:500;letter-spacing:-0.035em;line-height:1.02;margin:0;color:var(--color-navy-900)}
-:root[data-theme="dark"] .splash-h1{color:#F4F7FB}
-:root[data-theme="dark"] .splash-sub{color:rgba(244,247,251,0.65)}
-:root[data-theme="dark"] .splash-stats .v{color:#F4F7FB}
-:root[data-theme="dark"] .splash-stats{border-top-color:rgba(255,255,255,0.08)}
-:root[data-theme="dark"] .splash-nav .brand-name{color:#F4F7FB}
-:root[data-theme="dark"] .splash{background:var(--color-navy-900)}
-:root[data-theme="dark"] .trust-strip{color:rgba(244,247,251,0.75)}
+.splash-h1{font-family:'Space Grotesk',sans-serif;font-size:64px;font-weight:500;letter-spacing:-0.035em;line-height:1.02;margin:0;color:var(--color-ink-900)}
 .splash-h1 em{font-style:normal;background:linear-gradient(135deg,var(--color-blue-600),var(--color-concept));-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:600}
 .splash-sub{font-size:18px;color:var(--color-ink-500);line-height:1.55;margin:24px 0 32px;max-width:520px}
 .splash-cta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:36px}
@@ -708,7 +715,7 @@ body {
 .trust-strip span{display:inline-flex;align-items:center;gap:8px}
 .trust-strip .ic{width:32px;height:32px;border-radius:8px;background:var(--color-blue-50);color:var(--color-blue-600);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .splash-stats{display:flex;gap:48px;margin-top:64px;padding-top:32px;border-top:1px solid var(--color-ink-100)}
-.splash-stats .v{font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--color-navy-900)}
+.splash-stats .v{font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:500;letter-spacing:-0.025em;color:var(--color-ink-900)}
 .splash-stats .k{font-size:12px;color:var(--color-ink-500);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;margin-top:2px}
 
 .splash-visual{position:relative;height:560px}
