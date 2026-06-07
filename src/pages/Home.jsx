@@ -1,5 +1,31 @@
 import { Link } from 'react-router-dom'
-import { Hexagon, Users, Shield, TrendingUp, CheckCircle, Lightbulb, Zap, ArrowRight, ArrowUpRight, Check, Play } from 'lucide-react'
+import { Hexagon, Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check } from 'lucide-react'
+
+const SUBAPPS = [
+    { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Ready for vestDen' },
+    { key: 'invest', glyph: 'V', name: 'vestDen', tagline: 'Fund campaigns', stat: '14.2%', statLabel: 'Avg Target IRR' },
+    { key: 'collab', glyph: 'B', name: 'CollaBoard', tagline: 'Execute sprints', stat: '₦68M', statLabel: 'In Escrow' },
+    { key: 'skills', glyph: 'S', name: 'SkillsCanvas', tagline: 'Provable talent', stat: '76%', statLabel: 'Verified Profiles' },
+]
+
+const FLOAT_CARDS = [
+    { cls: 'fc1', icon: TrendingUp, title: '₦25k Stake Added', meta: 'SolarShare Lagos' },
+    { cls: 'fc2', icon: Lightbulb, title: 'Idea Validated', meta: 'Score: 84/100' },
+    { cls: 'fc3', icon: Check, title: 'Milestone Done', meta: '₦340k Released' },
+]
+
+const HOW_IT_WORKS = [
+    { num: '01', key: 'concept', glyph: 'C', title: 'Validate', desc: "Submit ideas to ConceptNexus. Peer reviewers and AI agents stress-test it until it's ready for funding." },
+    { num: '02', key: 'invest', glyph: 'V', title: 'Fund', desc: 'Graduated ideas move to vestDen. Backers stake capital from ₦5,000, locked in milestone-based escrow.' },
+    { num: '03', key: 'collab', glyph: 'B', title: 'Build', desc: 'Project leads use CollaBoard to run sprints. Escrowed funds release automatically as milestones ship.' },
+    { num: '04', key: 'skills', glyph: 'S', title: 'Earn', desc: 'Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.' },
+]
+
+const FOOTER_COLS = [
+    { heading: 'Ecosystem', links: ['ConceptNexus', 'vestDen', 'CollaBoard', 'SkillsCanvas'] },
+    { heading: 'Resources', links: ['Documentation', 'Whitepaper', 'FCS Scoring', 'Help Center'] },
+    { heading: 'Company', links: ['About Us', 'Careers', 'Terms of Service', 'Privacy Policy'] },
+]
 
 export default function Home() {
     return (
@@ -61,76 +87,30 @@ export default function Home() {
 
                 <div className="splash-visual">
                     <div className="subapp-2x2">
-                        <Link to="/dashboard" className="sa-card concept">
-                            <div className="glyph">C</div>
-                            <div>
-                                <div className="nm">ConceptNexus</div>
-                                <div className="tg">Validate ideas</div>
-                            </div>
-                            <div className="stat">
-                                <div className="v">89</div>
-                                <div className="k">Ready for vestDen</div>
-                            </div>
-                        </Link>
-                        
-                        <Link to="/dashboard" className="sa-card invest">
-                            <div className="glyph">V</div>
-                            <div>
-                                <div className="nm">vestDen</div>
-                                <div className="tg">Fund campaigns</div>
-                            </div>
-                            <div className="stat">
-                                <div className="v">14.2%</div>
-                                <div className="k">Avg Target IRR</div>
-                            </div>
-                        </Link>
-                        
-                        <Link to="/dashboard" className="sa-card collab">
-                            <div className="glyph">B</div>
-                            <div>
-                                <div className="nm">CollaBoard</div>
-                                <div className="tg">Execute sprints</div>
-                            </div>
-                            <div className="stat">
-                                <div className="v">₦68M</div>
-                                <div className="k">In Escrow</div>
-                            </div>
-                        </Link>
-                        
-                        <Link to="/dashboard" className="sa-card skills">
-                            <div className="glyph">S</div>
-                            <div>
-                                <div className="nm">SkillsCanvas</div>
-                                <div className="tg">Provable talent</div>
-                            </div>
-                            <div className="stat">
-                                <div className="v">76%</div>
-                                <div className="k">Verified Profiles</div>
-                            </div>
-                        </Link>
+                        {SUBAPPS.map((app) => (
+                            <Link key={app.key} to="/dashboard" className={`sa-card ${app.key}`}>
+                                <div className="glyph">{app.glyph}</div>
+                                <div>
+                                    <div className="nm">{app.name}</div>
+                                    <div className="tg">{app.tagline}</div>
+                                </div>
+                                <div className="stat">
+                                    <div className="v">{app.stat}</div>
+                                    <div className="k">{app.statLabel}</div>
+                                </div>
+                            </Link>
+                        ))}
                     </div>
 
-                    <div className="float-card fc1">
-                        <div className="ic"><TrendingUp className="w-4 h-4" /></div>
-                        <div>
-                            <div className="t">₦25k Stake Added</div>
-                            <div className="m">SolarShare Lagos</div>
+                    {FLOAT_CARDS.map((card) => (
+                        <div key={card.cls} className={`float-card ${card.cls}`}>
+                            <div className="ic"><card.icon className="w-4 h-4" /></div>
+                            <div>
+                                <div className="t">{card.title}</div>
+                                <div className="m">{card.meta}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div className="float-card fc2">
-                        <div className="ic"><Lightbulb className="w-4 h-4" /></div>
-                        <div>
-                            <div className="t">Idea Validated</div>
-                            <div className="m">Score: 84/100</div>
-                        </div>
-                    </div>
-                    <div className="float-card fc3">
-                        <div className="ic"><Check className="w-4 h-4" /></div>
-                        <div>
-                            <div className="t">Milestone Done</div>
-                            <div className="m">₦340k Released</div>
-                        </div>
-                    </div>
+                    ))}
                 </div>
             </header>
 
@@ -140,30 +120,14 @@ export default function Home() {
                     <p className="lede">One identity. Four districts. The entire lifecycle of innovation—from whiteboard to payout—happens securely across one interconnected ecosystem.</p>
                     
                     <div className="howit-grid">
-                        <div className="howit-step">
-                            <div className="num">01</div>
-                            <div className="glyph concept">C</div>
-                            <h4>Validate</h4>
-                            <p>Submit ideas to ConceptNexus. Peer reviewers and AI agents stress-test it until it's ready for funding.</p>
-                        </div>
-                        <div className="howit-step">
-                            <div className="num">02</div>
-                            <div className="glyph invest">V</div>
-                            <h4>Fund</h4>
-                            <p>Graduated ideas move to vestDen. Backers stake capital from ₦5,000, locked in milestone-based escrow.</p>
-                        </div>
-                        <div className="howit-step">
-                            <div className="num">03</div>
-                            <div className="glyph collab">B</div>
-                            <h4>Build</h4>
-                            <p>Project leads use CollaBoard to run sprints. Escrowed funds release automatically as milestones ship.</p>
-                        </div>
-                        <div className="howit-step">
-                            <div className="num">04</div>
-                            <div className="glyph skills">S</div>
-                            <h4>Earn</h4>
-                            <p>Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.</p>
-                        </div>
+                        {HOW_IT_WORKS.map((step) => (
+                            <div key={step.num} className="howit-step">
+                                <div className="num">{step.num}</div>
+                                <div className={`glyph ${step.key}`}>{step.glyph}</div>
+                                <h4>{step.title}</h4>
+                                <p>{step.desc}</p>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </section>
@@ -183,33 +147,16 @@ export default function Home() {
                                 <a aria-label="Discord"><ArrowUpRight className="w-4 h-4" /></a>
                             </div>
                         </div>
-                        <div className="footer-col">
-                            <h5>Ecosystem</h5>
-                            <ul>
-                                <li><a>ConceptNexus</a></li>
-                                <li><a>vestDen</a></li>
-                                <li><a>CollaBoard</a></li>
-                                <li><a>SkillsCanvas</a></li>
-                            </ul>
-                        </div>
-                        <div className="footer-col">
-                            <h5>Resources</h5>
-                            <ul>
-                                <li><a>Documentation</a></li>
-                                <li><a>Whitepaper</a></li>
-                                <li><a>FCS Scoring</a></li>
-                                <li><a>Help Center</a></li>
-                            </ul>
-                        </div>
-                        <div className="footer-col">
-                            <h5>Company</h5>
-                            <ul>
-                                <li><a>About Us</a></li>
-                                <li><a>Careers</a></li>
-                                <li><a>Terms of Service</a></li>
-                                <li><a>Privacy Policy</a></li>
-                            </ul>
-                        </div>
+                        {FOOTER_COLS.map((col) => (
+                            <div key={col.heading} className="footer-col">
+                                <h5>{col.heading}</h5>
+                                <ul>
+                                    {col.links.map((link) => (
+                                        <li key={link}><a>{link}</a></li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
                     </div>
                     <div className="footer-bot">
                         <div>© 2026 Fixars, Inc. All rights reserved.</div>
