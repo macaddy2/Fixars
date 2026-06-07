@@ -44,8 +44,11 @@
 .dash-subapp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .fx-subapp-tile {
   background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg);
-  padding: 16px; display: flex; flex-direction: column; position: relative;
+  padding: 16px; display: flex; flex-direction: column; position: relative; overflow: hidden;
   transition: all 0.2s; color: var(--color-foreground); text-decoration: none;
+}
+.fx-subapp-tile::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--tile-color);
 }
 .fx-subapp-tile:hover { border-color: var(--tile-color); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 .tile-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
