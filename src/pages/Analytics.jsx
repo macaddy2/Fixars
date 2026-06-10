@@ -100,7 +100,7 @@ export default function Analytics() {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <StatCard
                         label="Total Staked"
-                        value={`$${formatNumber(totalStaked)}`}
+                        value={`₦${formatNumber(totalStaked)}`}
                         trend={12}
                         trendLabel="vs last period"
                         icon={TrendingUp}

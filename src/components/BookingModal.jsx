@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { useSocial } from '@/contexts/SocialContext'
 import { getInitials } from '@/lib/utils'
-import { X, Send, DollarSign, Palette, CheckCircle, Star } from 'lucide-react'
+import { X, Send, Palette, CheckCircle, Star } from 'lucide-react'
 
 export default function BookingModal({ talent, onClose }) {
     const { user, isAuthenticated } = useAuth()
@@ -91,8 +91,7 @@ export default function BookingModal({ talent, onClose }) {
                                     </div>
                                     <span>•</span>
                                     <div className="flex items-center gap-1">
-                                        <DollarSign className="w-3.5 h-3.5" />
-                                        {talent.hourly_rate || talent.hourlyRate || 0}/hr
+                                        <span className="mono">₦{(talent.hourly_rate || talent.hourlyRate || 0).toLocaleString()}/hr</span>
                                     </div>
                                 </div>
                             </div>

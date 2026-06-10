@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/contexts/ThemeContext'
 import {
-    Settings, Sun, Moon, Monitor,
+    Settings, Sun, Moon, Coffee,
     Minus, Equal, AlignJustify,
     Palette, Bell, Shield, User,
     ChevronRight, LogOut, Globe
@@ -9,35 +10,31 @@ import {
 
 /* ====================================================================
    Settings Page — Phase 3
-   Tweaks panel: theme (light/sepia/dark), density, vibe presets,
-   account settings, notification preferences.
+   Appearance pickers are wired to ThemeContext (theme / density / vibe),
+   applied live as data-* attributes on <html> and persisted.
    ==================================================================== */
 
 const THEMES = [
     { key: 'light', label: 'Light', icon: Sun, preview: '#F9FAFC' },
-    { key: 'sepia', label: 'Sepia', icon: Sun, preview: '#F5EFE0' },
+    { key: 'dim', label: 'Sepia', icon: Coffee, preview: '#F5EFE4' },
     { key: 'dark', label: 'Dark', icon: Moon, preview: '#0A1628' },
-    { key: 'system', label: 'System', icon: Monitor, preview: 'linear-gradient(135deg, #F9FAFC 50%, #0A1628 50%)' },
 ]
 
 const DENSITIES = [
     { key: 'compact', label: 'Compact', icon: Minus },
-    { key: 'default', label: 'Default', icon: Equal },
-    { key: 'comfortable', label: 'Comfortable', icon: AlignJustify },
+    { key: 'cozy', label: 'Cozy', icon: Equal },
+    { key: 'spacious', label: 'Spacious', icon: AlignJustify },
 ]
 
 const VIBES = [
-    { key: 'professional', label: 'Professional', colors: ['#0A1628', '#1E5BFF', '#EBEFF5'] },
-    { key: 'creative', label: 'Creative', colors: ['#7C3AED', '#E87D4A', '#06B6D4'] },
-    { key: 'minimal', label: 'Minimal', colors: ['#1B2B44', '#3E5271', '#D7DDE8'] },
-    { key: 'vibrant', label: 'Vibrant', colors: ['#1E5BFF', '#10B981', '#F59E0B'] },
+    { key: 'focused', label: 'Focused', colors: ['#0A1628', '#3E5271', '#EBEFF5'] },
+    { key: 'expressive', label: 'Expressive', colors: ['#2F45E0', '#7C3AED', '#10B981'] },
+    { key: 'playful', label: 'Playful', colors: ['#7C3AED', '#E87D4A', '#06B6D4'] },
 ]
 
 export default function SettingsPage() {
-    const { user, logout } = useAuth()
-    const [theme, setTheme] = useState('dark')
-    const [density, setDensity] = useState('default')
-    const [vibe, setVibe] = useState('professional')
+    const { logout } = useAuth()
+    const { theme, setTheme, density, setDensity, vibe, setVibe } = useTheme()
     const [notifications, setNotifications] = useState({
         stakes: true,
         ideas: true,
