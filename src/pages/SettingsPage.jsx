@@ -27,10 +27,10 @@ const DENSITIES = [
 ]
 
 const VIBES = [
-    { key: 'professional', label: 'Professional', colors: ['#0A1628', '#1E5BFF', '#EBEFF5'] },
+    { key: 'professional', label: 'Professional', colors: ['#0A1628', '#2F45E0', '#EBEFF5'] },
     { key: 'creative', label: 'Creative', colors: ['#7C3AED', '#E87D4A', '#06B6D4'] },
     { key: 'minimal', label: 'Minimal', colors: ['#1B2B44', '#3E5271', '#D7DDE8'] },
-    { key: 'vibrant', label: 'Vibrant', colors: ['#1E5BFF', '#10B981', '#F59E0B'] },
+    { key: 'vibrant', label: 'Vibrant', colors: ['#2F45E0', '#10B981', '#F59E0B'] },
 ]
 
 export default function SettingsPage() {

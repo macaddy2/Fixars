@@ -31,7 +31,7 @@
 }
 .fx-wallet-hero::after, .wallet-balance-hero::after {
   content: ''; position: absolute; right: -40px; top: -40px; width: 200px; height: 200px;
-  border-radius: 50%; background: radial-gradient(circle, rgba(30,91,255,.25), transparent 70%);
+  border-radius: 50%; background: radial-gradient(circle, rgba(47,69,224,.25), transparent 70%);
   pointer-events: none;
 }
 .wallet-top { display: flex; justify-content: space-between; align-items: center; }
