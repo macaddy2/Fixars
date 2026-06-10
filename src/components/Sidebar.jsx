@@ -51,7 +51,7 @@ export default function Sidebar() {
           to={item.to}
           className={`nav-item ${isActive(item.to) ? 'active' : ''}`}
         >
-          <item.icon className="nav-icon" strokeWidth={1.8} />
+          <item.icon className="nav-icon" />
           <span className="nav-label">{item.label}</span>
           {item.badge && <span className="nav-badge">{item.badge}</span>}
         </NavLink>
@@ -64,7 +64,7 @@ export default function Sidebar() {
           to={item.to}
           className={`nav-item ${item.accent} ${isActive(item.to) ? 'active' : ''}`}
         >
-          <item.icon className="nav-icon" strokeWidth={1.8} />
+          <item.icon className="nav-icon" />
           <span className="nav-label">{item.label}</span>
         </NavLink>
       ))}
@@ -76,7 +76,7 @@ export default function Sidebar() {
           to={item.to}
           className={`nav-item ${isActive(item.to) ? 'active' : ''}`}
         >
-          <item.icon className="nav-icon" strokeWidth={1.8} />
+          <item.icon className="nav-icon" />
           <span className="nav-label">{item.label}</span>
         </NavLink>
       ))}

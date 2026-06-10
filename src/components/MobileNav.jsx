@@ -25,7 +25,7 @@ export default function MobileNav() {
           if (tab.isCreate) {
             return (
               <button key={i} className="tab-create" aria-label="Create">
-                <Plus size={26} strokeWidth={2.5} />
+                <Plus size={26} />
               </button>
             )
           }
@@ -35,7 +35,7 @@ export default function MobileNav() {
               to={tab.to}
               className={`tab-btn ${isActive(tab.to) ? 'active' : ''}`}
             >
-              <tab.icon size={22} strokeWidth={isActive(tab.to) ? 2.2 : 1.8} />
+              <tab.icon size={22} />
               {tab.label}
             </NavLink>
           )

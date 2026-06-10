@@ -9,6 +9,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getInitials } from '@/lib/utils'
 import CreateBoardModal from '@/components/CreateBoardModal'
 import AddTaskModal from '@/components/AddTaskModal'
+import PageHead from '@/components/PageHead'
+import { StatRow, Toolbar, ListGrid, EmptyState } from '@/components/SubAppKit'
 import {
     Users,
     Plus,
@@ -100,49 +102,52 @@ function BoardColumn({ column, boardId, onAddTask }) {
     )
 }
 
-function BoardCard({ board }) {
-    const taskCount = board.columns.reduce((sum, col) => sum + col.tasks.length, 0)
+const TEAM_AV_BG = ['var(--color-collab)', 'var(--color-navy-900)', 'var(--color-skills)', 'var(--color-ink-300)']
+
+const FILTERS = [
+    { value: 'all', label: 'All' },
+    { value: 'mine', label: 'My Boards' },
+    { value: 'active', label: 'Active' },
+    { value: 'review', label: 'In review' },
+    { value: 'done', label: 'Done' },
+]
+
+function boardStatus(board) {
+    const taskCount = board.columns.reduce((s, c) => s + c.tasks.length, 0)
     const doneCount = board.columns.find(c => c.id === 'done')?.tasks.length || 0
+    const reviewCount = board.columns.find(c => c.id === 'review' || c.id === 'in-review')?.tasks.length || 0
+    if (taskCount > 0 && doneCount === taskCount) return { key: 'Done', cls: 'tag-success' }
+    if (reviewCount > 0) return { key: 'In review', cls: 'tag-warning' }
+    return { key: 'Active', cls: 'tag-collab' }
+}
+
+function ProjectCard({ board, onOpen }) {
+    const taskCount = board.columns.reduce((s, c) => s + c.tasks.length, 0)
+    const doneCount = board.columns.find(c => c.id === 'done')?.tasks.length || 0
+    const status = boardStatus(board)
 
     return (
-        <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer">
-            <div className="h-1.5 gradient-collaboard" />
-            <CardContent className="p-5">
-                <h3 className="font-bold text-lg text-foreground mb-2">{board.title}</h3>
-                <p className="text-sm text-muted mb-4 line-clamp-2">{board.description}</p>
-
-                <div className="flex items-center gap-4 text-sm text-muted mb-4">
-                    <div className="flex items-center gap-1">
-                        <CheckCircle className="w-4 h-4" />
-                        {doneCount}/{taskCount} tasks
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        {board.members.length} members
-                    </div>
+        <button className="list-card" onClick={() => onOpen(board.id)}>
+            <div className="lc-head">
+                <span className={`tag ${status.cls}`}><span className="tag-dot" />{status.key}</span>
+                <span className="lc-mono">{doneCount}/{taskCount} tasks</span>
+            </div>
+            <div className="title">{board.title}</div>
+            <p className="desc line-clamp-2">{board.description}</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex' }}>
+                    {board.members.slice(0, 4).map((m, i) => (
+                        <div key={m.userId} className="av team-av" style={{ background: TEAM_AV_BG[i % 4], marginLeft: i ? -8 : 0 }}>
+                            {getInitials(m.name)}
+                        </div>
+                    ))}
                 </div>
-
-                <div className="flex items-center justify-between">
-                    <div className="flex -space-x-2">
-                        {board.members.slice(0, 4).map((member, i) => (
-                            <Avatar key={member.userId} className="w-8 h-8 border-2 border-card">
-                                <AvatarFallback className="text-xs">{getInitials(member.name)}</AvatarFallback>
-                            </Avatar>
-                        ))}
-                        {board.members.length > 4 && (
-                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-medium border-2 border-card">
-                                +{board.members.length - 4}
-                            </div>
-                        )}
-                    </div>
-                    {board.linkedIdeaId && (
-                        <Badge variant="conceptnexus" className="text-xs">
-                            Linked to idea
-                        </Badge>
-                    )}
+                <div style={{ textAlign: 'right' }}>
+                    <div className="micro-k">Team</div>
+                    <div className="mono" style={{ fontSize: 14, fontWeight: 600 }}>{board.members.length} members</div>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </button>
     )
 }
 
@@ -153,6 +158,8 @@ export default function Collaboard() {
     const [selectedBoard, setSelectedBoard] = useState(null)
     const [createOpen, setCreateOpen] = useState(false)
     const [addTaskState, setAddTaskState] = useState({ open: false, column: 'todo' })
+    const [search, setSearch] = useState('')
+    const [filter, setFilter] = useState('all')
 
     useEffect(() => {
         const boardId = searchParams.get('boardId')
@@ -160,10 +167,6 @@ export default function Collaboard() {
             setSelectedBoard(boardId)
         }
     }, [searchParams])
-
-    const myBoards = boards.filter(b =>
-        b.members.some(m => m.userId === user?.id)
-    )
 
     if (selectedBoard) {
         const board = boards.find(b => b.id === selectedBoard)
@@ -233,7 +236,7 @@ export default function Collaboard() {
                                                     </Avatar>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="font-medium text-sm truncate">{talent.displayName}</p>
-                                                        <p className="text-xs text-muted">{talent.hourlyRate}/hr</p>
+                                                        <p className="text-xs text-muted mono">₦{(talent.hourlyRate || 0).toLocaleString()}/hr</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-wrap gap-1 mb-3">
@@ -281,104 +284,69 @@ export default function Collaboard() {
         )
     }
 
+    const totalTasks = boards.reduce((sum, b) => sum + b.columns.reduce((s, c) => s + c.tasks.length, 0), 0)
+    const collaborators = new Set(boards.flatMap(b => b.members.map(m => m.userId))).size
+    const doneBoards = boards.filter(b => boardStatus(b).key === 'Done').length
+
+    const stats = [
+        { k: 'Total boards', v: boards.length, t: 'projects in flight' },
+        { k: 'Active tasks', v: totalTasks, t: 'across all boards' },
+        { k: 'Collaborators', v: collaborators, t: 'shipping together' },
+        { k: 'Completed', v: doneBoards, t: 'boards delivered', tColor: 'var(--color-success)' },
+    ]
+
+    const visibleBoards = boards.filter(board => {
+        const matchesSearch = board.title.toLowerCase().includes(search.toLowerCase()) ||
+            (board.description || '').toLowerCase().includes(search.toLowerCase())
+        if (!matchesSearch) return false
+        if (filter === 'mine') return board.members.some(m => m.userId === user?.id)
+        if (filter === 'active') return boardStatus(board).key === 'Active'
+        if (filter === 'review') return boardStatus(board).key === 'In review'
+        if (filter === 'done') return boardStatus(board).key === 'Done'
+        return true
+    })
+
     return (
         <main className="py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="subapp-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-12 h-12 rounded-2xl gradient-collaboard flex items-center justify-center">
-                                <Users className="w-6 h-6 text-white" />
-                            </div>
-                            <h1 className="text-3xl font-bold text-foreground">Collaboard</h1>
-                        </div>
-                        <p className="text-muted">Collaboration-ready sandbox. Team up and work together effortlessly.</p>
-                    </div>
-
-                    {isAuthenticated && (
+                <PageHead
+                    app="collab"
+                    glyph="B"
+                    tag="Execution · Escrowed sprints"
+                    title="CollaBoard"
+                    sub="Where validated ideas become shipped products. Milestone-based escrow keeps money safe and teams paid."
+                    actions={isAuthenticated && (
                         <Button variant="collaboard" size="lg" onClick={() => setCreateOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> Create Board
                         </Button>
                     )}
-                </div>
+                />
 
-                {/* Stats */}
-                <div className="grid sm:grid-cols-3 gap-4 mb-8">
-                    <Card>
-                        <CardContent className="p-5 text-center">
-                            <p className="text-3xl font-bold text-foreground">{boards.length}</p>
-                            <p className="text-sm text-muted">Total Boards</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-5 text-center">
-                            <p className="text-3xl font-bold text-foreground">
-                                {boards.reduce((sum, b) => sum + b.columns.reduce((s, c) => s + c.tasks.length, 0), 0)}
-                            </p>
-                            <p className="text-sm text-muted">Active Tasks</p>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent className="p-5 text-center">
-                            <p className="text-3xl font-bold text-foreground">
-                                {new Set(boards.flatMap(b => b.members.map(m => m.userId))).size}
-                            </p>
-                            <p className="text-sm text-muted">Collaborators</p>
-                        </CardContent>
-                    </Card>
-                </div>
+                <StatRow stats={stats} />
 
-                {/* My Boards */}
-                {myBoards.length > 0 && (
-                    <div className="mb-8">
-                        <h2 className="text-xl font-bold text-foreground mb-4">My Boards</h2>
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {myBoards.map((board, i) => (
-                                <div
-                                    key={board.id}
-                                    onClick={() => setSelectedBoard(board.id)}
-                                    className="animate-fade-in"
-                                    style={{ animationDelay: `${i * 50}ms` }}
-                                >
-                                    <BoardCard board={board} />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                <Toolbar
+                    search={search}
+                    onSearch={setSearch}
+                    placeholder="Search boards…"
+                    filters={FILTERS}
+                    active={filter}
+                    onFilter={setFilter}
+                />
 
-                {/* All Boards */}
-                <div>
-                    <h2 className="text-xl font-bold text-foreground mb-4">All Boards</h2>
-                    {boards.length === 0 ? (
-                        <Card>
-                            <CardContent className="py-12 text-center">
-                                <Users className="w-12 h-12 text-muted mx-auto mb-4" />
-                                <p className="text-lg font-medium text-foreground mb-2">No boards yet</p>
-                                <p className="text-muted mb-4">Create one to start collaborating.</p>
-                                {isAuthenticated && (
-                                    <Button variant="collaboard" onClick={() => setCreateOpen(true)}>
-                                        <Plus className="w-4 h-4 mr-2" /> Create your first board
-                                    </Button>
-                                )}
-                            </CardContent>
-                        </Card>
+                <ListGrid>
+                    {visibleBoards.length > 0 ? (
+                        visibleBoards.map(board => (
+                            <ProjectCard key={board.id} board={board} onOpen={setSelectedBoard} />
+                        ))
                     ) : (
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {boards.map((board, i) => (
-                                <div
-                                    key={board.id}
-                                    onClick={() => setSelectedBoard(board.id)}
-                                    className="animate-fade-in"
-                                    style={{ animationDelay: `${i * 50}ms` }}
-                                >
-                                    <BoardCard board={board} />
-                                </div>
-                            ))}
-                        </div>
+                        <EmptyState
+                            title={boards.length === 0 ? 'No boards yet' : 'No boards match'}
+                            sub={boards.length === 0 ? 'Create one to start collaborating.' : 'Try a different search or filter.'}
+                            onClear={() => { setSearch(''); setFilter('all') }}
+                        />
                     )}
-                </div>
+                </ListGrid>
             </div>
 
             <CreateBoardModal

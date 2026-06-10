@@ -14,18 +14,24 @@ import {
    FCS ring gauge, stats grid, verified skills, activity history
    ==================================================================== */
 
-// ─── FCS Ring Gauge ─────────────────────────────────────────────────
-function FCSGauge({ score, tier }) {
-    const circumference = 2 * Math.PI * 52
-    const filled = (score / 1000) * circumference
-    const offset = circumference - filled
+// ─── FCS (Fixars Credit Score) — v2 300–850 scale ───────────────────
+const FCS_MIN = 300
+const FCS_MAX = 850
 
-    const tierColors = {
-        Pioneer: 'var(--color-blue-600)',
-        Trailblazer: 'var(--color-concept)',
-        Visionary: 'var(--color-invest)',
-        Legend: 'var(--color-warning)',
-    }
+// Map a score to its band label + ring color.
+function fcsBand(score) {
+    if (score >= 800) return { label: 'Excellent', color: 'var(--color-success)' }
+    if (score >= 740) return { label: 'Very good', color: 'var(--color-success)' }
+    if (score >= 670) return { label: 'Good', color: 'var(--color-invest)' }
+    if (score >= 580) return { label: 'Fair', color: 'var(--color-warning)' }
+    return { label: 'Building', color: 'var(--color-danger)' }
+}
+
+function FCSGauge({ score }) {
+    const circumference = 2 * Math.PI * 52
+    const pct = Math.max(0, Math.min(1, (score - FCS_MIN) / (FCS_MAX - FCS_MIN)))
+    const offset = circumference - pct * circumference
+    const { color } = fcsBand(score)
 
     return (
         <div className="fcs-gauge">
@@ -33,7 +39,7 @@ function FCSGauge({ score, tier }) {
                 <circle cx="60" cy="60" r="52" fill="none" stroke="var(--color-ink-100)" strokeWidth="8" />
                 <circle
                     cx="60" cy="60" r="52" fill="none"
-                    stroke={tierColors[tier] || 'var(--color-blue-600)'}
+                    stroke={color}
                     strokeWidth="8" strokeLinecap="round"
                     strokeDasharray={circumference}
                     strokeDashoffset={offset}
@@ -67,8 +73,10 @@ export default function ProfilePage() {
         return <Navigate to="/login" replace state={{ from: location.pathname }} />
     }
 
-    const fcsScore = Math.min(999, Math.round(points * 0.8))
-    const tier = level
+    // Fixars Credit Score (300–850). Falls back to a points-derived estimate
+    // when the profile has no stored FCS yet.
+    const fcsScore = user.fcs ?? Math.min(FCS_MAX, FCS_MIN + Math.round(points * 0.35))
+    const fcsTier = fcsBand(fcsScore).label
 
     const profileStats = [
         { label: 'Active Stakes', value: stakes.filter(s => s.status === 'active').length, icon: TrendingUp, color: 'var(--color-invest)' },
@@ -120,10 +128,10 @@ export default function ProfilePage() {
             {/* Stats + FCS Row */}
             <div className="profile-top-row">
                 <div className="profile-fcs-card">
-                    <FCSGauge score={fcsScore} tier={tier} />
+                    <FCSGauge score={fcsScore} />
                     <div className="fcs-details">
-                        <span className="fcs-tier display">{tier}</span>
-                        <span className="fcs-range mono">0 — 1,000</span>
+                        <span className="fcs-tier display">{fcsTier}</span>
+                        <span className="fcs-range mono">300 — 850</span>
                         <p className="fcs-desc">Your Fixars Credit Score reflects your engagement, reliability, and contributions across the ecosystem.</p>
                     </div>
                 </div>
