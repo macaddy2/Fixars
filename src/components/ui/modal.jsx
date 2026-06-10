@@ -24,15 +24,19 @@ export default function Modal({ open, onClose, title, subtitle, gradient = 'grad
     if (!open) return null
 
     return (
-        <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label={title}>
+        <div
+            className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center"
+            role="dialog" aria-modal="true" aria-label={title}
+        >
             <div
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             />
-            <div className={`relative ${maxWidth} mx-auto mt-[8vh] px-4 animate-search-slide-down`}>
-                <Card className="shadow-2xl overflow-hidden">
-                    <div className={`h-2 ${gradient}`} />
-                    <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-2">
+            {/* Bottom-sheet on mobile, centered card on sm+ (v2 modal chrome) */}
+            <div className={`relative w-full ${maxWidth} sm:mx-4 animate-slide-in-up`}>
+                <Card className="shadow-2xl overflow-hidden rounded-b-none rounded-t-2xl sm:rounded-xl max-h-[90vh] sm:max-h-[85vh] flex flex-col">
+                    <div className={`h-[3px] flex-shrink-0 ${gradient}`} />
+                    <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-2 flex-shrink-0">
                         <div>
                             <h2 className="text-lg font-bold text-foreground">{title}</h2>
                             {subtitle && <p className="text-sm text-muted mt-1">{subtitle}</p>}
@@ -45,7 +49,7 @@ export default function Modal({ open, onClose, title, subtitle, gradient = 'grad
                             <X className="w-5 h-5 text-muted" />
                         </button>
                     </div>
-                    <CardContent className="pt-2 pb-6">
+                    <CardContent className="pt-2 pb-6 overflow-y-auto">
                         {children}
                     </CardContent>
                 </Card>
