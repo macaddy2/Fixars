@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getInitials } from '@/lib/utils'
 import CreateBoardModal from '@/components/CreateBoardModal'
 import AddTaskModal from '@/components/AddTaskModal'
+import PageHead from '@/components/PageHead'
 import {
     Users,
     Plus,
@@ -285,23 +286,18 @@ export default function Collaboard() {
         <main className="py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-12 h-12 rounded-2xl gradient-collaboard flex items-center justify-center">
-                                <Users className="w-6 h-6 text-white" />
-                            </div>
-                            <h1 className="text-3xl font-bold text-foreground">Collaboard</h1>
-                        </div>
-                        <p className="text-muted">Collaboration-ready sandbox. Team up and work together effortlessly.</p>
-                    </div>
-
-                    {isAuthenticated && (
+                <PageHead
+                    app="collab"
+                    glyph="B"
+                    tag="Execution · Escrowed sprints"
+                    title="CollaBoard"
+                    sub="Where validated ideas become shipped products. Milestone-based escrow keeps money safe and teams paid."
+                    actions={isAuthenticated && (
                         <Button variant="collaboard" size="lg" onClick={() => setCreateOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> Create Board
                         </Button>
                     )}
-                </div>
+                />
 
                 {/* Stats */}
                 <div className="grid sm:grid-cols-3 gap-4 mb-8">

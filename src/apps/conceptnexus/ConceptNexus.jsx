@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import AIRecommendations from '@/components/AIRecommendations'
 import SubmitIdeaModal from '@/components/SubmitIdeaModal'
+import PageHead from '@/components/PageHead'
 import {
     Lightbulb,
     Search,
@@ -147,23 +148,18 @@ export default function ConceptNexus() {
         <main className="py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-12 h-12 rounded-2xl gradient-conceptnexus flex items-center justify-center">
-                                <Lightbulb className="w-6 h-6 text-white" />
-                            </div>
-                            <h1 className="text-3xl font-bold text-foreground">ConceptNexus</h1>
-                        </div>
-                        <p className="text-muted">Gather, validate, and supercharge ideas and impact projects.</p>
-                    </div>
-
-                    {isAuthenticated && (
+                <PageHead
+                    app="concept"
+                    glyph="C"
+                    tag="Idea validation"
+                    title="ConceptNexus"
+                    sub="Where African innovation gets stress-tested before it gets funded."
+                    actions={isAuthenticated && (
                         <Button variant="conceptnexus" size="lg" onClick={() => setSubmitOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> Submit Idea
                         </Button>
                     )}
-                </div>
+                />
 
                 {/* Stats */}
                 <div className="grid sm:grid-cols-3 gap-4 mb-8">

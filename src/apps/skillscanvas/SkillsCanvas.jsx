@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { getInitials, formatNumber } from '@/lib/utils'
+import PageHead from '@/components/PageHead'
 import {
     Palette,
     Search,
@@ -145,23 +146,18 @@ export default function SkillsCanvas() {
         <main className="py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-12 h-12 rounded-2xl gradient-skillscanvas flex items-center justify-center">
-                                <Palette className="w-6 h-6 text-white" />
-                            </div>
-                            <h1 className="text-3xl font-bold text-foreground">SkillsCanvas</h1>
-                        </div>
-                        <p className="text-muted">The ultimate skills and talent hub. Find or summon the right people.</p>
-                    </div>
-
-                    {isAuthenticated && (
+                <PageHead
+                    app="skills"
+                    glyph="S"
+                    tag="Talent · Verified by work"
+                    title="SkillsCanvas"
+                    sub="Skills aren't self-claimed — they're verified by completed CollaBoard milestones with money attached."
+                    actions={isAuthenticated && (
                         <Button variant="skillscanvas" size="lg" onClick={() => setListOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> List Your Skills
                         </Button>
                     )}
-                </div>
+                />
 
                 {/* Stats */}
                 <div className="grid sm:grid-cols-4 gap-4 mb-8">
