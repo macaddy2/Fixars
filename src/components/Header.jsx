@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
     Home,
     LayoutGrid,
@@ -34,17 +34,7 @@ export default function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     const [userMenuOpen, setUserMenuOpen] = useState(false)
 
-    // Cmd+K / Ctrl+K keyboard shortcut
-    useEffect(() => {
-        function handleKeyDown(e) {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                e.preventDefault()
-                toggleSearch()
-            }
-        }
-        document.addEventListener('keydown', handleKeyDown)
-        return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [toggleSearch])
+    // ⌘K / Ctrl+K is handled globally in SearchProvider.
 
     const navLinks = [
         { path: '/', label: 'Home', icon: Home },
