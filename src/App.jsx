@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import { PointsProvider } from '@/contexts/PointsContext'
 import { SocialProvider } from '@/contexts/SocialContext'
 import { DataProvider } from '@/contexts/DataContext'
+import { WalletProvider } from '@/contexts/WalletContext'
 import { SearchProvider } from '@/contexts/SearchContext'
 
 // New shell components
@@ -16,6 +17,7 @@ import MobileNav from '@/components/MobileNav'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import RewardToast from '@/components/RewardToast'
+import WalletToast from '@/components/WalletToast'
 import SearchOverlay from '@/components/SearchOverlay'
 
 // Pages
@@ -194,6 +196,7 @@ function AppLayout() {
       </div>
       <MobileNav />
       <RewardToast />
+      <WalletToast />
     </>
   )
 }
@@ -204,6 +207,7 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <DataProvider>
+          <WalletProvider>
           <PointsProvider>
             <SocialProvider>
               <SearchProvider>
@@ -211,6 +215,7 @@ export default function App() {
               </SearchProvider>
             </SocialProvider>
           </PointsProvider>
+          </WalletProvider>
           </DataProvider>
         </AuthProvider>
       </ThemeProvider>

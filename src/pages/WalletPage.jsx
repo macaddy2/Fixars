@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
+import { useWallet } from '@/contexts/WalletContext'
 import { formatNumber } from '@/lib/utils'
 import {
     Wallet,
@@ -39,16 +40,18 @@ export default function WalletPage() {
     const { user } = useAuth()
     const { points } = usePoints()
     const { stakes } = useData()
+    const { balance: totalBalance, transactions } = useWallet()
     const [activeTab, setActiveTab] = useState('All')
 
-    const totalBalance = 284500
     const available = 142500
     const inEscrow = 98000
     const staked = 44000
 
+    // Live wallet ledger (real stakes/top-ups) ahead of the seeded history.
+    const allTransactions = [...transactions, ...MOCK_TRANSACTIONS]
     const filtered = activeTab === 'All'
-        ? MOCK_TRANSACTIONS
-        : MOCK_TRANSACTIONS.filter(t => t.type === activeTab.toLowerCase().slice(0, -1))
+        ? allTransactions
+        : allTransactions.filter(t => t.type === activeTab.toLowerCase().slice(0, -1))
 
     const appColors = {
         vestden: 'var(--color-invest)',

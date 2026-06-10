@@ -19,7 +19,7 @@ import {
     Zap,
     Plus
 } from 'lucide-react'
-import PaymentModal from '@/components/PaymentModal'
+import StakeFlowModal from '@/components/StakeFlowModal'
 import CreateStakeModal from '@/components/CreateStakeModal'
 
 const RISK_COLORS = {
@@ -96,20 +96,20 @@ export default function VestDen() {
     const { awardPoints } = usePoints()
     const [search, setSearch] = useState('')
     const [category, setCategory] = useState('all')
-    const [paymentModal, setPaymentModal] = useState({ open: false, stake: null, amount: 500 })
+    const [stakeModal, setStakeModal] = useState({ open: false, stake: null })
     const [createOpen, setCreateOpen] = useState(false)
 
     const handleStakeClick = useCallback((stake) => {
         if (!isAuthenticated) return
-        setPaymentModal({ open: true, stake, amount: 500 })
+        setStakeModal({ open: true, stake })
     }, [isAuthenticated])
 
-    const handlePaymentSuccess = useCallback(async () => {
-        if (paymentModal.stake && user?.id) {
-            await makeStake(paymentModal.stake.id, user.id, paymentModal.amount)
+    const handleStakeConfirm = useCallback(async (amount) => {
+        if (stakeModal.stake && user?.id) {
+            await makeStake(stakeModal.stake.id, user.id, amount)
             awardPoints('MAKE_STAKE')
         }
-    }, [paymentModal, user, makeStake, awardPoints])
+    }, [stakeModal, user, makeStake, awardPoints])
 
     const filteredStakes = stakes.filter(stake => {
         const matchesSearch = stake.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -278,14 +278,14 @@ export default function VestDen() {
                 )}
             </div>
 
-            {/* Payment Modal */}
-            <PaymentModal
-                isOpen={paymentModal.open}
-                onClose={() => setPaymentModal({ open: false, stake: null, amount: 500 })}
-                stake={paymentModal.stake}
-                amount={paymentModal.amount}
-                onSuccess={handlePaymentSuccess}
-            />
+            {/* Wallet-based Stake Flow */}
+            {stakeModal.open && (
+                <StakeFlowModal
+                    campaign={stakeModal.stake}
+                    onClose={() => setStakeModal({ open: false, stake: null })}
+                    onConfirm={handleStakeConfirm}
+                />
+            )}
 
             {/* Create Stake Modal */}
             <CreateStakeModal open={createOpen} onClose={() => setCreateOpen(false)} />
