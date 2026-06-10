@@ -9,6 +9,7 @@ import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { formatNumber, formatDate } from '@/lib/utils'
+import PageHead from '@/components/PageHead'
 import {
     TrendingUp,
     Search,
@@ -133,23 +134,18 @@ export default function VestDen() {
         <main className="py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 mb-8">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-12 h-12 rounded-2xl gradient-vestden flex items-center justify-center">
-                                <TrendingUp className="w-6 h-6 text-white" />
-                            </div>
-                            <h1 className="text-3xl font-bold text-foreground">VestDen</h1>
-                        </div>
-                        <p className="text-muted">Stake on ideas, innovations, and risks. Earn returns for your vision.</p>
-                    </div>
-
-                    {isAuthenticated && (
+                <PageHead
+                    app="invest"
+                    glyph="V"
+                    tag="Capital · Den of investors"
+                    title="vestDen"
+                    sub="Fund the validated future. From ₦5,000 to ₦5M, every stake is tracked, escrowed, and milestone-paid."
+                    actions={isAuthenticated && (
                         <Button variant="vestden" size="lg" onClick={() => setCreateOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> Create Stake
                         </Button>
                     )}
-                </div>
+                />
 
                 {/* Main Stats */}
                 <div className="grid sm:grid-cols-3 gap-4 mb-8">

@@ -138,6 +138,11 @@
   border-color: var(--color-border);
 }
 
+/* Design system: outline icons at 1.75px stroke, rounded caps/joins */
+svg.lucide {
+  stroke-width: 1.75;
+}
+
 body {
   background-color: var(--color-canvas);
   color: var(--color-foreground);
@@ -154,7 +159,21 @@ body {
 }
 .mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
+
+/* ===== Page heading (prototype grammar) ===== */
+.page-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; }
+.page-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.page-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; }
+.page-icon.concept { background: var(--color-concept); }
+.page-icon.invest { background: var(--color-invest); }
+.page-icon.collab { background: var(--color-collab); }
+.page-icon.skills { background: var(--color-skills); }
+.page-icon.fixars { background: var(--color-navy-900); }
+.page-tag { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-ink-400); font-weight: 600; }
+.page-title { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; margin: 0; color: var(--color-ink-900); }
+.page-sub { color: var(--color-ink-500); font-size: 15px; margin: 6px 0 0; max-width: 560px; line-height: 1.5; }
 
 /* ===== App Shell ===== */
 .app-shell {

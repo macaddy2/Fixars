@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Hexagon, Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check } from 'lucide-react'
+import { Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check } from 'lucide-react'
 
 const SUBAPPS = [
     { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Ready for vestDen' },
@@ -32,7 +32,7 @@ export default function Home() {
         <div className="splash">
             <nav className="splash-nav">
                 <Link to="/" className="brand">
-                    <Hexagon className="w-8 h-8 text-blue-600 fill-blue-600" />
+                    <img src="/fixars-mark.png" alt="Fixars" />
                     <div className="brand-name">Fixars</div>
                 </Link>
                 <div className="splash-nav-links">
@@ -137,7 +137,7 @@ export default function Home() {
                     <div className="footer-grid">
                         <div>
                             <Link to="/" className="footer-brand">
-                                <Hexagon className="w-8 h-8 text-white fill-white" />
+                                <img src="/fixars-mark.png" alt="Fixars" />
                                 <div className="nm">Fixars</div>
                             </Link>
                             <p className="footer-blurb">The operating system for African innovation. We connect ideas, capital, and talent to build the future.</p>
