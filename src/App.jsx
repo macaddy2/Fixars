@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import { PointsProvider } from '@/contexts/PointsContext'
 import { SocialProvider } from '@/contexts/SocialContext'
 import { DataProvider } from '@/contexts/DataContext'
@@ -200,8 +201,9 @@ function AppLayout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <DataProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <DataProvider>
           <PointsProvider>
             <SocialProvider>
               <SearchProvider>
@@ -209,8 +211,9 @@ export default function App() {
               </SearchProvider>
             </SocialProvider>
           </PointsProvider>
-        </DataProvider>
-      </AuthProvider>
+          </DataProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }
