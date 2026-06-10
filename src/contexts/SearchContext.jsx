@@ -1,7 +1,22 @@
-import { createContext, useContext, useState, useCallback, useMemo } from 'react'
+import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import { useData } from './DataContext'
 
 const SearchContext = createContext(null)
+
+// "Go to" destinations surfaced in the command palette.
+const PAGES = [
+    { id: 'home', label: 'Home', sub: 'Dashboard', path: '/dashboard' },
+    { id: 'apps', label: 'Apps', sub: 'All sub-apps', path: '/apps' },
+    { id: 'feed', label: 'Feed', sub: 'Community activity', path: '/feed' },
+    { id: 'wallet', label: 'Wallet', sub: 'Balance & transactions', path: '/wallet' },
+    { id: 'analytics', label: 'Analytics', sub: 'Ecosystem metrics', path: '/analytics' },
+    { id: 'concept', label: 'ConceptNexus', sub: 'Validate ideas', path: '/apps/conceptnexus' },
+    { id: 'invest', label: 'vestDen', sub: 'Fund campaigns', path: '/apps/vestden' },
+    { id: 'collab', label: 'CollaBoard', sub: 'Escrowed sprints', path: '/apps/collaboard' },
+    { id: 'skills', label: 'SkillsCanvas', sub: 'Verified talent', path: '/apps/skillscanvas' },
+    { id: 'profile', label: 'Profile', sub: 'Your identity', path: '/profile' },
+    { id: 'settings', label: 'Settings', sub: 'Preferences', path: '/settings' },
+]
 
 function fuzzyMatch(text, query) {
     if (!text || !query) return { match: false, score: 0 }
@@ -41,9 +56,20 @@ export function SearchProvider({ children }) {
     const [query, setQuery] = useState('')
 
     const results = useMemo(() => {
+        // Empty / short query → offer the "Go to" pages so the palette is
+        // useful as a navigator even before typing.
         if (!query || query.length < 2) {
-            return { stakes: [], ideas: [], boards: [], talents: [], total: 0 }
+            return { pages: PAGES, stakes: [], ideas: [], boards: [], talents: [], total: PAGES.length }
         }
+
+        const searchPages = PAGES
+            .map(p => {
+                const labelMatch = fuzzyMatch(p.label, query)
+                const subMatch = fuzzyMatch(p.sub, query)
+                return { ...p, _score: Math.max(labelMatch.score, subMatch.score * 0.6), _matched: labelMatch.match || subMatch.match }
+            })
+            .filter(p => p._matched)
+            .sort((a, b) => b._score - a._score)
 
         const searchStakes = stakes
             .map(s => {
@@ -93,11 +119,12 @@ export function SearchProvider({ children }) {
             .slice(0, 5)
 
         return {
+            pages: searchPages,
             stakes: searchStakes,
             ideas: searchIdeas,
             boards: searchBoards,
             talents: searchTalents,
-            total: searchStakes.length + searchIdeas.length + searchBoards.length + searchTalents.length
+            total: searchPages.length + searchStakes.length + searchIdeas.length + searchBoards.length + searchTalents.length
         }
     }, [query, stakes, ideas, boards, talents])
 
@@ -110,10 +137,23 @@ export function SearchProvider({ children }) {
         })
     }, [])
 
+    // Global ⌘K / Ctrl+K toggles the palette from anywhere in the app.
+    useEffect(() => {
+        function onKey(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault()
+                toggle()
+            }
+        }
+        document.addEventListener('keydown', onKey)
+        return () => document.removeEventListener('keydown', onKey)
+    }, [toggle])
+
     return (
         <SearchContext.Provider value={{
             isOpen, query, results,
-            setQuery, open, close, toggle,
+            // `setIsSearchOpen` kept as an alias so existing call sites work.
+            setQuery, open, close, toggle, setIsSearchOpen: setIsOpen,
             highlightMatch
         }}>
             {children}
