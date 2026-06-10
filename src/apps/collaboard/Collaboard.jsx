@@ -236,7 +236,7 @@ export default function Collaboard() {
                                                     </Avatar>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="font-medium text-sm truncate">{talent.displayName}</p>
-                                                        <p className="text-xs text-muted">{talent.hourlyRate}/hr</p>
+                                                        <p className="text-xs text-muted mono">₦{(talent.hourlyRate || 0).toLocaleString()}/hr</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-wrap gap-1 mb-3">

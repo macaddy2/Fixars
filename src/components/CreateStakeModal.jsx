@@ -42,7 +42,7 @@ export default function CreateStakeModal({ open, onClose }) {
         setError('')
         if (title.trim().length < 5) return setError('Title must be at least 5 characters')
         if (description.trim().length < 20) return setError('Describe the stake in at least 20 characters')
-        if (targetAmount < 100) return setError('Target amount must be at least $100')
+        if (targetAmount < 100) return setError('Target amount must be at least ₦100')
         if (new Date(deadline) <= new Date()) return setError('Deadline must be in the future')
 
         setSubmitting(true)
@@ -109,7 +109,7 @@ export default function CreateStakeModal({ open, onClose }) {
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4">
-                    <Field label="Target amount (USD)" required>
+                    <Field label="Target amount (₦)" required>
                         <Input type="number" min={100} step={100} value={targetAmount} onChange={e => setTargetAmount(e.target.value)} required />
                     </Field>
                     <Field label="Expected returns">

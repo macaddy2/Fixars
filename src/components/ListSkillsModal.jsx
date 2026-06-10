@@ -86,7 +86,7 @@ export default function ListSkillsModal({ open, onClose }) {
                     <Field label="Display name" required>
                         <Input value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={60} required />
                     </Field>
-                    <Field label="Hourly rate (USD)" required>
+                    <Field label="Hourly rate (₦)" required>
                         <Input type="number" min={0} step={5} value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} required />
                     </Field>
                 </div>
