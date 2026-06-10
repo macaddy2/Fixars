@@ -299,3 +299,64 @@
 .settings-account-row:hover { background: var(--color-ink-50); }
 .settings-account-row.danger { color: var(--color-danger); border-color: var(--color-danger-bg); background: var(--color-danger-bg); }
 .settings-account-row.danger:hover { background: rgba(194,74,62,0.2); }
+
+/* ====================================================================
+   v2 shared grammar — stat strip, tags, page-head eyebrow
+   ==================================================================== */
+
+/* Stat strip with sparkline (v2 .stats / .stat) */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 4px;
+}
+@media (max-width: 1024px) { .stats-strip { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .stats-strip { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+
+.stat-card {
+  background: var(--color-paper);
+  border: 1px solid var(--color-ink-100);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card .stat-k {
+  font-size: 11px; color: var(--color-ink-400); text-transform: uppercase;
+  letter-spacing: 0.1em; font-weight: 600; margin-bottom: 8px;
+}
+.stat-card .stat-v {
+  font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 500;
+  letter-spacing: -0.02em; line-height: 1.1;
+}
+.stat-card .stat-t { font-size: 11px; margin-top: 4px; color: var(--color-muted); }
+.stat-card .stat-t.up { color: var(--color-success); }
+.stat-card .stat-t.down { color: var(--color-danger); }
+.stat-card .spark {
+  position: absolute; right: 14px; bottom: 14px;
+  width: 72px; height: 30px; opacity: 0.85;
+}
+@media (max-width: 480px) { .stat-card .spark { display: none; } }
+
+/* Reusable status tags (v2 .tag family) */
+.tag {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 10px;
+  font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: var(--radius-full);
+}
+.tag-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.tag-concept { background: var(--color-concept-bg); color: var(--color-concept); }
+.tag-invest  { background: var(--color-invest-bg);  color: var(--color-invest); }
+.tag-collab  { background: var(--color-collab-bg);  color: var(--color-collab); }
+.tag-skills  { background: var(--color-skills-bg);  color: var(--color-skills); }
+.tag-success { background: var(--color-success-bg); color: var(--color-success); }
+.tag-warning { background: var(--color-warning-bg); color: var(--color-warning); }
+.tag-ink     { background: var(--color-ink-100);    color: var(--color-ink-700); }
+
+/* Page-head eyebrow (v2 .page-eyebrow / .page-tag) */
+.page-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.page-tag {
+  font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--color-ink-400); font-weight: 600;
+}

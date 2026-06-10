@@ -3,7 +3,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { getInitials, formatNumber } from '@/lib/utils'
-import { fetchPaymentHistory, formatCurrency } from '@/lib/payments'
 import {
     TrendingUp,
     Lightbulb,
@@ -25,6 +24,49 @@ import {
    Matches the Fixars design handoff:  wallet balance hero, 2×2 sub-app
    tiles, recent stakes carousel, community feed, FCS score card.
    ==================================================================== */
+
+// ─── Sparkline (v2 stat trend) ──────────────────────────────────────
+function Sparkline({ data, color }) {
+    const max = Math.max(...data)
+    const min = Math.min(...data)
+    const span = max - min || 1
+    const pts = data
+        .map((d, i) => {
+            const x = (i / (data.length - 1)) * 100
+            const y = 29 - ((d - min) / span) * 27
+            return `${x.toFixed(1)},${y.toFixed(1)}`
+        })
+        .join(' ')
+    return (
+        <svg className="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
+            <polyline
+                points={pts}
+                fill="none"
+                stroke={color}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+            />
+        </svg>
+    )
+}
+
+// ─── Stat strip (v2 .stats) ─────────────────────────────────────────
+function StatStrip({ stats }) {
+    return (
+        <section className="stats-strip">
+            {stats.map((s) => (
+                <div key={s.k} className="stat-card">
+                    <div className="stat-k">{s.k}</div>
+                    <div className={`stat-v display${s.mono ? ' mono' : ''}`}>{s.v}</div>
+                    <div className={`stat-t${s.tUp ? ' up' : ''}`}>{s.t}</div>
+                    {s.spark && <Sparkline data={s.spark} color={s.color} />}
+                </div>
+            ))}
+        </section>
+    )
+}
 
 // ─── Sub-app Quick Tiles ────────────────────────────────────────────
 function SubAppTile({ icon: Icon, name, label, color, gradient, value, to }) {
@@ -234,6 +276,36 @@ export default function Dashboard() {
         return <Navigate to="/login" replace state={{ from: location.pathname }} />
     }
 
+    const hour = new Date().getHours()
+    const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+
+    const activeStakes = stakes.filter(s => s.status === 'active')
+    const verifiedSkills = (user.skills || []).filter(s => s.verified ?? true)
+    const skillNames = verifiedSkills.slice(0, 3).map(s => s.name || s).join(' · ')
+
+    const homeStats = [
+        {
+            k: 'FCS · Fixars credit score', v: user.fcs ?? 742, tUp: true,
+            t: '↑ 18 this month', spark: [690, 702, 698, 711, 724, 720, 742],
+            color: 'var(--color-success)',
+        },
+        {
+            k: 'Fixars points', v: formatNumber(points), mono: true, tUp: true,
+            t: '↑ on the rise this week', spark: [180, 205, 196, 228, 241, 272, 284],
+            color: 'var(--color-blue-500)',
+        },
+        {
+            k: 'Active stakes', v: activeStakes.length,
+            t: `across ${stakes.length} campaigns`, spark: [6, 8, 8, 10, 11, 13, 14],
+            color: 'var(--color-invest)',
+        },
+        {
+            k: 'Verified skills', v: verifiedSkills.length,
+            t: skillNames || 'List your first skill', spark: [1, 1, 2, 2, 2, 3, 3],
+            color: 'var(--color-skills)',
+        },
+    ]
+
     const nextLevel = getNextLevel(points)
     const currentLevelData = LEVELS.find(l => l.name === level) || LEVELS[0]
     const levelSpan = nextLevel ? nextLevel.minPoints - currentLevelData.minPoints : 0
@@ -272,8 +344,11 @@ export default function Dashboard() {
                     {getInitials(user.name)}
                 </div>
                 <div className="dash-welcome-text">
-                    <h1 className="display">Welcome back, {user.name.split(' ')[0]}!</h1>
-                    <p>Here's what's happening across your Fixars apps</p>
+                    <div className="page-eyebrow">
+                        <span className="page-tag">{greeting}, {user.name.split(' ')[0]}</span>
+                    </div>
+                    <h1 className="display">Welcome back to Fixars</h1>
+                    <p>Here's what's happening across your apps today.</p>
                 </div>
                 <div className="dash-welcome-actions">
                     <Link to="/notifications" className="fx-btn-outline">
@@ -284,6 +359,9 @@ export default function Dashboard() {
                     </Link>
                 </div>
             </section>
+
+            {/* ── Stat strip with sparklines ── */}
+            <StatStrip stats={homeStats} />
 
             {/* ── Top Row: Wallet + Sub-App Tiles ── */}
             <div className="dash-top-row">
