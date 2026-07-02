@@ -2,6 +2,7 @@
 
 **Reviewer lens:** 10×product/UX/eng review from the POV of an ordinary Nigerian user (Lagos/Abuja/Kano), cross‑referenced against the Fixars Comprehensive PRD v2.0 and the four sub‑app PRDs (vestDen, ConceptNexus, CollaBoard, SkillsCanvas).
 **Date:** 2026‑06‑11 · **Build reviewed:** `main` (this repo; the source of the `fixars-production` deploy).
+**Addendum (2026‑07‑02):** strategic positioning has since been adopted in [`strategy-sovereignty.md`](./strategy-sovereignty.md) and [`fcl-spec.md`](./fcl-spec.md); this review's findings and priorities are unchanged.
 
 > **Note on method.** The live URL `https://fixars-production.up.railway.app/` is not reachable from this environment (blocked by the execution sandbox's network allowlist — returns `403 Host not in allowlist`). Because production is built from this repository, the review was performed by running the production codebase locally and auditing every route, modal and component, then mapping findings to the PRD goals. Anything network‑specific to the live deploy (TLS, CDN, uptime, real env vars) still needs a pass on the actual URL.
 

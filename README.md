@@ -2,6 +2,8 @@
 
 The connected productivity ecosystem: **invest in ideas (VestDen)**, **validate concepts (ConceptNexus)**, **collaborate on projects (Collaboard)**, and **showcase/book talent (SkillsCanvas)** — all from a single account with shared points, notifications, and real-time activity.
 
+Underneath the apps sits the **Fixars Context Layer (FCL)** — the ontology/application layer where the durable value lives: models commoditise, your context compounds. See [`docs/fcl-spec.md`](docs/fcl-spec.md) (the layer's specification) and [`docs/strategy-sovereignty.md`](docs/strategy-sovereignty.md) (the positioning).
+
 ## Tech stack
 
 - **React 19** + **Vite 7** (JSX, path alias `@/` → `src/`)
