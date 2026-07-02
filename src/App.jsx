@@ -33,6 +33,7 @@ import ApiDocs from '@/pages/ApiDocs'
 import ProfilePage from '@/pages/ProfilePage'
 import SettingsPage from '@/pages/SettingsPage'
 import WalletPage from '@/pages/WalletPage'
+import ReceiptsPage from '@/pages/ReceiptsPage'
 
 // Sub-apps
 import VestDen from '@/apps/vestden/VestDen'
@@ -138,6 +139,7 @@ function AppLayout() {
             <Route path="/apps/skillscanvas/talent/:id" element={<TalentProfile />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/wallet" element={<WalletPage />} />
+            <Route path="/receipts" element={<ReceiptsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/developers" element={<ApiDocs />} />
@@ -183,6 +185,7 @@ function AppLayout() {
 
               {/* Account */}
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/receipts" element={<ReceiptsPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/developers" element={<ApiDocs />} />

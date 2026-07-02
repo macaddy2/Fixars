@@ -1,11 +1,17 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useWallet } from '@/contexts/WalletContext'
+import { usePoints } from '@/contexts/PointsContext'
+import { useData } from '@/contexts/DataContext'
+import { exportSnapshot, downloadSnapshot, deleteLocalData } from '@/lib/ledger'
 import {
     Settings, Sun, Moon, Coffee,
     Minus, Equal, AlignJustify,
     Palette, Bell, Shield, User,
-    ChevronRight, LogOut, Globe
+    ChevronRight, LogOut, Globe,
+    Database, Download, ReceiptText, Trash2
 } from 'lucide-react'
 
 /* ====================================================================
@@ -33,17 +39,34 @@ const VIBES = [
 ]
 
 export default function SettingsPage() {
-    const { logout } = useAuth()
+    const { user, logout } = useAuth()
     const { theme, setTheme, density, setDensity, vibe, setVibe } = useTheme()
+    const { balance, transactions } = useWallet()
+    const { history } = usePoints()
+    const { activities } = useData()
     const [notifications, setNotifications] = useState({
         stakes: true,
         ideas: true,
         messages: true,
         weekly: false,
     })
+    const [confirmDelete, setConfirmDelete] = useState(false)
 
     const toggleNotif = (key) => {
         setNotifications(prev => ({ ...prev, [key]: !prev[key] }))
+    }
+
+    const handleExport = () => {
+        downloadSnapshot(exportSnapshot({ user, balance, transactions, history, activities }))
+    }
+
+    const handleDelete = () => {
+        if (!confirmDelete) {
+            setConfirmDelete(true)
+            return
+        }
+        deleteLocalData()
+        window.location.reload()
     }
 
     return (
@@ -151,6 +174,30 @@ export default function SettingsPage() {
                                 </button>
                             </div>
                         ))}
+                    </div>
+                </div>
+
+                {/* ── Data & Sovereignty ── */}
+                <div className="settings-card">
+                    <h3 className="settings-card-title display">
+                        <Database size={18} /> Data & Sovereignty
+                    </h3>
+                    <p className="sovereignty-pledge">
+                        <strong>Your data belongs to you.</strong> Everything Fixars records for you —
+                        wallet, points, activity, decisions — is exportable, deletable, and never
+                        used to train anyone else&apos;s models. Your context compounds; it stays yours.
+                    </p>
+                    <div className="settings-account-list">
+                        <button className="settings-account-row" onClick={handleExport}>
+                            <Download size={16} /> <span>Export my data (JSON)</span> <ChevronRight size={14} className="ml-auto" />
+                        </button>
+                        <Link to="/receipts" className="settings-account-row">
+                            <ReceiptText size={16} /> <span>View Receipts — your decision log</span> <ChevronRight size={14} className="ml-auto" />
+                        </Link>
+                        <button className={`settings-account-row ${confirmDelete ? 'danger' : ''}`} onClick={handleDelete}>
+                            <Trash2 size={16} />
+                            <span>{confirmDelete ? 'Tap again to confirm — resets wallet data on this device' : 'Delete local data'}</span>
+                        </button>
                     </div>
                 </div>
 

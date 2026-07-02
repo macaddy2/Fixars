@@ -15,6 +15,7 @@ const PAGES = [
     { id: 'collab', label: 'CollaBoard', sub: 'Escrowed sprints', path: '/apps/collaboard' },
     { id: 'skills', label: 'SkillsCanvas', sub: 'Verified talent', path: '/apps/skillscanvas' },
     { id: 'profile', label: 'Profile', sub: 'Your identity', path: '/profile' },
+    { id: 'receipts', label: 'Receipts', sub: 'Your decision log', path: '/receipts' },
     { id: 'settings', label: 'Settings', sub: 'Preferences', path: '/settings' },
 ]
 
