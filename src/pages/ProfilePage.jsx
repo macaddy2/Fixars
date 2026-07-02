@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
@@ -57,6 +58,7 @@ function FCSGauge({ score }) {
 
 export default function ProfilePage() {
     const { user, isAuthenticated, isLoading } = useAuth()
+    const [showFcsBreakdown, setShowFcsBreakdown] = useState(false)
     const { points, level, getNextLevel, LEVELS } = usePoints()
     const { stakes, ideas, boards, talents } = useData()
     const location = useLocation()
@@ -128,12 +130,42 @@ export default function ProfilePage() {
             {/* Stats + FCS Row */}
             <div className="profile-top-row">
                 <div className="profile-fcs-card">
-                    <FCSGauge score={fcsScore} />
+                    <button
+                        className="fcs-gauge-btn"
+                        onClick={() => setShowFcsBreakdown(v => !v)}
+                        aria-expanded={showFcsBreakdown}
+                        aria-label={`FCS score ${fcsScore}. Tap to see why.`}
+                    >
+                        <FCSGauge score={fcsScore} />
+                    </button>
                     <div className="fcs-details">
                         <span className="fcs-tier display">{fcsTier}</span>
                         <span className="fcs-range mono">300 — 850</span>
-                        <p className="fcs-desc">Your Fixars Credit Score reflects your engagement, reliability, and contributions across the ecosystem.</p>
+                        <p className="fcs-desc">Your Fixars Credit Score reflects your engagement, reliability, and contributions across the ecosystem. Tap the gauge to see why.</p>
                     </div>
+                    {showFcsBreakdown && (
+                        <div className="fcs-breakdown">
+                            <h4 className="fcs-breakdown-title">Why is my score {fcsScore}?</h4>
+                            <div className="fcs-breakdown-row">
+                                <span>Base score — everyone starts here</span>
+                                <span className="mono">300</span>
+                            </div>
+                            <div className="fcs-breakdown-row">
+                                <span>Engagement — {formatNumber(points)} FixPoints × 0.35</span>
+                                <span className="mono">+{fcsScore - 300}</span>
+                            </div>
+                            <div className="fcs-breakdown-row total">
+                                <span>Your FCS</span>
+                                <span className="mono">{fcsScore}</span>
+                            </div>
+                            <div className="fcs-breakdown-row">
+                                <span>Context signals — level ({level}), verified skills and completed milestones shape future revisions</span>
+                            </div>
+                            <p className="fcs-breakdown-note">
+                                Every score change is on the record in your <Link to="/receipts">Receipts</Link>.
+                            </p>
+                        </div>
+                    )}
                 </div>
                 <div className="profile-stats-grid">
                     {profileStats.map(s => {

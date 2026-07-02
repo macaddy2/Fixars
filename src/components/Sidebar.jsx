@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import {
   Home, LayoutGrid, AlignLeft, Wallet,
   Lightbulb, TrendingUp, Users, Shield,
-  User, Settings
+  User, Settings, ReceiptText
 } from 'lucide-react'
 
 const mainNav = [
@@ -22,6 +22,7 @@ const subApps = [
 
 const accountNav = [
   { to: '/profile', icon: User, label: 'Profile' },
+  { to: '/receipts', icon: ReceiptText, label: 'Receipts' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 

@@ -429,3 +429,44 @@
 .empty svg { margin: 0 auto 14px; opacity: .5; }
 .empty h4 { margin: 0 0 6px; font-family: var(--font-display); font-weight: 500; color: var(--color-foreground); font-size: 16px; }
 .empty p { margin: 0 0 16px; font-size: 13px; }
+
+/* ── Receipts (Decision Log) ─────────────────────────────────────── */
+.fx-receipts-page { display: flex; flex-direction: column; gap: 20px; }
+.receipts-filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.receipts-filter { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-full); border: 1px solid var(--color-border); background: transparent; color: var(--color-ink-500); font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; }
+.receipts-filter:hover { background: var(--color-ink-50); }
+.receipts-filter.active { background: var(--color-foreground); color: var(--color-paper); border-color: var(--color-foreground); }
+.receipts-list { background: var(--color-card); border: 1px solid var(--color-border); border-radius: var(--radius-xl); overflow: hidden; }
+.receipt-row { display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--color-border); }
+.receipt-row:last-child { border-bottom: none; }
+.receipt-chip { flex-shrink: 0; padding: 3px 10px; border-radius: var(--radius-full); font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.receipt-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.receipt-label { font-size: 14px; font-weight: 500; color: var(--color-foreground); }
+.receipt-reason { font-size: 12px; color: var(--color-ink-400); }
+.receipt-side { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+.receipt-delta { font-size: 13px; font-weight: 600; }
+.receipt-delta.credit { color: var(--color-success); }
+.receipt-delta.debit { color: var(--color-danger); }
+.receipt-ts { font-size: 11px; color: var(--color-ink-400); }
+.receipts-empty { padding: 48px 24px; text-align: center; color: var(--color-ink-400); font-size: 13px; }
+@media (max-width: 640px) {
+  .receipt-row { flex-wrap: wrap; }
+  .receipt-side { flex-direction: row; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
+}
+
+/* ── Data & Sovereignty (Settings) ───────────────────────────────── */
+.sovereignty-pledge { margin: 0 0 16px; padding: 14px 16px; border-radius: var(--radius-md); background: var(--color-ink-50); color: var(--color-ink-500); font-size: 13px; line-height: 1.5; }
+.sovereignty-pledge strong { color: var(--color-foreground); }
+
+/* ── FCS explainability (Profile) ────────────────────────────────── */
+.fcs-gauge-btn { background: none; border: none; padding: 0; cursor: pointer; border-radius: var(--radius-full); }
+.fcs-gauge-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 4px; }
+.profile-fcs-card { flex-wrap: wrap; }
+.fcs-breakdown { margin-top: 4px; padding-top: 16px; border-top: 1px dashed var(--color-border); display: flex; flex-direction: column; gap: 8px; width: 100%; flex-basis: 100%; }
+.fcs-breakdown-title { font-size: 13px; font-weight: 600; color: var(--color-foreground); margin: 0; }
+.fcs-breakdown-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--color-ink-500); }
+.fcs-breakdown-row .mono { color: var(--color-foreground); font-weight: 600; }
+.fcs-breakdown-row.total { padding-top: 8px; border-top: 1px solid var(--color-border); color: var(--color-foreground); font-weight: 600; }
+.fcs-breakdown-note { font-size: 12px; color: var(--color-ink-400); margin: 4px 0 0; }
+.fcs-breakdown-note a { color: var(--color-primary); text-decoration: none; }
+.fcs-breakdown-note a:hover { text-decoration: underline; }
