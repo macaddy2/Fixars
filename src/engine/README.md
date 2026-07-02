@@ -1,6 +1,16 @@
-# Fixars Ecosystem Engine (pre‑AI)
+# Fixars Ecosystem Engine (pre‑AI) — FCL v0
 
-The deterministic orchestration layer that connects the four sub‑apps. It is the
+The deterministic orchestration layer that connects the four sub‑apps — and the first
+implementation of the **Fixars Context Layer** (see [`docs/fcl-spec.md`](../../docs/fcl-spec.md)).
+Two FCL principles bind this code:
+
+- **Model-agnostic by design** — nothing in the events, guards, machines or rules may
+  assume a model vendor; intelligence enters only as a guard input or an effect, via the
+  provider seam in `src/lib/modelProvider.js`.
+- **Data-exhaust ownership** — the operator's entities, ledgers and event log belong to the
+  operator: exportable, deletable, never used to train competitors (fcl-spec §4).
+
+It is the
 **runnable form of the three diagrams** in [`docs/ecosystem-webbing.md`](../../docs/ecosystem-webbing.md):
 
 | Diagram view | Lives in code as |
