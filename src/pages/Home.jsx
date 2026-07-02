@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check } from 'lucide-react'
+import { Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check, Lock, Layers, BookOpen, RefreshCw } from 'lucide-react'
 
 const SUBAPPS = [
     { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Ready for vestDen' },
@@ -21,9 +21,15 @@ const HOW_IT_WORKS = [
     { num: '04', key: 'skills', glyph: 'S', title: 'Earn', desc: 'Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.' },
 ]
 
+const SOVEREIGNTY = [
+    { icon: Layers, title: 'Models commoditise; your context compounds', desc: 'Every idea validated, stake placed and milestone shipped is written into a context layer you own. AI models come and go — your operating manual only gets more valuable.' },
+    { icon: BookOpen, title: 'The manual, not the consultant', desc: 'A trader’s real edge lives in an invisible notebook — who supplies, who owes, who delivers. Fixars writes your notebook down once, so it can finally be delegated, financed and protected.' },
+    { icon: RefreshCw, title: 'Model-agnostic by design', desc: 'Your rules and records never depend on one AI vendor. Point today’s best rented intelligence at your business — under your rules — and swap it tomorrow without losing a thing.' },
+]
+
 const FOOTER_COLS = [
     { heading: 'Ecosystem', links: ['ConceptNexus', 'vestDen', 'CollaBoard', 'SkillsCanvas'] },
-    { heading: 'Resources', links: ['Documentation', 'Whitepaper', 'FCS Scoring', 'Help Center'] },
+    { heading: 'Resources', links: ['Documentation', 'Whitepaper', 'FCS Scoring', 'Sovereignty Pledge', 'Help Center'] },
     { heading: 'Company', links: ['About Us', 'Careers', 'Terms of Service', 'Privacy Policy'] },
 ]
 
@@ -49,7 +55,7 @@ export default function Home() {
             <header className="splash-hero">
                 <div>
                     <h1 className="splash-h1">Your operating system<br />for African <em>innovation</em>.</h1>
-                    <p className="splash-sub">Validate ideas, fund what matters, ship with verified teams. Identity, wallet, and reputation—built for the builders of tomorrow.</p>
+                    <p className="splash-sub">Validate ideas, fund what matters, ship with verified teams. Identity, wallet, and reputation—built for the builders of tomorrow, and owned by them.</p>
                     
                     <div className="splash-cta">
                         <Link to="/dashboard" className="btn btn-primary">Start building</Link>
@@ -66,6 +72,10 @@ export default function Home() {
                         <span>
                             <div className="ic"><Shield className="w-4 h-4" /></div>
                             Bank-grade Escrow
+                        </span>
+                        <span>
+                            <div className="ic"><Lock className="w-4 h-4" /></div>
+                            Your Data Stays Yours
                         </span>
                     </div>
                     
@@ -132,6 +142,20 @@ export default function Home() {
                 </div>
             </section>
 
+            <section id="sovereignty" className="splash-section">
+                <h2>Operational sovereignty<br />for African SMEs.</h2>
+                <p className="lede">You own your operating system; the model is just a rented worker. Everything Fixars records for you is exportable, deletable, and never used to train anyone else&apos;s models.</p>
+                <div className="sov-grid">
+                    {SOVEREIGNTY.map((item) => (
+                        <div key={item.title} className="sov-card">
+                            <div className="ic"><item.icon className="w-5 h-5" /></div>
+                            <h4>{item.title}</h4>
+                            <p>{item.desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
             <footer className="splash-footer">
                 <div className="footer-inner">
                     <div className="footer-grid">
@@ -140,7 +164,7 @@ export default function Home() {
                                 <img src="/fixars-mark.png" alt="Fixars" />
                                 <div className="nm">Fixars</div>
                             </Link>
-                            <p className="footer-blurb">The operating system for African innovation. We connect ideas, capital, and talent to build the future.</p>
+                            <p className="footer-blurb">The operating system for African innovation. We connect ideas, capital, and talent to build the future. Your context compounds; it belongs to you.</p>
                             <div className="footer-socials">
                                 <a aria-label="Twitter"><ArrowUpRight className="w-4 h-4" /></a>
                                 <a aria-label="LinkedIn"><ArrowUpRight className="w-4 h-4" /></a>
