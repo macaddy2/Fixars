@@ -868,6 +868,13 @@ body {
 .howit-step p{margin:0;font-size:13px;color:var(--color-ink-500);line-height:1.5}
 .splash-section.dark .howit-step p{color:rgba(255,255,255,.6)}
 
+/* Splash Sovereignty section */
+.sov-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.sov-card{background:var(--color-paper);border:1px solid var(--color-ink-100);border-radius:18px;padding:24px}
+.sov-card .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--color-navy-900);color:white;margin-bottom:18px}
+.sov-card h4{margin:0 0 6px;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:500;letter-spacing:-0.015em;color:var(--color-navy-900);line-height:1.3}
+.sov-card p{margin:0;font-size:13px;color:var(--color-ink-500);line-height:1.5}
+
 /* Splash Footer */
 .splash-footer{background:var(--color-navy-900);color:white;padding:64px 48px 32px}
 .footer-inner{max-width:1320px;margin:0 auto}
@@ -895,6 +902,7 @@ body {
   .splash-section.dark{padding:64px 24px}
   .splash-section.dark .inner{padding:0}
   .howit-grid{grid-template-columns:repeat(2,1fr)}
+  .sov-grid{grid-template-columns:1fr}
   .splash-footer{padding:48px 24px 24px}
   .footer-grid{grid-template-columns:1fr 1fr;gap:32px}
 }
