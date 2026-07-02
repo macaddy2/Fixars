@@ -1,52 +1,16 @@
 /**
  * AI-powered recommendation engine for Fixars.
- * Uses Gemini API when VITE_GEMINI_API_KEY is available,
- * falls back to heuristic-based recommendations.
+ * Model-agnostic: talks to whichever provider modelProvider.js exposes
+ * (Gemini today), falls back to heuristic-based recommendations.
  */
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const GEMINI_MODEL = 'gemini-2.0-flash'
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+import { getDefaultProvider, isProviderConfigured } from './modelProvider'
 
 /**
- * Check if Gemini is available
+ * Check if a model provider is available
  */
 export function isAIConfigured() {
-    return !!GEMINI_API_KEY && GEMINI_API_KEY !== 'placeholder'
-}
-
-/**
- * Call the Gemini API  
- */
-async function callGemini(prompt) {
-    if (!isAIConfigured()) return null
-
-    try {
-        const response = await fetch(GEMINI_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': GEMINI_API_KEY,
-            },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 1024,
-                    responseMimeType: 'application/json'
-                }
-            })
-        })
-
-        if (!response.ok) return null
-
-        const data = await response.json()
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-        return text ? JSON.parse(text) : null
-    } catch (err) {
-        console.warn('Gemini API error:', err)
-        return null
-    }
+    return isProviderConfigured()
 }
 
 /**
@@ -78,7 +42,7 @@ Return a JSON array of the top 5 recommended ideas with this format:
 [{"ideaId": "...", "matchReason": "short reason why this matches", "score": 0.0-1.0}]
 Only return the JSON array, nothing else.`
 
-        const aiResult = await callGemini(prompt)
+        const aiResult = await getDefaultProvider().generateJSON(prompt)
         if (aiResult && Array.isArray(aiResult)) {
             return aiResult
                 .map(rec => ({
