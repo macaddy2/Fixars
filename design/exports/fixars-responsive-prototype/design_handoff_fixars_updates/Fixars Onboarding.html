@@ -1,0 +1,525 @@
+<!-- @dsCard group="Onboarding" viewport="1440x900" subtitle="P0 activation flow — referral to banded reputation reveal" name="Onboarding flow" --><!-- @template name="Onboarding flow" description="Fixars activation flow — referral to reputation reveal" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Fixars · Build my verified profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --navy-900:#0A1628; --navy-800:#111E33; --navy-700:#1B2B44; --navy-600:#2A3C56;
+  --blue-600:#1E5BFF; --blue-500:#3B82F6; --blue-100:#DBE7FF; --blue-50:#EEF3FF;
+  --ink-900:#0A1628; --ink-700:#2A3C56; --ink-500:#5A6B85; --ink-400:#8695AE;
+  --ink-300:#B4BECF; --ink-200:#D7DDE8; --ink-100:#EBEFF5; --ink-50:#F5F7FB;
+  --paper:#FFFFFF; --canvas:#F5F7FB;
+  --success:#16A34A; --success-bg:#DCFCE7;
+  --warning:#D97706; --warning-bg:#FEF3C7;
+  --skills:#06B6D4; --skills-bg:#E0F6FA;
+  --concept:#7C3AED; --concept-bg:#F1EAFE;
+  --r-lg:14px; --r-xl:20px; --r-2xl:28px;
+  --shadow-md:0 4px 12px rgba(10,22,40,.06),0 1px 2px rgba(10,22,40,.04);
+  --shadow-lg:0 20px 48px rgba(10,22,40,.14),0 4px 12px rgba(10,22,40,.06);
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--ink-900);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select{font-family:inherit}
+.display{font-family:'Space Grotesk',sans-serif;letter-spacing:-0.02em}
+.mono{font-family:'JetBrains Mono',monospace}
+:focus-visible{outline:2px solid var(--blue-500);outline-offset:2px;border-radius:6px}
+
+/* ===== Shell ===== */
+.stage{min-height:100vh;display:flex;flex-direction:column}
+.stage-top{display:flex;align-items:center;gap:14px;padding:20px 24px;max-width:640px;width:100%;margin:0 auto}
+.brand-mini{display:flex;align-items:center;gap:8px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px}
+.brand-mini .mark{width:26px;height:26px;border-radius:7px;background:var(--navy-900);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.back-btn{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-500);padding:6px 10px;border-radius:8px}
+.back-btn:hover{background:var(--ink-100);color:var(--ink-900)}
+.skip-btn{margin-left:auto;font-size:12px;font-weight:600;color:var(--ink-400);padding:6px 10px}
+.skip-btn:hover{color:var(--ink-700)}
+
+.stepper{display:flex;gap:6px;max-width:640px;width:100%;margin:0 auto;padding:0 24px 8px}
+.stepper .seg{flex:1;height:4px;border-radius:3px;background:var(--ink-100);overflow:hidden}
+.stepper .seg > div{height:100%;width:0;background:var(--blue-600);transition:width .3s ease}
+.stepper .seg.done > div{width:100%}
+.stepper .seg.active > div{width:100%;background:var(--blue-600)}
+
+.stage-body{flex:1;display:flex;align-items:center;justify-content:center;padding:20px 24px 60px}
+.panel{max-width:520px;width:100%}
+@media(prefers-reduced-motion:no-preference){
+  .panel{animation:stepIn .32s cubic-bezier(.2,.7,.3,1)}
+  @keyframes stepIn{from{transform:translateY(14px)}to{transform:none}}
+}
+.eyebrow{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--blue-600);background:var(--blue-50);padding:5px 10px;border-radius:999px;margin-bottom:16px}
+h1.panel-title{font-family:'Space Grotesk',sans-serif;font-size:30px;font-weight:500;letter-spacing:-0.025em;line-height:1.15;margin:0 0 10px;text-wrap:pretty}
+.panel-sub{font-size:14.5px;color:var(--ink-500);line-height:1.55;margin:0 0 28px;max-width:460px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;color:var(--ink-500);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:6px}
+.field input{width:100%;border:1px solid var(--ink-200);border-radius:11px;padding:13px 14px;font-size:14px;color:var(--ink-900);background:var(--paper);outline:none;transition:border-color .15s,box-shadow .15s}
+.field input:focus{border-color:var(--blue-500);box-shadow:0 0 0 3px var(--blue-50)}
+.field-hint{font-size:11.5px;color:var(--ink-400);margin-top:6px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row .field{margin-bottom:0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 22px;border-radius:12px;font-size:14.5px;font-weight:600;transition:all .15s;width:100%}
+.btn-primary{background:var(--navy-900);color:white}
+.btn-primary:hover{background:#16243D}
+.btn-primary:disabled{background:var(--ink-200);color:var(--ink-400);cursor:not-allowed}
+.btn-ghost{background:var(--paper);color:var(--ink-900);border:1px solid var(--ink-200)}
+.btn-ghost:hover{background:var(--ink-50)}
+
+/* referral pill */
+.ref-pill{display:flex;align-items:center;gap:8px;background:var(--success-bg);color:var(--success);font-size:12.5px;font-weight:600;padding:9px 14px;border-radius:11px;margin-bottom:22px}
+.ref-pill svg{flex-shrink:0}
+
+/* Discipline / skill picker */
+.search-box{position:relative;margin-bottom:16px}
+.search-box svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-400)}
+.search-box input{width:100%;border:1px solid var(--ink-200);border-radius:11px;padding:13px 14px 13px 40px;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s}
+.search-box input:focus{border-color:var(--blue-500);box-shadow:0 0 0 3px var(--blue-50)}
+.option-list{display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:20px;padding-right:2px}
+.option-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border-radius:11px;border:1px solid var(--ink-100);background:var(--paper);cursor:pointer;transition:all .12s;font-size:14px;font-weight:500}
+.option-row:hover{border-color:var(--ink-300)}
+.option-row.sel{border-color:var(--blue-600);background:var(--blue-50);color:var(--blue-600)}
+.option-row .check{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--ink-300);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.option-row.sel .check{background:var(--blue-600);border-color:var(--blue-600)}
+.empty-opt{padding:24px;text-align:center;color:var(--ink-400);font-size:13px}
+
+/* Skill chip picker */
+.chip-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.skill-chip{display:inline-flex;align-items:center;gap:7px;padding:10px 14px;border-radius:11px;border:1.5px solid var(--ink-200);font-size:13.5px;font-weight:600;color:var(--ink-700);cursor:pointer;transition:all .12s;background:var(--paper)}
+.skill-chip:hover{border-color:var(--skills)}
+.skill-chip.sel{background:var(--skills);border-color:var(--skills);color:white}
+.min-note{font-size:12px;color:var(--ink-400);margin:10px 0 20px}
+.min-note b{color:var(--ink-700)}
+
+/* Tier badge */
+.tier-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:0.02em;padding:4px 10px;border-radius:999px}
+.tier-self{background:var(--ink-100);color:var(--ink-700)}
+.tier-peer{background:var(--blue-100);color:var(--blue-600)}
+.tier-assessed{background:var(--skills-bg);color:var(--skills)}
+.tier-proven{background:var(--success-bg);color:var(--success)}
+
+/* Skill listed confirmation card */
+.confirm-card{background:var(--paper);border:1px solid var(--ink-100);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-md);display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:22px}
+.confirm-card .name{font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:16px}
+.confirm-card .sub{font-size:12px;color:var(--ink-500);margin-top:2px}
+.tier-explainer{background:var(--ink-50);border-radius:11px;padding:14px 16px;font-size:12.5px;color:var(--ink-700);line-height:1.6}
+.tier-explainer .steps{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.tier-explainer .steps span{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--paper);color:var(--ink-400)}
+.tier-explainer .steps span.now{background:var(--navy-900);color:white}
+
+/* Activation celebration */
+.celebrate-wrap{text-align:center}
+.badge-burst{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,var(--blue-600),var(--concept));display:flex;align-items:center;justify-content:center;margin:0 auto 22px;position:relative}
+.badge-burst svg{color:white}
+@media(prefers-reduced-motion:no-preference){
+  .badge-burst{animation:pop .5s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes pop{from{transform:scale(.6)}to{transform:scale(1)}}
+}
+.rep-band-name{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;color:var(--blue-600);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.rep-numeric{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-400);margin-left:6px}
+.rep-meter{height:10px;background:var(--ink-100);border-radius:6px;overflow:hidden;margin:16px 0 8px;max-width:340px;margin-left:auto;margin-right:auto}
+.rep-meter > div{height:100%;background:linear-gradient(90deg,var(--blue-600),var(--concept));border-radius:6px;width:0;transition:width 1s cubic-bezier(.2,.7,.3,1)}
+.rep-grow{font-size:12.5px;color:var(--ink-500);max-width:360px;margin:0 auto 26px;line-height:1.5}
+.event-note{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-300);margin-top:8px}
+
+/* Verify prompt */
+.verify-opt{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--ink-100);border-radius:var(--r-lg);margin-bottom:12px;cursor:pointer;transition:all .12s;text-align:left}
+.verify-opt:hover{border-color:var(--ink-300);box-shadow:var(--shadow-md)}
+.verify-opt .ic{width:40px;height:40px;border-radius:10px;background:var(--skills-bg);color:var(--skills);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.verify-opt .t{font-weight:600;font-size:14px}
+.verify-opt .s{font-size:12px;color:var(--ink-500);margin-top:2px}
+.verify-opt .arrow{margin-left:auto;color:var(--ink-300)}
+
+/* quiz */
+.quiz-card{background:var(--paper);border:1px solid var(--ink-100);border-radius:var(--r-lg);padding:22px;box-shadow:var(--shadow-md);margin-bottom:18px}
+.quiz-q{font-weight:600;font-size:15px;margin-bottom:14px}
+.quiz-opt{display:block;width:100%;text-align:left;padding:12px 14px;border:1px solid var(--ink-200);border-radius:10px;margin-bottom:8px;font-size:13.5px;transition:all .12s}
+.quiz-opt:hover{border-color:var(--ink-300)}
+.quiz-opt.sel{border-color:var(--blue-600);background:var(--blue-50)}
+.quiz-opt.correct{border-color:var(--success);background:var(--success-bg)}
+.quiz-progress{font-size:11px;color:var(--ink-400);margin-bottom:8px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase}
+
+.pilot-tag{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--ink-300);font-family:'JetBrains Mono',monospace}
+@media(max-width:560px){
+  .field-row{grid-template-columns:1fr}
+  .panel-title{font-size:24px}
+}
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#0A1628">
+  <svg viewBox="0 0 1600 1000" xmlns="http://www.w3.org/2000/svg">
+    <rect width="1600" height="1000" fill="#0A1628"></rect>
+    <circle cx="800" cy="430" r="190" fill="#1E5BFF"></circle>
+    <circle cx="800" cy="430" r="120" fill="#0A1628"></circle>
+    <text x="800" y="720" font-family="system-ui" font-size="100" font-weight="600" fill="white" text-anchor="middle" letter-spacing="-3">Fixars</text>
+  </svg>
+</template>
+
+<div class="stage">
+  <div class="stage-top">
+    <button class="back-btn" id="back-btn" style="visibility:hidden">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      Back
+    </button>
+    <div class="brand-mini"><span class="mark">F</span>Fixars</div>
+    <button class="skip-btn" id="skip-btn" style="visibility:hidden">Skip for now</button>
+  </div>
+  <div class="stepper" id="stepper"></div>
+  <div class="stage-body">
+    <div class="panel" id="panel"></div>
+  </div>
+</div>
+<div class="pilot-tag">UI (Ibadan) Ambassador pilot · build my verified profile</div>
+
+<script>
+// ============================================================
+// Fixars — P0 activation flow
+// Landing → Signup → Discipline → Micro-skill → Skill listed →
+// Activation celebration → Verify prompt → (quiz) → Home
+// ============================================================
+
+const DISCIPLINES = [
+  'Economics','Computer Science','Accounting','Mass Communication','Law',
+  'Electrical Engineering','Mechanical Engineering','Political Science',
+  'Business Administration','Statistics','Agricultural Economics',
+  'Microbiology','Architecture','Pharmacy','Sociology','Theatre Arts'
+];
+
+const MICRO_SKILLS = {
+  'Economics': ['Financial modelling','Data analysis','STATA','Policy writing','Excel forecasting'],
+  'Computer Science': ['React','Python','SQL','UI design','API integration'],
+  'Accounting': ['Bookkeeping','Financial auditing','Excel modelling','Tax prep','QuickBooks'],
+  'Mass Communication': ['Copywriting','Video editing','Social media strategy','Podcast production'],
+  'Law': ['Legal research','Contract drafting','Case brief writing','Compliance review'],
+  'Electrical Engineering': ['Circuit design','AutoCAD','Embedded systems','Power systems analysis'],
+  'Mechanical Engineering': ['CAD modelling','SolidWorks','Thermodynamics analysis','Prototyping'],
+  'Political Science': ['Policy research','Public speaking','Survey design','Report writing'],
+  'Business Administration': ['Market research','Business plan writing','Financial modelling','Project management'],
+  'Statistics': ['R programming','Data visualization','STATA','Survey analysis'],
+  'Agricultural Economics': ['Farm budgeting','Data analysis','Policy writing','GIS mapping'],
+  'Microbiology': ['Lab technique documentation','Data analysis','Scientific writing'],
+  'Architecture': ['AutoCAD','3D rendering','SketchUp','Site planning'],
+  'Pharmacy': ['Drug information review','Patient counseling notes','Regulatory writing'],
+  'Sociology': ['Survey design','Qualitative research','Report writing','Data coding'],
+  'Theatre Arts': ['Script writing','Video editing','Event production','Voiceover']
+};
+const DEFAULT_SKILLS = ['Excel','Research writing','Public speaking','Social media management','Graphic design'];
+
+const state = {
+  step: 0,
+  referral: '',
+  name: '', contact: '',
+  discipline: '',
+  skills: [],
+  quizIdx: 0, quizCorrect: 0
+};
+
+const steps = ['landing','signup','discipline','microskill','listed','celebrate','verify'];
+
+function go(delta, target){
+  if (target !== undefined) state.step = steps.indexOf(target);
+  else state.step = Math.min(steps.length - 1, Math.max(0, state.step + delta));
+  render();
+}
+
+function renderStepper(){
+  const el = document.getElementById('stepper');
+  el.innerHTML = steps.slice(1).map((s,i) => {
+    const idx = i + 1;
+    const cls = idx < state.step ? 'done' : idx === state.step ? 'active' : '';
+    return `<div class="seg ${cls}"><div></div></div>`;
+  }).join('');
+}
+
+function icon(name){
+  const map = {
+    check: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+    search: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+    link: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 15l6-6"/><path d="M13 5l1.5-1.5a3.5 3.5 0 015 5L18 10"/><path d="M11 19l-1.5 1.5a3.5 3.5 0 01-5-5L6 14"/></svg>',
+    quiz: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"/><path d="M12 17h.01"/></svg>',
+    upload: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>',
+    arrow: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>'
+  };
+  return map[name] || '';
+}
+
+// ---------- Screens ----------
+function screenLanding(){
+  return `
+    <span class="eyebrow">CV-framed · UI (Ibadan) pilot</span>
+    <h1 class="panel-title">Turn your degree into verified skills employers can check.</h1>
+    <p class="panel-sub">Build a portfolio from real projects. Your reputation travels with you — across every app in Fixars.</p>
+    <div class="field">
+      <label>Ambassador referral code (optional)</label>
+      <input id="in-referral" placeholder="e.g. UIAMB-KENNY" value="${state.referral}"/>
+      <div class="field-hint">Have a code from a campus ambassador? It's saved automatically.</div>
+    </div>
+    <button class="btn btn-primary" id="cta-landing">Build my verified profile →</button>
+  `;
+}
+function bindLanding(){
+  document.getElementById('cta-landing').addEventListener('click', () => {
+    state.referral = document.getElementById('in-referral').value.trim();
+    if (state.referral) localStorage.setItem('fixars_referral', state.referral);
+    go(1);
+  });
+}
+
+function screenSignup(){
+  return `
+    ${state.referral ? `<div class="ref-pill">${icon('link')} Referral <b class="mono">${state.referral}</b> saved — attributed when you activate</div>` : ''}
+    <span class="eyebrow">Step 1 of 4</span>
+    <h1 class="panel-title">Create your account.</h1>
+    <p class="panel-sub">Single login across ConceptNexus, vestDen, CollaBoard and SkillsCanvas. Your reputation score follows you everywhere.</p>
+    <div class="field"><label>Full name</label><input id="in-name" placeholder="Adaeze Nwosu" value="${state.name}"/></div>
+    <div class="field"><label>Phone number</label><input id="in-contact" placeholder="080X XXX XXXX" value="${state.contact}"/></div>
+    <div class="field"><label>Password</label><input type="password" id="in-pass" placeholder="••••••••"/></div>
+    <button class="btn btn-primary" id="cta-signup" style="margin-top:6px">Continue →</button>
+  `;
+}
+function bindSignup(){
+  const btn = document.getElementById('cta-signup');
+  const check = () => { btn.disabled = !(document.getElementById('in-name').value.trim() && document.getElementById('in-contact').value.trim()); };
+  ['in-name','in-contact','in-pass'].forEach(id => document.getElementById(id).addEventListener('input', check));
+  check();
+  btn.addEventListener('click', () => {
+    state.name = document.getElementById('in-name').value.trim();
+    state.contact = document.getElementById('in-contact').value.trim();
+    go(1);
+  });
+}
+
+function screenDiscipline(){
+  return `
+    <span class="eyebrow">Step 2 of 4</span>
+    <h1 class="panel-title">What are you studying?</h1>
+    <p class="panel-sub">This tunes the micro-skills we suggest next — no blank page, just pick what applies.</p>
+    <div class="search-box">${icon('search')}<input id="in-disc-search" placeholder="Search your faculty or department…" autocomplete="off"/></div>
+    <div class="option-list" id="disc-list"></div>
+  `;
+}
+function bindDiscipline(){
+  const list = document.getElementById('disc-list');
+  const search = document.getElementById('in-disc-search');
+  function renderList(){
+    const q = search.value.trim().toLowerCase();
+    const items = DISCIPLINES.filter(d => d.toLowerCase().includes(q));
+    list.innerHTML = items.length ? items.map(d => `
+      <div class="option-row ${state.discipline === d ? 'sel' : ''}" data-d="${d}">
+        <span>${d}</span>
+        <span class="check">${state.discipline === d ? icon('check') : ''}</span>
+      </div>`).join('') : `<div class="empty-opt">No match — try “Engineering” or “Science”.</div>`;
+    list.querySelectorAll('.option-row').forEach(row => row.addEventListener('click', () => {
+      state.discipline = row.dataset.d;
+      state.skills = [];
+      go(1);
+    }));
+  }
+  search.addEventListener('input', renderList);
+  renderList();
+}
+
+function screenMicroskill(){
+  const suggestions = MICRO_SKILLS[state.discipline] || DEFAULT_SKILLS;
+  return `
+    <span class="eyebrow">Step 3 of 4</span>
+    <h1 class="panel-title">What can you actually <em style="font-style:normal;color:var(--skills)">do</em> within it?</h1>
+    <p class="panel-sub">Suggested micro-skills for <b>${state.discipline}</b>. Pick at least one — you can add more later.</p>
+    <div class="chip-grid" id="skill-chips">
+      ${suggestions.map(s => `<div class="skill-chip ${state.skills.includes(s) ? 'sel' : ''}" data-s="${s}">${state.skills.includes(s) ? icon('check') : ''} ${s}</div>`).join('')}
+    </div>
+    <div class="min-note">Selected: <b>${state.skills.length}</b> — minimum 1 to continue.</div>
+    <button class="btn btn-primary" id="cta-skills" ${state.skills.length ? '' : 'disabled'}>List ${state.skills.length > 1 ? 'these skills' : 'this skill'} →</button>
+  `;
+}
+function bindMicroskill(){
+  document.getElementById('skill-chips').querySelectorAll('.skill-chip').forEach(chip => chip.addEventListener('click', () => {
+    const s = chip.dataset.s;
+    const i = state.skills.indexOf(s);
+    if (i > -1) state.skills.splice(i, 1); else state.skills.push(s);
+    render();
+  }));
+  document.getElementById('cta-skills')?.addEventListener('click', () => go(1));
+}
+
+function screenListed(){
+  return `
+    <span class="eyebrow">Step 4 of 4</span>
+    <h1 class="panel-title">Skill listed.</h1>
+    <p class="panel-sub">Here's how it'll appear on your profile — right now it's self-reported. Verification raises its tier.</p>
+    ${state.skills.map(s => `
+      <div class="confirm-card">
+        <div><div class="name">${s}</div><div class="sub">${state.discipline} · listed just now</div></div>
+        <span class="tier-badge tier-self">Self-reported</span>
+      </div>`).join('')}
+    <div class="tier-explainer">
+      Verification tiers grow as you prove it:
+      <div class="steps">
+        <span class="now">Self-reported</span><span>${icon('arrow')}</span>
+        <span>Peer</span><span>${icon('arrow')}</span>
+        <span>Assessed</span><span>${icon('arrow')}</span>
+        <span>Ecosystem-proven</span>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="cta-listed" style="margin-top:20px">Activate my profile →</button>
+  `;
+}
+function bindListed(){
+  document.getElementById('cta-listed').addEventListener('click', () => go(1));
+}
+
+function screenCelebrate(){
+  return `
+    <div class="celebrate-wrap">
+      <div class="badge-burst">${icon('check')}</div>
+      <span class="eyebrow" style="background:var(--success-bg);color:var(--success)">Profile activated</span>
+      <h1 class="panel-title">You're in, ${state.name.split(' ')[0] || 'there'}.</h1>
+      <p class="panel-sub" style="margin-left:auto;margin-right:auto">Your reputation score starts small and honest — here's how it grows from here.</p>
+      <div class="rep-band-name" id="rep-toggle">Emerging <span class="rep-numeric" id="rep-num" style="display:none">180 / 1000</span> ${icon('arrow')}</div>
+      <div class="rep-meter"><div id="rep-fill"></div></div>
+      <p class="rep-grow">Grows with: verified skills, delivered CollaBoard milestones, peer reviews on ConceptNexus, and on-time vestDen repayments.</p>
+      <button class="btn btn-primary" id="cta-celebrate">Continue →</button>
+      <div class="event-note">event → user.activated · referral: ${state.referral || 'none'} · first_skill: ${state.skills[0] || '—'}</div>
+    </div>
+  `;
+}
+function bindCelebrate(){
+  setTimeout(() => { const f = document.getElementById('rep-fill'); if (f) f.style.width = '18%'; }, 150);
+  document.getElementById('rep-toggle').addEventListener('click', function(){
+    const num = document.getElementById('rep-num');
+    num.style.display = num.style.display === 'none' ? 'inline' : 'none';
+  });
+  document.getElementById('cta-celebrate').addEventListener('click', () => go(1));
+  try {
+    const key = 'fixars_activation_log';
+    const log = JSON.parse(localStorage.getItem(key) || '[]');
+    log.push({ user: state.name, referral: state.referral, first_skill_id: state.skills[0], ts: Date.now() });
+    localStorage.setItem(key, JSON.stringify(log));
+  } catch (e) {}
+}
+
+function screenVerify(){
+  return `
+    <span class="eyebrow">Optional</span>
+    <h1 class="panel-title">Want to raise your tier now?</h1>
+    <p class="panel-sub">Verification is optional today — but a quick quiz turns “Self-reported” into “Assessed” immediately.</p>
+    <div class="verify-opt" id="opt-quiz">
+      <div class="ic">${icon('quiz')}</div>
+      <div><div class="t">Take a 3-question skill check</div><div class="s">~2 minutes · ${state.skills[0] || 'your first skill'}</div></div>
+      <div class="arrow">${icon('arrow')}</div>
+    </div>
+    <div class="verify-opt" id="opt-proof">
+      <div class="ic">${icon('upload')}</div>
+      <div><div class="t">Add proof of work instead</div><div class="s">Link a project, doc or portfolio piece</div></div>
+      <div class="arrow">${icon('arrow')}</div>
+    </div>
+    <button class="btn btn-ghost" id="cta-later">I'll verify later</button>
+  `;
+}
+function bindVerify(){
+  document.getElementById('opt-quiz').addEventListener('click', () => renderQuiz());
+  document.getElementById('opt-proof').addEventListener('click', () => finish());
+  document.getElementById('cta-later').addEventListener('click', finish);
+}
+
+const QUIZ = [
+  { q: 'In financial modelling, what does "IRR" stand for?', opts: ['Internal Rate of Return','Interest Repayment Ratio','Income Reserve Rate'], correct: 0 },
+  { q: 'Which best describes a 3-statement financial model?', opts: ['A single spreadsheet of expenses only','Links income statement, balance sheet & cash flow','A pitch deck template'], correct: 1 },
+  { q: 'What\'s the purpose of a sensitivity analysis?', opts: ['To test how outputs change with input assumptions','To format currency values','To check spelling in a report'], correct: 0 }
+];
+
+function renderQuiz(){
+  document.getElementById('back-btn').style.visibility = 'visible';
+  const panel = document.getElementById('panel');
+  const q = QUIZ[state.quizIdx];
+  panel.innerHTML = `
+    <span class="eyebrow">Skill check</span>
+    <div class="quiz-progress">Question ${state.quizIdx + 1} of ${QUIZ.length}</div>
+    <div class="quiz-card">
+      <div class="quiz-q">${q.q}</div>
+      ${q.opts.map((o, i) => `<button class="quiz-opt" data-i="${i}">${o}</button>`).join('')}
+    </div>
+  `;
+  panel.querySelectorAll('.quiz-opt').forEach(btn => btn.addEventListener('click', () => {
+    const i = parseInt(btn.dataset.i, 10);
+    panel.querySelectorAll('.quiz-opt').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    if (i === q.correct) { btn.classList.add('correct'); state.quizCorrect++; }
+    panel.querySelectorAll('.quiz-opt').forEach(b => b.style.pointerEvents = 'none');
+    setTimeout(() => {
+      state.quizIdx++;
+      if (state.quizIdx < QUIZ.length) renderQuiz();
+      else quizResult();
+    }, 550);
+  }));
+}
+function quizResult(){
+  document.getElementById('back-btn').style.visibility = 'hidden';
+  const panel = document.getElementById('panel');
+  const passed = state.quizCorrect >= 2;
+  panel.innerHTML = `
+    <div class="celebrate-wrap">
+      <div class="badge-burst" style="background:${passed ? 'linear-gradient(135deg,#16A34A,#06B6D4)' : 'linear-gradient(135deg,var(--ink-400),var(--ink-300))'}">${icon('check')}</div>
+      <h1 class="panel-title">${passed ? 'Tier raised: Assessed' : 'Good try — keep it Self-reported for now'}</h1>
+      <p class="panel-sub" style="margin-left:auto;margin-right:auto">${passed ? `Scored ${state.quizCorrect}/${QUIZ.length}. Your first skill now shows the ` : `Scored ${state.quizCorrect}/${QUIZ.length}. You can retake this anytime from your profile — for now it stays `}<span class="tier-badge ${passed ? 'tier-assessed' : 'tier-self'}">${passed ? 'Assessed' : 'Self-reported'}</span> badge.</p>
+      <button class="btn btn-primary" id="cta-finish">Go to my Fixars home →</button>
+    </div>
+  `;
+  document.getElementById('cta-finish').addEventListener('click', finish);
+}
+
+function finish(){
+  const panel = document.getElementById('panel');
+  document.getElementById('stepper').style.display = 'none';
+  document.getElementById('back-btn').style.visibility = 'hidden';
+  document.getElementById('skip-btn').style.visibility = 'hidden';
+  panel.innerHTML = `
+    <div class="celebrate-wrap">
+      <div class="badge-burst">${icon('check')}</div>
+      <h1 class="panel-title">Welcome home, ${state.name.split(' ')[0] || 'friend'}.</h1>
+      <p class="panel-sub" style="margin-left:auto;margin-right:auto">Your profile is live. Next: get your first peer review, or explore what other ${state.discipline || ''} students are building.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-primary" href="Fixars Superapp.html#profile" style="text-decoration:none;display:inline-flex">Enter Fixars →</a>
+        <a class="btn btn-ghost" href="Fixars Mobile.html#profile" style="text-decoration:none;display:inline-flex">Open on mobile</a>
+      </div>
+    </div>
+  `;
+}
+
+function render(){
+  const backBtn = document.getElementById('back-btn');
+  const skipBtn = document.getElementById('skip-btn');
+  const stepperEl = document.getElementById('stepper');
+  stepperEl.style.display = '';
+  backBtn.style.visibility = state.step > 0 ? 'visible' : 'hidden';
+  skipBtn.style.visibility = 'hidden';
+
+  renderStepper();
+  const panel = document.getElementById('panel');
+  const name = steps[state.step];
+  const renderers = { landing: screenLanding, signup: screenSignup, discipline: screenDiscipline, microskill: screenMicroskill, listed: screenListed, celebrate: screenCelebrate, verify: screenVerify };
+  const binders = { landing: bindLanding, signup: bindSignup, discipline: bindDiscipline, microskill: bindMicroskill, listed: bindListed, celebrate: bindCelebrate, verify: bindVerify };
+  panel.classList.remove('panel');
+  void panel.offsetWidth;
+  panel.className = 'panel';
+  panel.innerHTML = renderers[name]();
+  binders[name]();
+  if (name === 'landing') stepperEl.style.display = 'none';
+}
+
+document.getElementById('back-btn').addEventListener('click', () => go(-1));
+
+// restore saved referral code if present
+const savedRef = localStorage.getItem('fixars_referral');
+if (savedRef) state.referral = savedRef;
+
+render();
+</script>
+</body>
+</html>
