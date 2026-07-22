@@ -24,7 +24,7 @@ export function StatRow({ stats }) {
 }
 
 // Search + segmented filter control with live state lifted to the page.
-export function Toolbar({ search, onSearch, placeholder, filters, active, onFilter }) {
+export function Toolbar({ search, onSearch, placeholder, filters, active, onFilter, extra }) {
     return (
         <div className="toolbar">
             <div className="toolbar-search">
@@ -48,6 +48,7 @@ export function Toolbar({ search, onSearch, placeholder, filters, active, onFilt
                     </button>
                 ))}
             </div>
+            {extra}
         </div>
     )
 }
