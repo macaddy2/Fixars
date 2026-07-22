@@ -58,7 +58,7 @@ export default function Analytics() {
 
     // Per-app breakdown data
     const appBreakdown = [
-        { name: 'InvestDen', color: 'vestden', value: stakes.length, icon: TrendingUp },
+        { name: 'vestDen', color: 'vestden', value: stakes.length, icon: TrendingUp },
         { name: 'ConceptNexus', color: 'conceptnexus', value: ideas.length, icon: Lightbulb },
         { name: 'Collaboard', color: 'collaboard', value: boards.length, icon: Users },
         { name: 'SkillsCanvas', color: 'skillscanvas', value: talents.length, icon: Palette }
