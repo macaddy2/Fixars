@@ -186,7 +186,16 @@ export default function ProfilePage() {
             {/* Skills + Activity */}
             <div className="profile-bottom-row">
                 <div className="profile-skills-card">
-                    <h3 className="profile-section-title display">Verified Skills</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <h3 className="profile-section-title display" style={{ margin: 0 }}>Verified Skills</h3>
+                        <Link
+                            to="/apps/skillscanvas"
+                            className="fx-btn-outline"
+                            style={{ fontSize: 12, padding: '6px 12px', gap: 6 }}
+                        >
+                            <ArrowRight size={13} /> List a skill
+                        </Link>
+                    </div>
                     <div className="profile-skills-list">
                         {skills.map((skill, i) => (
                             <div key={i} className="profile-skill-tag" style={skill.verified ? { borderColor: 'var(--color-success)' } : {}}>
