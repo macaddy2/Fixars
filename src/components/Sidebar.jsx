@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSocial } from '@/contexts/SocialContext'
+import fixarsMark from '@/assets/fixars-mark.png'
 import {
   Home, LayoutGrid, AlignLeft, Wallet,
   Lightbulb, TrendingUp, Users, Shield,
@@ -44,7 +45,7 @@ export default function Sidebar() {
   return (
     <aside className="fx-sidebar">
       <div className="sidebar-brand">
-        <img src="/fixars-mark.png" alt="Fixars" />
+        <img src={fixarsMark} alt="Fixars" />
         <span className="sidebar-brand-name">Fixars</span>
       </div>
 
