@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom'
 import { Twitter, Github, Linkedin, Mail } from 'lucide-react'
 
 const APPS = [
-    { name: 'VestDen', path: '/apps/vestden' },
+    { name: 'vestDen', path: '/apps/vestden' },
     { name: 'ConceptNexus', path: '/apps/conceptnexus' },
-    { name: 'Collaboard', path: '/apps/collaboard' },
+    { name: 'CollaBoard', path: '/apps/collaboard' },
     { name: 'SkillsCanvas', path: '/apps/skillscanvas' }
 ]
 

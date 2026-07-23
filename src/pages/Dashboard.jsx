@@ -317,7 +317,7 @@ export default function Dashboard() {
 
     const subApps = [
         {
-            icon: TrendingUp, name: 'VestDen', label: 'Active stakes',
+            icon: TrendingUp, name: 'vestDen', label: 'Active stakes',
             color: 'var(--color-invest)', gradient: 'linear-gradient(140deg, #10B981, #047857)',
             value: stakes.filter(s => s.status === 'active').length, to: '/apps/vestden'
         },

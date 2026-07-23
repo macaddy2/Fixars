@@ -92,6 +92,19 @@ function NotFound() {
   )
 }
 
+function ForgotPassword() {
+  return (
+    <div className="max-w-md mx-auto px-4 py-16 text-center">
+      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+        <span className="text-3xl">🔑</span>
+      </div>
+      <h1 className="text-2xl font-bold text-foreground mb-2">Reset your password</h1>
+      <p className="text-muted mb-6">Password reset is handled via Magic Link on Fixars. Head back to login and use the "Sign in with Magic Link" button to access your account without a password.</p>
+      <a href="/login" className="inline-block px-6 py-2 rounded-lg bg-primary text-white font-semibold hover:opacity-90 transition-opacity">Back to Login</a>
+    </div>
+  )
+}
+
 
 
 /**
@@ -127,6 +140,7 @@ function AppLayout() {
             <Route path="/about" element={<About />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
             {/* Authenticated routes also available here as fallback */}
             <Route path="/apps" element={<Apps />} />
