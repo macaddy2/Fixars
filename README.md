@@ -59,6 +59,12 @@ See `.env.example`. Never commit a real `.env` — all `.env*` files are gitigno
 
 Configured for Railway via `railway.json`; the `start` script builds and serves the static `dist/` folder on `$PORT`.
 
+### Early-access landing page
+
+The currently deployed public waitlist is maintained as a separate project in
+[`landing-page/`](landing-page/). Keeping it isolated allows the waitlist to be
+deployed without publishing or changing the broader Fixars application.
+
 ## Contributing
 
 1. Branch from `main`
