@@ -3,11 +3,11 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
-// https://vite.dev/config/
+// Set base path: GitHub Pages deploys under /Fixars/, whereas Railway, Vercel, and local dev use /
+const isGitHubPages = process.env.GITHUB_ACTIONS === 'true' || process.env.GH_PAGES === 'true'
+
 export default defineConfig({
-  // GitHub Pages deploys to https://macaddy2.github.io/Fixars/
-  // Set base only in production so local dev stays on /
-  base: process.env.NODE_ENV === 'production' ? '/Fixars/' : '/',
+  base: isGitHubPages ? '/Fixars/' : '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
