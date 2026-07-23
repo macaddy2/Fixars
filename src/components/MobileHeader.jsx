@@ -6,7 +6,7 @@ export default function MobileHeader() {
 
   return (
     <header className="fx-mobile-header">
-      <img src="/fixars-mark.png" alt="Fixars" />
+      <img src={`${import.meta.env.BASE_URL}fixars-mark.png`} alt="Fixars" />
       <span className="mobile-brand-name display">Fixars</span>
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
         <button className="icon-btn" onClick={() => setIsSearchOpen(true)} aria-label="Search">

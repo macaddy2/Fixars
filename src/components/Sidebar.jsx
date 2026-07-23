@@ -44,7 +44,7 @@ export default function Sidebar() {
   return (
     <aside className="fx-sidebar">
       <div className="sidebar-brand">
-        <img src="/fixars-mark.png" alt="Fixars" />
+        <img src={`${import.meta.env.BASE_URL}fixars-mark.png`} alt="Fixars" />
         <span className="sidebar-brand-name">Fixars</span>
       </div>
 

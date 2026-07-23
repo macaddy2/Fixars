@@ -38,7 +38,7 @@ export default function Home() {
         <div className="splash">
             <nav className="splash-nav">
                 <Link to="/" className="brand">
-                    <img src="/fixars-mark.png" alt="Fixars" />
+                    <img src={`${import.meta.env.BASE_URL}fixars-mark.png`} alt="Fixars" />
                     <div className="brand-name">Fixars</div>
                 </Link>
                 <div className="splash-nav-links">
@@ -161,7 +161,7 @@ export default function Home() {
                     <div className="footer-grid">
                         <div>
                             <Link to="/" className="footer-brand">
-                                <img src="/fixars-mark.png" alt="Fixars" />
+                                <img src={`${import.meta.env.BASE_URL}fixars-mark.png`} alt="Fixars" />
                                 <div className="nm">Fixars</div>
                             </Link>
                             <p className="footer-blurb">The operating system for African innovation. We connect ideas, capital, and talent to build the future. Your context compounds; it belongs to you.</p>
