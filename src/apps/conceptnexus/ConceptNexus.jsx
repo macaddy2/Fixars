@@ -6,10 +6,11 @@ import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import AIRecommendations from '@/components/AIRecommendations'
 import SubmitIdeaModal from '@/components/SubmitIdeaModal'
+import CreateStakeModal from '@/components/CreateStakeModal'
 import PageHead from '@/components/PageHead'
 import { StatRow, Toolbar, ListGrid, EmptyState } from '@/components/SubAppKit'
 import {
-    ThumbsUp, ThumbsDown, Plus, Sparkles, ExternalLink,
+    ThumbsUp, ThumbsDown, Plus, Sparkles, ExternalLink, TrendingUp
 } from 'lucide-react'
 
 const STATUS_TAG = {
@@ -25,7 +26,7 @@ const FILTERS = [
     { value: 'validated', label: 'Validated' },
 ]
 
-function IdeaCard({ idea, onVote }) {
+function IdeaCard({ idea, onVote, onLaunchCampaign }) {
     const { isAuthenticated, user } = useAuth()
     const { launchProjectFromIdea } = useData()
     const totalVotes = idea.votes.up + idea.votes.down
@@ -48,7 +49,7 @@ function IdeaCard({ idea, onVote }) {
             </div>
 
             {/* Inline actions */}
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex flex-wrap items-center gap-2 pt-1">
                 <button
                     className="flex items-center gap-1.5 text-sm font-medium text-success hover:bg-success/10 rounded-md px-2 py-1 disabled:opacity-50"
                     onClick={() => isAuthenticated && onVote?.(idea.id, 'up')}
@@ -63,7 +64,24 @@ function IdeaCard({ idea, onVote }) {
                 >
                     <ThumbsDown className="w-4 h-4" /> {idea.votes.down}
                 </button>
-                <div className="ml-auto flex items-center gap-2">
+
+                <div className="ml-auto flex items-center gap-2 flex-wrap">
+                    {/* Launch / Link Campaign to vestDen */}
+                    {idea.status === 'validated' && !idea.linkedStakeId && (
+                        <button
+                            className="btn-app btn-app-invest text-xs px-3 py-1.5"
+                            onClick={() => onLaunchCampaign?.(idea)}
+                        >
+                            <TrendingUp className="w-3.5 h-3.5" /> Launch Campaign
+                        </button>
+                    )}
+                    {idea.linkedStakeId && (
+                        <Link to="/apps/vestden" className="btn-ghost text-xs text-invest border-invest/30">
+                            <ExternalLink className="w-3.5 h-3.5" /> On vestDen
+                        </Link>
+                    )}
+
+                    {/* Launch / Link Project to CollaBoard */}
                     {idea.status === 'validated' && !idea.linkedBoardId && (
                         <button
                             className="btn-app btn-app-concept text-xs px-3 py-1.5"
@@ -90,10 +108,24 @@ export default function ConceptNexus() {
     const [search, setSearch] = useState('')
     const [status, setStatus] = useState('all')
     const [submitOpen, setSubmitOpen] = useState(false)
+    const [campaignState, setCampaignState] = useState({ open: false, initialData: null })
 
     const handleVote = (ideaId, vote) => {
         voteIdea(ideaId, user.id, vote)
         awardPoints('VALIDATE_IDEA')
+    }
+
+    const handleLaunchCampaign = (idea) => {
+        setCampaignState({
+            open: true,
+            initialData: {
+                ideaId: idea.id,
+                title: idea.title,
+                description: idea.description,
+                category: idea.category || 'tech',
+                targetAmount: 25000
+            }
+        })
     }
 
     const filteredIdeas = ideas.filter(idea => {
@@ -144,7 +176,7 @@ export default function ConceptNexus() {
                 <ListGrid>
                     {filteredIdeas.length > 0 ? (
                         filteredIdeas.map(idea => (
-                            <IdeaCard key={idea.id} idea={idea} onVote={handleVote} />
+                            <IdeaCard key={idea.id} idea={idea} onVote={handleVote} onLaunchCampaign={handleLaunchCampaign} />
                         ))
                     ) : (
                         <EmptyState
@@ -162,6 +194,11 @@ export default function ConceptNexus() {
             </div>
 
             <SubmitIdeaModal open={submitOpen} onClose={() => setSubmitOpen(false)} />
+            <CreateStakeModal
+                open={campaignState.open}
+                onClose={() => setCampaignState({ open: false, initialData: null })}
+                initialData={campaignState.initialData}
+            />
         </main>
     )
 }

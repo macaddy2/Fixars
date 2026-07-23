@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Modal, { Field } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,19 +16,34 @@ function todayPlus(days) {
     return d.toISOString().slice(0, 10)
 }
 
-export default function CreateStakeModal({ open, onClose }) {
-    const { createStake, logActivity } = useData()
+export default function CreateStakeModal({ open, onClose, initialData = null }) {
+    const { createStake, linkIdeaToStake, logActivity } = useData()
     const { user } = useAuth()
 
-    const [title, setTitle] = useState('')
-    const [description, setDescription] = useState('')
-    const [category, setCategory] = useState('tech')
-    const [targetAmount, setTargetAmount] = useState(10000)
+    const [title, setTitle] = useState(initialData?.title || '')
+    const [description, setDescription] = useState(initialData?.description || '')
+    const [category, setCategory] = useState(initialData?.category || 'tech')
+    const [targetAmount, setTargetAmount] = useState(initialData?.targetAmount || 10000)
     const [riskLevel, setRiskLevel] = useState('medium')
     const [expectedReturns, setExpectedReturns] = useState('2-4x')
     const [deadline, setDeadline] = useState(todayPlus(60))
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
+
+    // Reset or initialize state when modal opens with new initialData
+    useEffect(() => {
+        if (open) {
+            setTitle(initialData?.title || '')
+            setDescription(initialData?.description || '')
+            setCategory(initialData?.category || 'tech')
+            setTargetAmount(initialData?.targetAmount || 10000)
+            setRiskLevel('medium')
+            setExpectedReturns('2-4x')
+            setDeadline(todayPlus(60))
+            setError('')
+            setSubmitting(false)
+        }
+    }, [open, initialData])
 
     const close = () => {
         setTitle(''); setDescription(''); setCategory('tech')
@@ -47,7 +62,7 @@ export default function CreateStakeModal({ open, onClose }) {
 
         setSubmitting(true)
         try {
-            await createStake({
+            const newStake = await createStake({
                 title: title.trim(),
                 description: description.trim(),
                 creatorId: user.id,
@@ -56,8 +71,12 @@ export default function CreateStakeModal({ open, onClose }) {
                 riskLevel,
                 targetAmount: Number(targetAmount),
                 expectedReturns,
-                deadline
+                deadline,
+                linkedIdeaId: initialData?.ideaId || null
             })
+            if (initialData?.ideaId && newStake?.id) {
+                await linkIdeaToStake(initialData.ideaId, newStake.id)
+            }
             logActivity('stake', user.name, `created a stake: ${title.trim()}`, 'vestden')
             close()
         } catch (err) {
