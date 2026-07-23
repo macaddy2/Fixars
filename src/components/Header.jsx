@@ -24,7 +24,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import NotificationDropdown from '@/components/NotificationDropdown'
 import { cn, getInitials, formatNumber } from '@/lib/utils'
-import { isSupabaseConfigured } from '@/lib/supabase'
+import fixarsMark from '@/assets/fixars-mark.png'
 
 export default function Header() {
     const location = useLocation()
@@ -50,9 +50,7 @@ export default function Header() {
                     {/* Logo */}
                     <Link to="/" className="flex items-center gap-2 group">
                         <div className="relative">
-                            <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                                <span className="text-white font-bold text-lg">F</span>
-                            </div>
+                            <img src={fixarsMark} alt="Fixars" className="w-9 h-9 rounded-xl shadow-md group-hover:shadow-lg transition-shadow object-contain" />
                             {isSupabaseConfigured() && (
                                 <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-background animate-realtime-pulse" title="Live connected" />
                             )}

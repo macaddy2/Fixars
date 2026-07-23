@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check, Lock, Layers, BookOpen, RefreshCw } from 'lucide-react'
+import fixarsMark from '@/assets/fixars-mark.png'
 
 const SUBAPPS = [
     { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Ready for vestDen' },
@@ -38,7 +39,7 @@ export default function Home() {
         <div className="splash">
             <nav className="splash-nav">
                 <Link to="/" className="brand">
-                    <img src="/fixars-mark.png" alt="Fixars" />
+                    <img src={fixarsMark} alt="Fixars" />
                     <div className="brand-name">Fixars</div>
                 </Link>
                 <div className="splash-nav-links">
@@ -161,7 +162,7 @@ export default function Home() {
                     <div className="footer-grid">
                         <div>
                             <Link to="/" className="footer-brand">
-                                <img src="/fixars-mark.png" alt="Fixars" />
+                                <img src={fixarsMark} alt="Fixars" />
                                 <div className="nm">Fixars</div>
                             </Link>
                             <p className="footer-blurb">The operating system for African innovation. We connect ideas, capital, and talent to build the future. Your context compounds; it belongs to you.</p>
