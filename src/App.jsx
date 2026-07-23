@@ -219,8 +219,9 @@ function AppLayout() {
 }
 
 export default function App() {
+  const routerBasename = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename}>
       <ThemeProvider>
         <AuthProvider>
           <DataProvider>
