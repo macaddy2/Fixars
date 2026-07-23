@@ -11,7 +11,8 @@ import {
     Minus, Equal, AlignJustify,
     Palette, Bell, Shield, User,
     ChevronRight, LogOut, Globe,
-    Database, Download, ReceiptText, Trash2
+    Database, Download, ReceiptText, Trash2,
+    Smartphone, RefreshCw
 } from 'lucide-react'
 
 /* ====================================================================
@@ -207,9 +208,9 @@ export default function SettingsPage() {
                         <User size={18} /> Account
                     </h3>
                     <div className="settings-account-list">
-                        <button className="settings-account-row">
+                        <Link to="/profile" className="settings-account-row">
                             <User size={16} /> <span>Edit Profile</span> <ChevronRight size={14} className="ml-auto" />
-                        </button>
+                        </Link>
                         <button className="settings-account-row">
                             <Shield size={16} /> <span>Security & Password</span> <ChevronRight size={14} className="ml-auto" />
                         </button>
@@ -219,6 +220,30 @@ export default function SettingsPage() {
                         <button className="settings-account-row danger" onClick={logout}>
                             <LogOut size={16} /> <span>Log Out</span>
                         </button>
+                    </div>
+                </div>
+
+                {/* ── Platform (Delta 4 cross-navigation) ── */}
+                <div className="settings-card">
+                    <h3 className="settings-card-title display">
+                        <Smartphone size={18} /> Platform
+                    </h3>
+                    <div className="settings-account-list">
+                        <Link to="/apps" className="settings-account-row">
+                            <Smartphone size={16} />
+                            <span>Mobile app · Browse app suite</span>
+                            <ChevronRight size={14} className="ml-auto" style={{ color: 'var(--color-blue-500)' }} />
+                        </Link>
+                        <Link to="/apps/skillscanvas" className="settings-account-row">
+                            <RefreshCw size={16} />
+                            <span>SkillsCanvas · List or manage your skills</span>
+                            <ChevronRight size={14} className="ml-auto" style={{ color: 'var(--color-blue-500)' }} />
+                        </Link>
+                        <Link to="/apps/vestden" className="settings-account-row">
+                            <RefreshCw size={16} />
+                            <span>vestDen · View active campaigns</span>
+                            <ChevronRight size={14} className="ml-auto" style={{ color: 'var(--color-blue-500)' }} />
+                        </Link>
                     </div>
                 </div>
             </div>

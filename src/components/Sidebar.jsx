@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSocial } from '@/contexts/SocialContext'
 import {
   Home, LayoutGrid, AlignLeft, Wallet,
   Lightbulb, TrendingUp, Users, Shield,
@@ -7,7 +8,7 @@ import {
 } from 'lucide-react'
 
 const mainNav = [
-  { to: '/dashboard', icon: Home, label: 'Home', badge: '3' },
+  { to: '/dashboard', icon: Home, label: 'Home' },
   { to: '/apps', icon: LayoutGrid, label: 'Apps' },
   { to: '/feed', icon: AlignLeft, label: 'Feed' },
   { to: '/wallet', icon: Wallet, label: 'Wallet' },
@@ -28,6 +29,7 @@ const accountNav = [
 
 export default function Sidebar() {
   const { user } = useAuth()
+  const { unreadCount } = useSocial()
   const location = useLocation()
 
   const isActive = (path) => {
@@ -54,7 +56,9 @@ export default function Sidebar() {
         >
           <item.icon className="nav-icon" />
           <span className="nav-label">{item.label}</span>
-          {item.badge && <span className="nav-badge">{item.badge}</span>}
+          {item.to === '/dashboard' && unreadCount > 0 && (
+            <span className="nav-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+          )}
         </NavLink>
       ))}
 

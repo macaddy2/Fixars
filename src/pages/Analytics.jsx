@@ -60,7 +60,7 @@ export default function Analytics() {
     const appBreakdown = [
         { name: 'vestDen', color: 'vestden', value: stakes.length, icon: TrendingUp },
         { name: 'ConceptNexus', color: 'conceptnexus', value: ideas.length, icon: Lightbulb },
-        { name: 'Collaboard', color: 'collaboard', value: boards.length, icon: Users },
+        { name: 'CollaBoard', color: 'collaboard', value: boards.length, icon: Users },
         { name: 'SkillsCanvas', color: 'skillscanvas', value: talents.length, icon: Palette }
     ]
     const maxAppValue = Math.max(...appBreakdown.map(a => a.value), 1)
