@@ -5,6 +5,9 @@ import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages deploys to https://macaddy2.github.io/Fixars/
+  // Set base only in production so local dev stays on /
+  base: process.env.NODE_ENV === 'production' ? '/Fixars/' : '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -34,3 +37,4 @@ export default defineConfig({
     },
   },
 })
+
