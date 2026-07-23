@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSfphC9GZD2uJR6Ezv7IgX8_R7g6_JC7wOA7qeGBBVAzxBU_Dg/viewform?usp=publish-editor";
@@ -41,6 +41,26 @@ function skillsFor(value) {
 }
 
 function WaitlistModal({ onClose }) {
+  const closeButtonRef = useRef(null);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    function handleKeyDown(event) {
+      if (event.key === "Escape") onClose();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose]);
+
   return (
     <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
@@ -55,7 +75,13 @@ function WaitlistModal({ onClose }) {
             <span className="eyebrow">FIXARS EARLY ACCESS</span>
             <h2 id="waitlist-title">Join the waitlist</h2>
           </div>
-          <button className="icon-button" type="button" onClick={onClose} aria-label="Close waitlist form">
+          <button
+            ref={closeButtonRef}
+            className="icon-button"
+            type="button"
+            onClick={onClose}
+            aria-label="Close waitlist form"
+          >
             ×
           </button>
         </div>
@@ -156,7 +182,7 @@ function App() {
             <h2 id="signup-heading">Get early access</h2>
             <p>Be first in when the pilot opens on your campus.</p>
             <div className="field-preview" aria-hidden="true">
-              <div><span>Full name</span><i /></div>
+              <div><span>First name</span><i /></div>
               <div><span>Email or phone</span><i /></div>
               <div><span>University</span><i /></div>
               <div><span>Discipline</span><i /></div>
