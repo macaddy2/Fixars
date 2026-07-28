@@ -24,6 +24,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import NotificationDropdown from '@/components/NotificationDropdown'
 import { cn, getInitials, formatNumber } from '@/lib/utils'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import fixarsMark from '@/assets/fixars-mark.png'
 
 export default function Header() {
@@ -60,19 +61,19 @@ export default function Header() {
 
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-1">
-                        {navLinks.map(({ path, label, icon: Icon }) => (
+                        {navLinks.map((item) => (
                             <Link
-                                key={path}
-                                to={path}
+                                key={item.path}
+                                to={item.path}
                                 className={cn(
                                     "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-                                    location.pathname === path
+                                    location.pathname === item.path
                                         ? "bg-primary/10 text-primary"
                                         : "text-muted hover:text-foreground hover:bg-muted/10"
                                 )}
                             >
-                                <Icon className="w-4 h-4" />
-                                {label}
+                                <item.icon className="w-4 h-4" />
+                                {item.label}
                             </Link>
                         ))}
                     </nav>
@@ -218,20 +219,20 @@ export default function Header() {
                 {/* Mobile Navigation */}
                 {mobileMenuOpen && (
                     <nav className="md:hidden py-4 border-t animate-fade-in">
-                        {navLinks.map(({ path, label, icon: Icon }) => (
+                        {navLinks.map((item) => (
                             <Link
-                                key={path}
-                                to={path}
+                                key={item.path}
+                                to={item.path}
                                 onClick={() => setMobileMenuOpen(false)}
                                 className={cn(
                                     "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                                    location.pathname === path
+                                    location.pathname === item.path
                                         ? "bg-primary/10 text-primary"
                                         : "text-muted hover:text-foreground hover:bg-muted/10"
                                 )}
                             >
-                                <Icon className="w-5 h-5" />
-                                {label}
+                                <item.icon className="w-5 h-5" />
+                                {item.label}
                             </Link>
                         ))}
                     </nav>
