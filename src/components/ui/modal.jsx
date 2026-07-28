@@ -29,27 +29,27 @@ export default function Modal({ open, onClose, title, subtitle, gradient = 'grad
             role="dialog" aria-modal="true" aria-label={title}
         >
             <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+                className="absolute inset-0 bg-[#0c1938]/60 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             />
             {/* Bottom-sheet on mobile, centered card on sm+ (v2 modal chrome) */}
             <div className={`relative w-full ${maxWidth} sm:mx-4 animate-slide-in-up`}>
-                <Card className="shadow-2xl overflow-hidden rounded-b-none rounded-t-2xl sm:rounded-xl max-h-[90vh] sm:max-h-[85vh] flex flex-col">
+                <Card className="shadow-[0_38px_90px_rgba(10,22,40,.24)] overflow-hidden rounded-b-none rounded-t-3xl sm:rounded-3xl max-h-[90vh] sm:max-h-[85vh] flex flex-col">
                     <div className={`h-[3px] flex-shrink-0 ${gradient}`} />
-                    <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-2 flex-shrink-0">
+                    <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-3 flex-shrink-0 bg-white">
                         <div>
-                            <h2 className="text-lg font-bold text-foreground">{title}</h2>
+                            <h2 className="text-xl font-extrabold text-foreground tracking-[-0.02em]">{title}</h2>
                             {subtitle && <p className="text-sm text-muted mt-1">{subtitle}</p>}
                         </div>
                         <button
                             onClick={onClose}
                             aria-label="Close"
-                            className="p-1 hover:bg-muted/10 rounded-md"
+                            className="p-2 bg-blue-50 hover:bg-blue-100 rounded-full transition-colors"
                         >
                             <X className="w-5 h-5 text-muted" />
                         </button>
                     </div>
-                    <CardContent className="pt-2 pb-6 overflow-y-auto">
+                    <CardContent className="pt-2 pb-6 overflow-y-auto bg-[#f8faff]">
                         {children}
                     </CardContent>
                 </Card>
