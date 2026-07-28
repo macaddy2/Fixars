@@ -2,8 +2,24 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 const FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSfphC9GZD2uJR6Ezv7IgX8_R7g6_JC7wOA7qeGBBVAzxBU_Dg/viewform?usp=publish-editor";
-const EMBED_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSfphC9GZD2uJR6Ezv7IgX8_R7g6_JC7wOA7qeGBBVAzxBU_Dg/viewform?embedded=true";
+const FORM_RESPONSE_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSfphC9GZD2uJR6Ezv7IgX8_R7g6_JC7wOA7qeGBBVAzxBU_Dg/formResponse";
+
+const formEntries = {
+  firstName: "entry.1211410083",
+  contact: "entry.1093468283",
+  university: "entry.1721877843",
+  discipline: "entry.1556195189",
+  consent: "entry.755150101",
+};
+
+const emptyWaitlistForm = {
+  firstName: "",
+  contact: "",
+  university: "",
+  discipline: "",
+  consent: false,
+};
 
 const disciplines = {
   Economics: ["Financial modelling", "Data analysis", "Policy writing", "Market research"],
@@ -38,6 +54,96 @@ function skillsFor(value) {
     return ["Lab practice", "Data recording", "Research review", "Technical reporting"];
   }
   return ["Research", "Structured problem-solving", "Technical writing", "Project delivery"];
+}
+
+function WaitlistForm({ className = "", intro, submitLabel = "Join early access" }) {
+  const [details, setDetails] = useState(emptyWaitlistForm);
+  const [status, setStatus] = useState("idle");
+
+  function updateDetail(field, value) {
+    setDetails((current) => ({ ...current, [field]: value }));
+  }
+
+  async function submitWaitlist(event) {
+    event.preventDefault();
+    setStatus("submitting");
+
+    const formData = new FormData();
+    formData.append(formEntries.firstName, details.firstName.trim());
+    formData.append(formEntries.contact, details.contact.trim());
+    formData.append(formEntries.university, details.university.trim());
+    formData.append(formEntries.discipline, details.discipline.trim());
+    formData.append(formEntries.consent, "I agree");
+
+    try {
+      await fetch(FORM_RESPONSE_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: formData,
+      });
+      setStatus("success");
+      setDetails(emptyWaitlistForm);
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <form className={`waitlist-form ${className}`.trim()} onSubmit={submitWaitlist}>
+      {intro && <p className="waitlist-intro">{intro}</p>}
+      <label>
+        <span>First name</span>
+        <input
+          value={details.firstName}
+          onChange={(event) => updateDetail("firstName", event.target.value)}
+          autoComplete="given-name"
+          required
+        />
+      </label>
+      <label>
+        <span>Email or phone</span>
+        <input
+          value={details.contact}
+          onChange={(event) => updateDetail("contact", event.target.value)}
+          autoComplete="email"
+          required
+        />
+      </label>
+      <label>
+        <span>University</span>
+        <input
+          value={details.university}
+          onChange={(event) => updateDetail("university", event.target.value)}
+          autoComplete="organization"
+        />
+      </label>
+      <label>
+        <span>Discipline</span>
+        <input
+          value={details.discipline}
+          onChange={(event) => updateDetail("discipline", event.target.value)}
+          placeholder="e.g. Computer Science"
+        />
+      </label>
+      <button className="submit-button" type="submit" disabled={status === "submitting"}>
+        {status === "submitting" ? "Joining..." : submitLabel}
+      </button>
+      {status === "success" && (
+        <p className="form-status success" role="status">
+          You are on the waitlist. We will be in touch when your campus opens.
+        </p>
+      )}
+      {status === "error" && (
+        <p className="form-status error" role="alert">
+          Something did not go through. Please try again or use the{" "}
+          <a href={FORM_URL} target="_blank" rel="noreferrer">
+            secure back-up form
+          </a>
+          .
+        </p>
+      )}
+    </form>
+  );
 }
 
 function WaitlistModal({ onClose }) {
@@ -85,16 +191,11 @@ function WaitlistModal({ onClose }) {
             ×
           </button>
         </div>
-        <iframe
-          className="waitlist-frame"
-          src={EMBED_URL}
-          title="Fixars early access waitlist"
-          loading="eager"
-        />
+        <WaitlistForm intro="Leave your details and we will contact you when early access opens on your campus." />
         <p className="form-fallback">
-          Form not displaying?{" "}
+          Back-up sign-up link:{" "}
           <a href={FORM_URL} target="_blank" rel="noreferrer">
-            Open the secure sign-up form
+            open the secure Google form
           </a>
           .
         </p>
@@ -181,15 +282,10 @@ function App() {
             <span className="eyebrow">EARLY ACCESS</span>
             <h2 id="signup-heading">Get early access</h2>
             <p>Be first in when the pilot opens on your campus.</p>
-            <div className="field-preview" aria-hidden="true">
-              <div><span>First name</span><i /></div>
-              <div><span>Email or phone</span><i /></div>
-              <div><span>University</span><i /></div>
-              <div><span>Discipline</span><i /></div>
-            </div>
-            <button className="primary-button" type="button" onClick={openWaitlist}>
-              Join the waitlist <span aria-hidden="true">→</span>
-            </button>
+            <WaitlistForm
+              className="waitlist-card-form"
+              submitLabel={<>Join the waitlist <span aria-hidden="true">→</span></>}
+            />
             <p className="privacy-note">No spam. One message when your campus goes live.</p>
           </aside>
         </section>
