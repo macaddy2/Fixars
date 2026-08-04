@@ -1,0 +1,53 @@
+name: Publish Fixars Group
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "group-page/**"
+      - ".github/workflows/deploy-fixars-group.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-fixars-group
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build and publish Fixars Group
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check out approved source
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: group-page/package-lock.json
+
+      - name: Install page dependencies
+        working-directory: group-page
+        run: npm ci
+
+      - name: Build the production page
+        working-directory: group-page
+        run: npm run build
+
+      - name: Publish to Fixars Group hosting
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FIXARSGROUP_FTP_SERVER }}
+          username: ${{ secrets.FIXARSGROUP_FTP_USERNAME }}
+          password: ${{ secrets.FIXARSGROUP_FTP_PASSWORD }}
+          local-dir: group-page/dist/client/
+          server-dir: ./
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
