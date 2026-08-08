@@ -1,0 +1,77 @@
+{
+  "catalog_version": "1.0.0",
+  "envelope_schema": "./event-envelope.schema.json",
+  "products": [
+    "fixars-hub",
+    "concepts-nexus",
+    "skills-canvas",
+    "colla-board",
+    "vest-den",
+    "vest-den-verification"
+  ],
+  "events": [
+    {
+      "type": "ai.fixars.concepts.concept.certified.v1",
+      "producer": "concepts-nexus",
+      "consumers": ["fixars-hub", "skills-canvas", "colla-board"],
+      "classification": "internal",
+      "description": "A concept completed the authoritative certification workflow."
+    },
+    {
+      "type": "ai.fixars.concepts.skills.required.v1",
+      "producer": "concepts-nexus",
+      "consumers": ["skills-canvas", "colla-board"],
+      "classification": "internal",
+      "description": "A certified concept published a versioned capability requirement."
+    },
+    {
+      "type": "ai.fixars.skills.skill.verified.v1",
+      "producer": "skills-canvas",
+      "consumers": ["fixars-hub", "colla-board"],
+      "classification": "restricted",
+      "description": "An authoritative assessment changed a verified skill record."
+    },
+    {
+      "type": "ai.fixars.skills.passport.updated.v1",
+      "producer": "skills-canvas",
+      "consumers": ["colla-board", "vest-den"],
+      "classification": "restricted",
+      "description": "A versioned passport projection is available for authorised consumers."
+    },
+    {
+      "type": "ai.fixars.collab.capsule.created.v1",
+      "producer": "colla-board",
+      "consumers": ["fixars-hub", "concepts-nexus"],
+      "classification": "internal",
+      "description": "A project capsule was created from approved source context."
+    },
+    {
+      "type": "ai.fixars.collab.artifact.approved.v1",
+      "producer": "colla-board",
+      "consumers": ["skills-canvas", "vest-den"],
+      "classification": "restricted",
+      "description": "A versioned project artifact was approved and recorded as evidence."
+    },
+    {
+      "type": "ai.fixars.collab.milestone.approved.v1",
+      "producer": "colla-board",
+      "consumers": ["fixars-hub", "vest-den-verification"],
+      "classification": "restricted",
+      "description": "A milestone entered verification; this event cannot release escrow."
+    },
+    {
+      "type": "ai.fixars.vest.diligence.updated.v1",
+      "producer": "vest-den",
+      "consumers": ["fixars-hub"],
+      "classification": "restricted",
+      "description": "A non-financial diligence projection changed."
+    },
+    {
+      "type": "ai.fixars.vest.escrow.release.requested.v1",
+      "producer": "vest-den",
+      "consumers": ["vest-den-verification"],
+      "classification": "highly-restricted",
+      "description": "A request entered the restricted verification workflow; no release has occurred."
+    }
+  ]
+}

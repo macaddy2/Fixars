@@ -1,6 +1,6 @@
 # Fixars
 
-The connected productivity ecosystem: **invest in ideas (VestDen)**, **validate concepts (ConceptNexus)**, **collaborate on projects (Collaboard)**, and **showcase/book talent (SkillsCanvas)** — all from a single account with shared points, notifications, and real-time activity.
+The connected productivity ecosystem: **invest in ideas (VestDen)**, **validate concepts (ConceptsNexus)**, **collaborate on projects (CollaBoard)**, and **showcase/book talent (SkillsCanvas)** — all from a single account with shared points, notifications, and real-time activity.
 
 Underneath the apps sits the **Fixars Context Layer (FCL)** — the ontology/application layer where the durable value lives: models commoditise, your context compounds. See [`docs/fcl-spec.md`](docs/fcl-spec.md) (the layer's specification) and [`docs/strategy-sovereignty.md`](docs/strategy-sovereignty.md) (the positioning).
 
@@ -64,6 +64,13 @@ Configured for Railway via `railway.json`; the `start` script builds and serves 
 The currently deployed public waitlist is maintained as a separate project in
 [`landing-page/`](landing-page/). Keeping it isolated allows the waitlist to be
 deployed without publishing or changing the broader Fixars application.
+
+### Independent product sites
+
+The four standalone product-site implementations and their independently built
+artifacts live in [`subapps/`](subapps/). Their canonical domains, Fixars
+connector redirects, event boundaries, and cPanel deployment roots are recorded
+in [`docs/architecture/network-event-architecture.md`](docs/architecture/network-event-architecture.md).
 
 ## Contributing
 
