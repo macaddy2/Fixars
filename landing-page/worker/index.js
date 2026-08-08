@@ -50,6 +50,7 @@ export function validateWaitlist(payload) {
     whatsapp: normalizeWhatsApp(payload?.whatsapp),
     university: trimText(payload?.university),
     course: trimText(payload?.course),
+    microskills: trimText(payload?.microskills),
     consent: payload?.consent === true,
     website: trimText(payload?.website),
   };
@@ -59,6 +60,7 @@ export function validateWaitlist(payload) {
   if (values.whatsapp && !/^\+?\d{7,15}$/.test(values.whatsapp)) errors.whatsapp = "Enter a valid WhatsApp number or leave it blank.";
   if (values.university.length < 2 || values.university.length > 120) errors.university = "Enter a university or campus of 120 characters or fewer.";
   if (values.course.length < 2 || values.course.length > 160) errors.course = "Enter a course of study of 160 characters or fewer.";
+  if (values.microskills.length > 800) errors.microskills = "Choose 800 characters or fewer of microskills.";
   if (!values.consent) errors.consent = "Consent is required to join early access.";
   return { values, errors };
 }
@@ -108,7 +110,8 @@ export async function handleWaitlist(request, fetchImpl = fetch) {
   formData.append(FORM_ENTRIES.firstName, values.firstName);
   formData.append(FORM_ENTRIES.contact, values.whatsapp ? `${values.email} | WhatsApp: ${values.whatsapp}` : values.email);
   formData.append(FORM_ENTRIES.university, values.university);
-  formData.append(FORM_ENTRIES.course, values.course);
+  const courseWithMicroskills = values.microskills ? `${values.course} | Microskills: ${values.microskills}` : values.course;
+  formData.append(FORM_ENTRIES.course, courseWithMicroskills);
   formData.append(FORM_ENTRIES.consent, "I agree");
 
   const controller = new AbortController();

@@ -15,6 +15,7 @@ const emptyWaitlistForm = {
   whatsapp: "",
   university: "",
   course: "",
+  microskills: "",
   consent: false,
   website: "",
 };
@@ -152,6 +153,14 @@ function WaitlistForm({ details, onChange, onCourseEdit, firstInputRef }) {
         />
         {errors.course && <small id="course-error">{errors.course}</small>}
       </label>
+      <label>
+        <span>Microskills to explore <i>optional</i></span>
+        <input
+          value={details.microskills}
+          onChange={(event) => updateDetail("microskills", event.target.value)}
+          placeholder="e.g. Problem decomposition, Data reasoning"
+        />
+      </label>
       <label className="honeypot" aria-hidden="true">
         Website
         <input
@@ -190,7 +199,13 @@ function WaitlistForm({ details, onChange, onCourseEdit, firstInputRef }) {
   );
 }
 
-function SkillProfile({ result, onSelect, onJoin }) {
+const MICROSKILL_GUIDANCE = {
+  "Course-derived": "A capability suggested by the course signal.",
+  Applied: "A capability to practise in a real task or project.",
+  Transferable: "A capability you can demonstrate across contexts.",
+};
+
+function SkillProfile({ result, selectedSkills, onSelect, onToggleSkill, onPrefill }) {
   if (!result) {
     return (
       <div className="empty-profile">
@@ -254,13 +269,32 @@ function SkillProfile({ result, onSelect, onJoin }) {
           <section key={label}>
             <h4>{label}</h4>
             <div className="skill-grid">
-              {skills.map((skill) => <span key={skill}>{skill}</span>)}
+              {skills.map((skill) => (
+                <label className="microskill-card" key={skill}>
+                  <input
+                    type="checkbox"
+                    checked={selectedSkills.includes(skill)}
+                    onChange={() => onToggleSkill(skill)}
+                  />
+                  <span>
+                    <strong>{skill}</strong>
+                    <small>{MICROSKILL_GUIDANCE[label]}</small>
+                  </span>
+                </label>
+              ))}
             </div>
           </section>
         ))}
       </div>
       <p className="preview-footnote">{result.basis}</p>
-      <button className="profile-join" type="button" onClick={onJoin}>Join with this course</button>
+      <div className="profile-actions">
+        <button className="profile-join" type="button" onClick={onPrefill}>
+          Prefill my profile
+        </button>
+        <button className="profile-secondary" type="button" onClick={onPrefill}>
+          Use in waitlist form
+        </button>
+      </div>
     </div>
   );
 }
@@ -270,6 +304,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [details, setDetails] = useState(emptyWaitlistForm);
   const [courseEdited, setCourseEdited] = useState(false);
+  const [selectedSkills, setSelectedSkills] = useState([]);
   const firstInputRef = useRef(null);
 
   function focusJoin() {
@@ -288,22 +323,32 @@ function App() {
     const nextResult = classifyCourse(qualification);
     if (nextResult.status === "empty") return;
     setResult(nextResult);
+    setSelectedSkills(nextResult.status === "matched" ? Object.values(nextResult.skills).flat() : []);
     if (!courseEdited) setDetails((current) => ({ ...current, course: qualification.trim() }));
   }
 
   function selectFamily(familyId) {
-    setResult(profileForFamily(familyId, qualification));
+    const nextResult = profileForFamily(familyId, qualification);
+    setResult(nextResult);
+    setSelectedSkills(Object.values(nextResult.skills).flat());
     if (!courseEdited) setDetails((current) => ({ ...current, course: qualification.trim() }));
   }
 
   function chooseCourse(course) {
     setQualification(course);
-    setResult(classifyCourse(course));
+    const nextResult = classifyCourse(course);
+    setResult(nextResult);
+    setSelectedSkills(nextResult.status === "matched" ? Object.values(nextResult.skills).flat() : []);
     if (!courseEdited) setDetails((current) => ({ ...current, course }));
   }
 
-  function joinWithCourse() {
-    if (!courseEdited) setDetails((current) => ({ ...current, course: qualification.trim() }));
+  function prefillWithSkills() {
+    const skillText = selectedSkills.join(", ");
+    setDetails((current) => ({
+      ...current,
+      course: courseEdited ? current.course : qualification.trim(),
+      microskills: skillText,
+    }));
     focusJoin();
   }
 
@@ -389,7 +434,13 @@ function App() {
               </div>
             </form>
             <div className={`profile-preview ${result ? "is-ready" : ""}`} aria-live="polite">
-              <SkillProfile result={result} onSelect={selectFamily} onJoin={joinWithCourse} />
+              <SkillProfile
+                result={result}
+                selectedSkills={selectedSkills}
+                onSelect={selectFamily}
+                onToggleSkill={(skill) => setSelectedSkills((current) => current.includes(skill) ? current.filter((entry) => entry !== skill) : [...current, skill])}
+                onPrefill={prefillWithSkills}
+              />
             </div>
           </div>
         </section>
