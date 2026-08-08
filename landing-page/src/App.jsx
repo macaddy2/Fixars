@@ -199,12 +199,6 @@ function WaitlistForm({ details, onChange, onCourseEdit, firstInputRef }) {
   );
 }
 
-const MICROSKILL_GUIDANCE = {
-  "Course-derived": "A capability suggested by the course signal.",
-  Applied: "A capability to practise in a real task or project.",
-  Transferable: "A capability you can demonstrate across contexts.",
-};
-
 function SkillProfile({ result, selectedSkills, onSelect, onToggleSkill, onPrefill }) {
   if (!result) {
     return (
@@ -278,7 +272,6 @@ function SkillProfile({ result, selectedSkills, onSelect, onToggleSkill, onPrefi
                   />
                   <span>
                     <strong>{skill}</strong>
-                    <small>{MICROSKILL_GUIDANCE[label]}</small>
                   </span>
                 </label>
               ))}

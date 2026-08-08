@@ -22,7 +22,7 @@ export const COURSE_FAMILIES = [
   {
     id: "computing",
     label: "Computing and technology",
-    aliases: ["computer science", "computing", "software engineering", "information technology", "data science", "cyber security", "artificial intelligence"],
+    aliases: ["computer science", "computing", "computer engineering", "software engineering", "software development", "information technology", "information systems", "informatics", "data science", "data analytics", "business analytics", "cyber security", "cybersecurity", "artificial intelligence", "machine learning", "cloud computing", "network engineering", "telecommunications", "web development", "mobile app development", "game development", "database management", "human computer interaction", "user experience design", "computer applications"],
     skills: {
       courseDerived: ["Problem decomposition", "Data reasoning"],
       applied: ["Software testing", "Technical documentation"],
@@ -32,7 +32,7 @@ export const COURSE_FAMILIES = [
   {
     id: "engineering",
     label: "Engineering",
-    aliases: ["mechanical engineering", "civil engineering", "electrical engineering", "electronic engineering", "chemical engineering", "mechatronics", "engineering"],
+    aliases: ["mechanical engineering", "civil engineering", "electrical engineering", "electronic engineering", "chemical engineering", "mechatronics", "aerospace engineering", "biomedical engineering", "petroleum engineering", "automotive engineering", "industrial engineering", "systems engineering", "production engineering", "structural engineering", "materials engineering", "robotics engineering", "environmental engineering", "agricultural engineering", "engineering"],
     skills: {
       courseDerived: ["Requirements analysis", "Technical modelling"],
       applied: ["Quality checks", "Design documentation"],
@@ -42,7 +42,7 @@ export const COURSE_FAMILIES = [
   {
     id: "business-economics",
     label: "Business and economics",
-    aliases: ["economics", "business administration", "business management", "accounting", "finance", "marketing", "banking and finance", "entrepreneurship"],
+    aliases: ["economics", "business administration", "business management", "business studies", "commerce", "accounting", "finance", "banking and finance", "marketing", "human resources", "supply chain management", "logistics", "operations management", "project management", "entrepreneurship", "actuarial science", "insurance", "real estate", "estate management", "tourism management", "hospitality management", "procurement", "management"],
     skills: {
       courseDerived: ["Commercial analysis", "Market research"],
       applied: ["Spreadsheet modelling", "Business presentation"],
@@ -52,7 +52,7 @@ export const COURSE_FAMILIES = [
   {
     id: "communications-creative",
     label: "Communications and creative arts",
-    aliases: ["mass communication", "journalism", "media studies", "public relations", "graphic design", "film studies", "creative arts", "advertising"],
+    aliases: ["mass communication", "communication arts", "journalism", "broadcasting", "media studies", "digital media", "public relations", "graphic design", "visual communication", "film studies", "film production", "creative arts", "advertising", "animation", "photography", "fashion design", "fine arts", "music", "music production", "theatre arts", "performing arts", "publishing"],
     skills: {
       courseDerived: ["Audience research", "Story development"],
       applied: ["Content production", "Campaign planning"],
@@ -62,7 +62,7 @@ export const COURSE_FAMILIES = [
   {
     id: "law-policy",
     label: "Law and public policy",
-    aliases: ["law", "legal studies", "political science", "public policy", "international relations", "criminology"],
+    aliases: ["law", "legal studies", "corporate law", "political science", "politics", "public policy", "public administration", "governance", "international relations", "international development", "criminology", "security studies", "peace studies", "human rights"],
     skills: {
       courseDerived: ["Evidence review", "Policy analysis"],
       applied: ["Case research", "Structured argument"],
@@ -72,7 +72,7 @@ export const COURSE_FAMILIES = [
   {
     id: "life-health",
     label: "Life and health sciences",
-    aliases: ["microbiology", "biology", "biochemistry", "medicine", "nursing", "pharmacy", "public health", "anatomy", "physiology"],
+    aliases: ["microbiology", "biology", "biochemistry", "biotechnology", "genetics", "molecular biology", "medicine", "medical science", "nursing", "pharmacy", "public health", "epidemiology", "anatomy", "physiology", "physiotherapy", "radiography", "medical laboratory science", "medical rehabilitation", "nutrition", "dietetics", "dentistry", "veterinary medicine", "neuroscience", "health information management"],
     skills: {
       courseDerived: ["Scientific observation", "Research review"],
       applied: ["Data recording", "Technical reporting"],
@@ -82,7 +82,7 @@ export const COURSE_FAMILIES = [
   {
     id: "physical-sciences",
     label: "Physical sciences",
-    aliases: ["chemistry", "physics", "mathematics", "statistics", "geology", "industrial chemistry"],
+    aliases: ["chemistry", "industrial chemistry", "analytical chemistry", "physics", "applied physics", "mathematics", "applied mathematics", "statistics", "data statistics", "geology", "geophysics", "meteorology", "astronomy", "materials science"],
     skills: {
       courseDerived: ["Quantitative analysis", "Scientific modelling"],
       applied: ["Experimental design", "Data interpretation"],
@@ -92,7 +92,7 @@ export const COURSE_FAMILIES = [
   {
     id: "social-sciences",
     label: "Social sciences",
-    aliases: ["sociology", "psychology", "social work", "anthropology", "development studies", "geography"],
+    aliases: ["sociology", "psychology", "social work", "social policy", "anthropology", "development studies", "development economics", "geography", "human geography", "demography", "gender studies", "community development", "social sciences"],
     skills: {
       courseDerived: ["Human-centred research", "Behavioural analysis"],
       applied: ["Interview design", "Qualitative synthesis"],
@@ -102,7 +102,7 @@ export const COURSE_FAMILIES = [
   {
     id: "education",
     label: "Education",
-    aliases: ["education", "education management", "guidance and counselling", "early childhood education", "primary education", "science education"],
+    aliases: ["education", "education management", "educational management", "guidance and counselling", "early childhood education", "primary education", "secondary education", "special education", "adult education", "science education", "technical education", "curriculum studies", "educational psychology", "teaching"],
     skills: {
       courseDerived: ["Learning design", "Assessment planning"],
       applied: ["Facilitation", "Progress evaluation"],
@@ -112,7 +112,7 @@ export const COURSE_FAMILIES = [
   {
     id: "built-environment",
     label: "Built environment",
-    aliases: ["architecture", "quantity surveying", "estate management", "urban planning", "building technology", "surveying"],
+    aliases: ["architecture", "quantity surveying", "estate management", "urban planning", "town planning", "building technology", "construction management", "surveying", "geomatics", "land surveying", "property management", "interior design", "landscape architecture"],
     skills: {
       courseDerived: ["Spatial reasoning", "Specification review"],
       applied: ["Design documentation", "Project planning"],
@@ -122,7 +122,7 @@ export const COURSE_FAMILIES = [
   {
     id: "agriculture-environment",
     label: "Agriculture and environment",
-    aliases: ["agriculture", "agricultural economics", "environmental science", "forestry", "fisheries", "animal science", "soil science"],
+    aliases: ["agriculture", "agricultural economics", "agricultural science", "crop science", "animal science", "fisheries", "forestry", "soil science", "environmental science", "environmental management", "conservation", "climate science", "water resources", "food science", "fisheries management"],
     skills: {
       courseDerived: ["Environmental assessment", "Resource analysis"],
       applied: ["Field data collection", "Sustainability planning"],
@@ -132,7 +132,7 @@ export const COURSE_FAMILIES = [
   {
     id: "humanities-languages",
     label: "Humanities and languages",
-    aliases: ["english", "history", "philosophy", "linguistics", "languages", "religious studies", "theatre arts"],
+    aliases: ["english", "english language", "english literature", "history", "philosophy", "linguistics", "languages", "modern languages", "french", "german", "spanish", "religious studies", "theology", "classics", "cultural studies", "literature", "theatre arts"],
     skills: {
       courseDerived: ["Textual analysis", "Contextual research"],
       applied: ["Editorial writing", "Argument development"],
