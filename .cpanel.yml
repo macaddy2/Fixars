@@ -1,0 +1,12 @@
+---
+deployment:
+  tasks:
+    # Canonical product origins are isolated. Connector subdomains only redirect.
+    - /bin/mkdir -p /home/fixarsgr/public_html/skillscanvas.co
+    - /bin/cp -R subapps/dist-products/skillscanvas/. /home/fixarsgr/public_html/skillscanvas.co/
+    - /bin/mkdir -p /home/fixarsgr/public_html/collaboard.co
+    - /bin/cp -R subapps/dist-products/collaboard/. /home/fixarsgr/public_html/collaboard.co/
+    - /bin/mkdir -p /home/fixarsgr/conceptsnexus.co
+    - /bin/cp -R subapps/dist-products/conceptnexus/. /home/fixarsgr/conceptsnexus.co/
+    - /bin/mkdir -p /home/fixarsgr/vestden.co
+    - /bin/cp -R subapps/dist-products/vestden/. /home/fixarsgr/vestden.co/

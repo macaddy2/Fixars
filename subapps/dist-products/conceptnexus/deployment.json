@@ -1,0 +1,7 @@
+{
+  "key": "conceptnexus",
+  "name": "ConceptsNexus",
+  "canonical": "https://conceptsnexus.co/",
+  "connector": "https://concepts.fixars.ai/",
+  "path": "https://fixars.ai/concepts"
+}

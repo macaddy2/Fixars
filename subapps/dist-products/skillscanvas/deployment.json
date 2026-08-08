@@ -1,0 +1,7 @@
+{
+  "key": "skillscanvas",
+  "name": "SkillsCanvas",
+  "canonical": "https://skillscanvas.co/",
+  "connector": "https://skills.fixars.ai/",
+  "path": "https://fixars.ai/skills"
+}
