@@ -1,232 +1,315 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
+import {
+  COURSE_FAMILIES,
+  POPULAR_COURSES,
+  classifyCourse,
+  profileForFamily,
+} from "./courseClassifier.js";
 
 const FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSfphC9GZD2uJR6Ezv7IgX8_R7g6_JC7wOA7qeGBBVAzxBU_Dg/viewform?usp=publish-editor";
-const FORM_RESPONSE_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSfphC9GZD2uJR6Ezv7IgX8_R7g6_JC7wOA7qeGBBVAzxBU_Dg/formResponse";
-
-const formEntries = {
-  firstName: "entry.1211410083",
-  contact: "entry.1093468283",
-  university: "entry.1721877843",
-  discipline: "entry.1556195189",
-  consent: "entry.755150101",
-};
 
 const emptyWaitlistForm = {
   firstName: "",
-  contact: "",
+  email: "",
+  whatsapp: "",
   university: "",
-  discipline: "",
+  course: "",
   consent: false,
+  website: "",
 };
 
-const disciplines = {
-  Economics: ["Financial modelling", "Data analysis", "Policy writing", "Market research"],
-  "Computer Science": ["Frontend development", "API integration", "Testing", "Data structures"],
-  "Mass Communication": ["Copywriting", "Interviewing", "Video editing", "Campaign planning"],
-  "Mechanical Engineering": ["CAD modelling", "Technical drawing", "Materials testing", "Maintenance planning"],
-  Law: ["Legal research", "Case briefing", "Contract review", "Policy analysis"],
-  Microbiology: ["Lab safety", "Sample preparation", "Microscopy", "Culture techniques"],
-};
-
-function skillsFor(value) {
-  const exact = disciplines[value];
-  if (exact) return exact;
-
-  const term = value.toLowerCase();
-  if (/(comput|software|data|cyber|tech)/.test(term)) {
-    return ["Problem decomposition", "Data analysis", "Technical documentation", "Testing"];
+function validateForm(details) {
+  const errors = {};
+  if (!details.firstName.trim()) errors.firstName = "Enter your first name.";
+  if (!/^\S+@\S+\.\S+$/.test(details.email.trim())) errors.email = "Enter a valid email address.";
+  if (details.whatsapp && details.whatsapp.replace(/\D/g, "").length < 7) {
+    errors.whatsapp = "Enter a complete WhatsApp number or leave it blank.";
   }
-  if (/(business|econom|finance|account|market)/.test(term)) {
-    return ["Spreadsheet modelling", "Market research", "Presentation", "Commercial analysis"];
-  }
-  if (/(engineer|mechan|civil|electr|build)/.test(term)) {
-    return ["Technical drawing", "Requirements analysis", "Quality checks", "Project delivery"];
-  }
-  if (/(media|communicat|journal|design|creative)/.test(term)) {
-    return ["Story development", "Audience research", "Content production", "Campaign planning"];
-  }
-  if (/(law|legal|politic|policy)/.test(term)) {
-    return ["Evidence review", "Structured writing", "Case research", "Stakeholder analysis"];
-  }
-  if (/(bio|chem|science|medical|health)/.test(term)) {
-    return ["Lab practice", "Data recording", "Research review", "Technical reporting"];
-  }
-  return ["Research", "Structured problem-solving", "Technical writing", "Project delivery"];
+  if (details.university.trim().length < 2) errors.university = "Enter your university or campus.";
+  if (details.course.trim().length < 2) errors.course = "Enter your course of study.";
+  if (!details.consent) errors.consent = "Please agree to the early-access data notice.";
+  return errors;
 }
 
-function WaitlistForm({ className = "", intro, submitLabel = "Join early access" }) {
-  const [details, setDetails] = useState(emptyWaitlistForm);
+function WaitlistForm({ details, onChange, onCourseEdit, firstInputRef }) {
+  const [errors, setErrors] = useState({});
   const [status, setStatus] = useState("idle");
 
   function updateDetail(field, value) {
-    setDetails((current) => ({ ...current, [field]: value }));
+    onChange((current) => ({ ...current, [field]: value }));
+    setErrors((current) => ({ ...current, [field]: undefined }));
+    if (field === "course") onCourseEdit();
   }
 
   async function submitWaitlist(event) {
     event.preventDefault();
+    const nextErrors = validateForm(details);
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      setStatus("invalid");
+      return;
+    }
+
     setStatus("submitting");
-
-    const formData = new FormData();
-    formData.append(formEntries.firstName, details.firstName.trim());
-    formData.append(formEntries.contact, details.contact.trim());
-    formData.append(formEntries.university, details.university.trim());
-    formData.append(formEntries.discipline, details.discipline.trim());
-    formData.append(formEntries.consent, "I agree");
-
     try {
-      await fetch(FORM_RESPONSE_URL, {
+      const response = await fetch("/api/waitlist", {
         method: "POST",
-        mode: "no-cors",
-        body: formData,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(details),
       });
+      const result = await response.json();
+      if (!response.ok) {
+        setErrors(result.errors || {});
+        setStatus("error");
+        return;
+      }
       setStatus("success");
-      setDetails(emptyWaitlistForm);
     } catch {
       setStatus("error");
     }
   }
 
+  if (status === "success") {
+    return (
+      <div className="waitlist-success" role="status">
+        <span>Early access requested</span>
+        <h3>You are on the list, {details.firstName.trim()}.</h3>
+        <p>We will use your email to share the next pilot step when it is relevant to your campus.</p>
+      </div>
+    );
+  }
+
+  const errorCount = Object.values(errors).filter(Boolean).length;
   return (
-    <form className={`waitlist-form ${className}`.trim()} onSubmit={submitWaitlist}>
-      {intro && <p className="waitlist-intro">{intro}</p>}
+    <form className="waitlist-form" onSubmit={submitWaitlist} noValidate>
+      {errorCount > 0 && (
+        <div className="error-summary" role="alert">
+          Please check {errorCount === 1 ? "the highlighted field" : `${errorCount} highlighted fields`}.
+        </div>
+      )}
       <label>
         <span>First name</span>
         <input
+          ref={firstInputRef}
           value={details.firstName}
           onChange={(event) => updateDetail("firstName", event.target.value)}
           autoComplete="given-name"
+          aria-invalid={Boolean(errors.firstName)}
+          aria-describedby={errors.firstName ? "first-name-error" : undefined}
           required
         />
+        {errors.firstName && <small id="first-name-error">{errors.firstName}</small>}
       </label>
       <label>
-        <span>Email or phone</span>
+        <span>Email</span>
         <input
-          value={details.contact}
-          onChange={(event) => updateDetail("contact", event.target.value)}
+          type="email"
+          value={details.email}
+          onChange={(event) => updateDetail("email", event.target.value)}
           autoComplete="email"
+          aria-invalid={Boolean(errors.email)}
+          aria-describedby={errors.email ? "email-error" : undefined}
           required
         />
+        {errors.email && <small id="email-error">{errors.email}</small>}
       </label>
       <label>
-        <span>University</span>
+        <span>WhatsApp <i>optional</i></span>
+        <input
+          type="tel"
+          inputMode="tel"
+          value={details.whatsapp}
+          onChange={(event) => updateDetail("whatsapp", event.target.value)}
+          autoComplete="tel"
+          placeholder="e.g. +234 801 234 5678"
+          aria-invalid={Boolean(errors.whatsapp)}
+          aria-describedby={errors.whatsapp ? "whatsapp-error" : undefined}
+        />
+        {errors.whatsapp && <small id="whatsapp-error">{errors.whatsapp}</small>}
+      </label>
+      <label>
+        <span>University or campus</span>
         <input
           value={details.university}
           onChange={(event) => updateDetail("university", event.target.value)}
           autoComplete="organization"
+          aria-invalid={Boolean(errors.university)}
+          aria-describedby={errors.university ? "university-error" : undefined}
+          required
         />
+        {errors.university && <small id="university-error">{errors.university}</small>}
       </label>
       <label>
-        <span>Discipline</span>
+        <span>Course of study</span>
         <input
-          value={details.discipline}
-          onChange={(event) => updateDetail("discipline", event.target.value)}
+          value={details.course}
+          onChange={(event) => updateDetail("course", event.target.value)}
           placeholder="e.g. Computer Science"
+          aria-invalid={Boolean(errors.course)}
+          aria-describedby={errors.course ? "course-error" : undefined}
+          required
+        />
+        {errors.course && <small id="course-error">{errors.course}</small>}
+      </label>
+      <label className="honeypot" aria-hidden="true">
+        Website
+        <input
+          value={details.website}
+          onChange={(event) => updateDetail("website", event.target.value)}
+          tabIndex="-1"
+          autoComplete="off"
         />
       </label>
+      <label className="consent-field">
+        <input
+          type="checkbox"
+          checked={details.consent}
+          onChange={(event) => updateDetail("consent", event.target.checked)}
+          aria-invalid={Boolean(errors.consent)}
+          aria-describedby={errors.consent ? "consent-error" : "privacy-summary"}
+          required
+        />
+        <span>I agree that Fixars may use these details to manage early access and contact me about the pilot.</span>
+      </label>
+      {errors.consent && <small id="consent-error" className="standalone-error">{errors.consent}</small>}
+      <p id="privacy-summary" className="privacy-summary">
+        We keep waitlist data for no more than 12 months, or delete it earlier when the pilot closes or you ask us to.
+        Contact <a href="mailto:privacy@fixars.ai">privacy@fixars.ai</a> to withdraw.
+      </p>
       <button className="submit-button" type="submit" disabled={status === "submitting"}>
-        {status === "submitting" ? "Joining..." : submitLabel}
+        {status === "submitting" ? "Confirming your place…" : "Join early access"}
       </button>
-      {status === "success" && (
-        <p className="form-status success" role="status">
-          You are on the waitlist. We will be in touch when your campus opens.
-        </p>
-      )}
       {status === "error" && (
         <p className="form-status error" role="alert">
-          Something did not go through. Please try again or use the{" "}
-          <a href={FORM_URL} target="_blank" rel="noreferrer">
-            secure back-up form
-          </a>
-          .
+          We could not confirm your place. Try again, or use the{" "}
+          <a href={FORM_URL} target="_blank" rel="noreferrer">secure back-up form</a>.
         </p>
       )}
     </form>
   );
 }
 
-function WaitlistModal({ onClose }) {
-  const closeButtonRef = useRef(null);
+function SkillProfile({ result, onSelect, onJoin }) {
+  if (!result) {
+    return (
+      <div className="empty-profile">
+        <img src="/fixars-mark.png" alt="" width="52" height="52" />
+        <h3>Your potential skill map starts here.</h3>
+        <p>Enter a course title or choose an example to see a grounded preview.</p>
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = "hidden";
-    closeButtonRef.current?.focus();
-
-    function handleKeyDown(event) {
-      if (event.key === "Escape") onClose();
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [onClose]);
-
-  return (
-    <div className="modal-backdrop" role="presentation" onMouseDown={onClose}>
-      <section
-        className="waitlist-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="waitlist-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <div className="modal-heading">
-          <div>
-            <span className="eyebrow">FIXARS EARLY ACCESS</span>
-            <h2 id="waitlist-title">Join the waitlist</h2>
-          </div>
-          <button
-            ref={closeButtonRef}
-            className="icon-button"
-            type="button"
-            onClick={onClose}
-            aria-label="Close waitlist form"
-          >
-            ×
-          </button>
+  if (result.status === "ambiguous") {
+    return (
+      <div className="match-help">
+        <span className="eyebrow">A QUICK CHECK</span>
+        <h3>Which area is closest?</h3>
+        <p>We found more than one sensible match for “{result.course}”.</p>
+        <div className="choice-list">
+          {result.suggestions.map((suggestion) => (
+            <button key={suggestion.id} type="button" onClick={() => onSelect(suggestion.id)}>
+              {suggestion.label}
+            </button>
+          ))}
         </div>
-        <WaitlistForm intro="Leave your details and we will contact you when early access opens on your campus." />
-        <p className="form-fallback">
-          Back-up sign-up link:{" "}
-          <a href={FORM_URL} target="_blank" rel="noreferrer">
-            open the secure Google form
-          </a>
-          .
-        </p>
-      </section>
+      </div>
+    );
+  }
+
+  if (result.status === "unknown") {
+    return (
+      <div className="match-help">
+        <span className="eyebrow">HELP US PLACE IT</span>
+        <h3>Choose the nearest course family</h3>
+        <p>Your course remains exactly as you entered it; this choice only improves the skill preview.</p>
+        <div className="family-list">
+          {COURSE_FAMILIES.map((family) => (
+            <button key={family.id} type="button" onClick={() => onSelect(family.id)}>{family.label}</button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const groups = [
+    ["Course-derived", result.skills.courseDerived],
+    ["Applied", result.skills.applied],
+    ["Transferable", result.skills.transferable],
+  ];
+  return (
+    <div className="profile-result">
+      <div className="preview-topline">
+        <div>
+          <span className="eyebrow">PROFILE PREVIEW</span>
+          <h3>{result.course}</h3>
+          <p>{result.families.map((family) => family.label).join(" + ")}</p>
+        </div>
+        <span className="emerging-tag">To verify</span>
+      </div>
+      <p className="preview-label">Potential skill areas to verify</p>
+      <div className="skill-groups">
+        {groups.map(([label, skills]) => (
+          <section key={label}>
+            <h4>{label}</h4>
+            <div className="skill-grid">
+              {skills.map((skill) => <span key={skill}>{skill}</span>)}
+            </div>
+          </section>
+        ))}
+      </div>
+      <p className="preview-footnote">{result.basis}</p>
+      <button className="profile-join" type="button" onClick={onJoin}>Join with this course</button>
     </div>
   );
 }
 
 function App() {
-  const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [qualification, setQualification] = useState("");
-  const [profile, setProfile] = useState(null);
+  const [result, setResult] = useState(null);
+  const [details, setDetails] = useState(emptyWaitlistForm);
+  const [courseEdited, setCourseEdited] = useState(false);
+  const firstInputRef = useRef(null);
 
-  const profileSkills = useMemo(() => (profile ? skillsFor(profile) : []), [profile]);
-
-  function openWaitlist() {
-    setWaitlistOpen(true);
+  function focusJoin() {
+    const joinSection = document.getElementById("join");
+    joinSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => {
+      const firstIncomplete = [...(joinSection?.querySelectorAll("input[required]") || [])].find((input) =>
+        input.type === "checkbox" ? !input.checked : !input.value.trim(),
+      );
+      (firstIncomplete || firstInputRef.current)?.focus();
+    }, 350);
   }
 
   function buildProfile(event) {
     event.preventDefault();
-    const clean = qualification.trim();
-    if (!clean) return;
-    setProfile(clean);
+    const nextResult = classifyCourse(qualification);
+    if (nextResult.status === "empty") return;
+    setResult(nextResult);
+    if (!courseEdited) setDetails((current) => ({ ...current, course: qualification.trim() }));
+  }
+
+  function selectFamily(familyId) {
+    setResult(profileForFamily(familyId, qualification));
+    if (!courseEdited) setDetails((current) => ({ ...current, course: qualification.trim() }));
+  }
+
+  function chooseCourse(course) {
+    setQualification(course);
+    setResult(classifyCourse(course));
+    if (!courseEdited) setDetails((current) => ({ ...current, course }));
+  }
+
+  function joinWithCourse() {
+    if (!courseEdited) setDetails((current) => ({ ...current, course: qualification.trim() }));
+    focusJoin();
   }
 
   return (
     <>
-      <a className="skip-link" href="#main">
-        Skip to content
-      </a>
+      <a className="skip-link" href="#main">Skip to content</a>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Fixars home">
           <img src="/fixars-mark.png" alt="" width="38" height="38" />
@@ -234,72 +317,55 @@ function App() {
         </a>
         <nav aria-label="Main navigation">
           <a href="#how-it-works">How it works</a>
-          <a href="#taster">Taster</a>
+          <a href="#taster">Course taster</a>
+          <a href="#early-access">Early access</a>
         </nav>
-        <button className="header-cta" type="button" onClick={openWaitlist}>
-          Join waitlist
-        </button>
+        <button className="header-cta" type="button" onClick={focusJoin}>Join waitlist</button>
       </header>
 
       <main id="main">
         <section className="hero" id="top">
           <div className="hero-copy">
-            <span className="launch-pill">
-              <span aria-hidden="true" />
-              Launching soon at a uni near you
-            </span>
-            <h1>
-              Turn your degree into <em>verified skills</em> employers can check.
-            </h1>
+            <span className="launch-pill"><span aria-hidden="true" />Student pilot in development</span>
+            <h1>Turn what you study into <em>skills you can prove.</em></h1>
             <p className="hero-intro">
-              A degree says what you studied. Fixars shows what you can actually do — verified micro-skills,
-              real projects, and a reputation that travels with you. Earn before you graduate. Walk into the
-              job market with receipts, not just results.
+              Fixars helps students translate a course of study into potential skills, gather evidence, and discover
+              connected pathways across SkillsCanvas, ConceptsNexus and CollaBoard.
             </p>
             <div className="proof-list" id="how-it-works">
-              <div>
-                <span>S</span>
-                <p>List micro-skills you can prove — not buzzwords</p>
-              </div>
-              <div>
-                <span>P</span>
-                <p>Earn from real paid projects while you study</p>
-              </div>
-              <div>
-                <span>R</span>
-                <p>One reputation score across everything you do</p>
-              </div>
+              <div><span>01</span><p>Map your course into skill areas worth investigating</p></div>
+              <div><span>02</span><p>Add evidence that shows what you can actually do</p></div>
+              <div><span>03</span><p>Explore relevant people, ideas and project pathways</p></div>
             </div>
             <div className="score-note">
-              <strong>Emerging</strong>
-              <span>Your score starts honest and grows with every verified skill.</span>
+              <strong>Evidence first</strong>
+              <span>A suggestion is never treated as a verified skill until you support it.</span>
             </div>
           </div>
 
-          <aside className="signup-card" aria-labelledby="signup-heading">
-            <div className="card-orbit orbit-one" aria-hidden="true" />
-            <div className="card-orbit orbit-two" aria-hidden="true" />
-            <span className="eyebrow">EARLY ACCESS</span>
-            <h2 id="signup-heading">Get early access</h2>
-            <p>Be first in when the pilot opens on your campus.</p>
-            <WaitlistForm
-              className="waitlist-card-form"
-              submitLabel={<>Join the waitlist <span aria-hidden="true">→</span></>}
-            />
-            <p className="privacy-note">No spam. One message when your campus goes live.</p>
+          <aside className="signup-card" id="join" aria-labelledby="signup-heading">
+            <div className="signup-card-copy">
+              <span className="eyebrow">EARLY ACCESS</span>
+              <h2 id="signup-heading">Join the student pilot</h2>
+              <p>Tell us where and what you study. We will contact you when there is a relevant next step.</p>
+            </div>
+            <div className="waitlist-panel">
+              <WaitlistForm
+                details={details}
+                onChange={setDetails}
+                onCourseEdit={() => setCourseEdited(true)}
+                firstInputRef={firstInputRef}
+              />
+            </div>
           </aside>
         </section>
 
         <section className="taster-section" id="taster">
           <div className="section-heading">
-            <span className="eyebrow">THE 20-SECOND TASTER</span>
-            <h2>See your profile before it exists</h2>
-            <p>
-              This is the real first step of Fixars onboarding. Pick what you study, pick what you can
-              actually do — and watch a verifiable profile appear.
-            </p>
+            <span className="eyebrow">THE COURSE TASTER</span>
+            <h2>See the skill areas your course could open up</h2>
+            <p>Start with a course title. We will suggest areas to explore, then you decide what your evidence can support.</p>
           </div>
-
           <div className="taster-shell">
             <form className="taster-form" onSubmit={buildProfile}>
               <label htmlFor="qualification">What are you studying?</label>
@@ -308,69 +374,54 @@ function App() {
                   id="qualification"
                   value={qualification}
                   onChange={(event) => setQualification(event.target.value)}
-                  placeholder="e.g. Economics"
+                  placeholder="e.g. BSc Computer Science"
                   autoComplete="off"
                 />
-                <button type="submit">Break it down</button>
+                <button type="submit">Build preview</button>
               </div>
-              <div className="preset-list" aria-label="Example disciplines">
-                {Object.keys(disciplines).map((discipline) => (
-                  <button
-                    key={discipline}
-                    type="button"
-                    className={qualification === discipline ? "selected" : ""}
-                    onClick={() => {
-                      setQualification(discipline);
-                      setProfile(discipline);
-                    }}
-                  >
-                    {discipline}
+              <p className="field-hint">Degree awards and abbreviations are ignored when matching your course.</p>
+              <div className="preset-list" aria-label="Example courses">
+                {POPULAR_COURSES.map((course) => (
+                  <button key={course} type="button" className={qualification === course ? "selected" : ""} onClick={() => chooseCourse(course)}>
+                    {course}
                   </button>
                 ))}
               </div>
             </form>
-
-            <div className={`profile-preview ${profile ? "is-ready" : ""}`} aria-live="polite">
-              {!profile ? (
-                <div className="empty-profile">
-                  <div className="profile-spark" aria-hidden="true">✦</div>
-                  <h3>Your micro-skill map starts here.</h3>
-                  <p>Type your qualification or pick a discipline to see a grounded profile preview.</p>
-                </div>
-              ) : (
-                <>
-                  <div className="preview-topline">
-                    <div>
-                      <span className="eyebrow">PROFILE PREVIEW</span>
-                      <h3>{profile}</h3>
-                    </div>
-                    <span className="emerging-tag">Emerging</span>
-                  </div>
-                  <p className="preview-label">Micro-skills to verify</p>
-                  <div className="skill-grid">
-                    {profileSkills.map((skill, index) => (
-                      <div key={skill} style={{ "--delay": `${index * 70}ms` }}>
-                        <span>{String(index + 1).padStart(2, "0")}</span>
-                        {skill}
-                      </div>
-                    ))}
-                  </div>
-                  <p className="preview-footnote">A preview only — your real profile grows through evidence and verification.</p>
-                </>
-              )}
+            <div className={`profile-preview ${result ? "is-ready" : ""}`} aria-live="polite">
+              <SkillProfile result={result} onSelect={selectFamily} onJoin={joinWithCourse} />
             </div>
+          </div>
+        </section>
+
+        <section className="early-access-section" id="early-access">
+          <div>
+            <span className="eyebrow">WHAT EARLY ACCESS MEANS</span>
+            <h2>A focused student pilot, not a promise of a job.</h2>
+          </div>
+          <div className="faq-list">
+            <details open>
+              <summary>Who is this first pilot for?</summary>
+              <p>We are starting with university students and recent graduates who want a clearer way to express and evidence their capabilities.</p>
+            </details>
+            <details>
+              <summary>What happens after I join?</summary>
+              <p>We record your campus and course, then contact you when onboarding, research or testing is relevant. Joining does not guarantee access, placement or earnings.</p>
+            </details>
+            <details>
+              <summary>How is my waitlist data handled?</summary>
+              <p>It is used for pilot planning and contact, kept for no more than 12 months, and removed earlier when the pilot closes or you withdraw through privacy@fixars.ai.</p>
+            </details>
           </div>
         </section>
 
         <section className="closing-section">
           <div>
-            <span className="eyebrow">YOUR NEXT MOVE</span>
-            <h2>Get in before your campus does.</h2>
-            <p>Launching soon at a uni near you. No placement promises — just receipts.</p>
+            <span className="eyebrow">HELP SHAPE THE PILOT</span>
+            <h2>Start with the course you already know.</h2>
+            <p>Join the research and early-access list for your campus.</p>
           </div>
-          <button className="light-button" type="button" onClick={openWaitlist}>
-            Join the waitlist <span aria-hidden="true">→</span>
-          </button>
+          <button className="light-button" type="button" onClick={focusJoin}>Join early access</button>
         </section>
       </main>
 
@@ -379,11 +430,9 @@ function App() {
           <img src="/fixars-mark.png" alt="" width="30" height="30" />
           <span>Fixars</span>
         </a>
-        <p>One account. One wallet. One reputation.</p>
-        <button type="button" onClick={openWaitlist}>Early access</button>
+        <p>Skills, evidence and opportunities — connected.</p>
+        <button type="button" onClick={focusJoin}>Early access</button>
       </footer>
-
-      {waitlistOpen && <WaitlistModal onClose={() => setWaitlistOpen(false)} />}
     </>
   );
 }
