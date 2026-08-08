@@ -3,6 +3,50 @@ import { access } from "node:fs/promises";
 import test from "node:test";
 import worker from "../worker/index.js";
 
+test("permanently redirects product connector paths to canonical domains", async () => {
+  const cases = [
+    ["/skills", "https://skillscanvas.co/"],
+    ["/skills/passport?source=hub", "https://skillscanvas.co/passport?source=hub"],
+    ["/concepts/ideas/42", "https://conceptsnexus.co/ideas/42"],
+    ["/collab/capsules/demo", "https://collaboard.co/capsules/demo"],
+    ["/vest/projects/demo", "https://vestden.co/projects/demo"],
+  ];
+
+  for (const [pathname, expectedLocation] of cases) {
+    let assetCalls = 0;
+    const response = await worker.fetch(new Request(`https://fixars.ai${pathname}`), {
+      ASSETS: {
+        fetch: async () => {
+          assetCalls += 1;
+          return new Response("unexpected", { status: 500 });
+        },
+      },
+    });
+
+    assert.equal(response.status, 308);
+    assert.equal(response.headers.get("location"), expectedLocation);
+    assert.equal(assetCalls, 0);
+  }
+});
+
+test("does not redirect write requests through connector aliases", async () => {
+  let assetCalls = 0;
+  const response = await worker.fetch(
+    new Request("https://fixars.ai/skills/passport", { method: "POST" }),
+    {
+      ASSETS: {
+        fetch: async () => {
+          assetCalls += 1;
+          return new Response("missing", { status: 404 });
+        },
+      },
+    },
+  );
+
+  assert.equal(response.status, 404);
+  assert.equal(assetCalls, 1);
+});
+
 test("serves existing static assets without a fallback", async () => {
   const calls = [];
   const response = await worker.fetch(new Request("https://example.test/assets/app.js"), {
