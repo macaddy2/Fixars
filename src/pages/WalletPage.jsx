@@ -26,7 +26,7 @@ const MOCK_TRANSACTIONS = [
     { id: 2, type: 'earning', label: 'Demo credit · Solar Grid Network', amount: 4200, date: '2026-05-10', app: 'vestden' },
     { id: 3, type: 'reward', label: 'Points reward — Idea validated', amount: 150, date: '2026-05-09', app: 'conceptnexus' },
     { id: 4, type: 'stake', label: 'Staked on Sustainable Fashion Marketplace', amount: -1800, date: '2026-05-07', app: 'vestden' },
-    { id: 5, type: 'earning', label: 'Freelance payment — Logo Design', amount: 3500, date: '2026-05-05', app: 'skillscanvas' },
+    { id: 5, type: 'earning', label: 'Demo credit · Logo Design', amount: 3500, date: '2026-05-05', app: 'skillscanvas' },
     { id: 6, type: 'reward', label: 'Points reward — Board completed', amount: 200, date: '2026-05-03', app: 'collaboard' },
     { id: 7, type: 'stake', label: 'Staked on Remote Team Wellness Platform', amount: -1000, date: '2026-05-01', app: 'vestden' },
     { id: 8, type: 'earning', label: 'Demo credit · EdTech Pipeline', amount: 2800, date: '2026-04-28', app: 'vestden' },
@@ -82,7 +82,7 @@ export default function WalletPage() {
                 setPayoutDest('')
             }
         } catch (err) {
-            setPayoutError(err.message || 'Payout failed')
+            setPayoutError(err.message || 'Mock debit failed')
         } finally {
             setPayoutBusy(false)
         }

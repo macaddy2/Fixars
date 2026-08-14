@@ -52,7 +52,7 @@ export async function requestPayout({ amount, destination }) {
     })
     const data = await readJson(res)
     if (!res.ok) {
-        return { ok: false, error: data?.message || 'Payout failed', snapshot: null }
+        return { ok: false, error: data?.message || 'Mock debit failed', snapshot: null }
     }
     return { ok: true, error: null, snapshot: data }
 }

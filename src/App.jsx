@@ -99,9 +99,9 @@ function ForgotPassword() {
       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
         <span className="text-3xl">🔑</span>
       </div>
-      <h1 className="text-2xl font-bold text-foreground mb-2">Reset your password</h1>
-      <p className="text-muted mb-6">Password reset is handled via Magic Link on Fixars. Head back to login and use the "Sign in with Magic Link" button to access your account without a password.</p>
-      <a href="/login" className="inline-block px-6 py-2 rounded-lg bg-primary text-white font-semibold hover:opacity-90 transition-opacity">Back to Login</a>
+      <h1 className="text-2xl font-bold text-foreground mb-2">No live password reset</h1>
+      <p className="text-muted mb-6">This is a public prototype. Dummy sign-in does not reset a live account. Go back to login and enter the demo.</p>
+      <a href="/login" className="inline-block px-6 py-2 rounded-lg bg-primary text-white font-semibold hover:opacity-90 transition-opacity">Back to prototype sign-in</a>
     </div>
   )
 }

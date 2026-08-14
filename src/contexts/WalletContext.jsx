@@ -116,7 +116,7 @@ export function WalletProvider({ children }) {
 
     const payout = useCallback(async (amount, destination) => {
         if (!realSession) {
-            return { ok: false, error: 'Payout is not a live-money path on the public demo.' }
+            return { ok: false, error: 'Mock debit is only on the flagged server ledger. Not a live-money path.' }
         }
         const result = await requestPayout({ amount, destination })
         if (result.ok) setServerSnapshot(result.snapshot)

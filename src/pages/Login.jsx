@@ -1,22 +1,21 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/AuthContext'
 import { isRealSessionEnabled } from '@/lib/flags'
-import { Mail, Lock, ArrowRight, Loader2, Wand2, CheckCircle } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function Login() {
     const navigate = useNavigate()
     const location = useLocation()
-    const { login, loginWithMagicLink, isAuthenticated, isLoading } = useAuth()
+    const { login, isAuthenticated } = useAuth()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
     const [submitting, setSubmitting] = useState(false)
-    const [magicLinkSent, setMagicLinkSent] = useState(false)
-    const [sendingMagicLink, setSendingMagicLink] = useState(false)
+    const flagOn = isRealSessionEnabled()
 
     const redirectTo = location.state?.from || '/dashboard'
 
@@ -38,7 +37,7 @@ export default function Login() {
             if (result.error) {
                 const msg = result.error.message || ''
                 if (msg.toLowerCase().includes('email not confirmed') || msg.toLowerCase().includes('not confirmed')) {
-                    setError('Email not confirmed yet. Use the "Sign in with Magic Link" button below, or check your inbox for the confirmation email.')
+                    setError('Email is not confirmed on this prototype path. Try the dummy password sign-in.')
                 } else {
                     setError(msg || 'Invalid credentials. Please try again.')
                 }
@@ -48,31 +47,9 @@ export default function Login() {
 
             // Navigation happens in the useEffect once isAuthenticated flips true.
             // Keep submitting=true until then so the button stays in its loading state.
-        } catch (err) {
+        } catch {
             setError('Something went wrong. Please try again.')
             setSubmitting(false)
-        }
-    }
-
-    const handleMagicLink = async () => {
-        if (!email) {
-            setError('Please enter your email first')
-            return
-        }
-        setError('')
-        setSendingMagicLink(true)
-
-        try {
-            const result = await loginWithMagicLink(email)
-            if (result.error) {
-                setError(result.error.message || 'Failed to send magic link')
-            } else {
-                setMagicLinkSent(true)
-            }
-        } catch (err) {
-            setError('Failed to send magic link. Please try again.')
-        } finally {
-            setSendingMagicLink(false)
         }
     }
 
@@ -85,122 +62,81 @@ export default function Login() {
                             <span className="text-white font-bold text-2xl">F</span>
                         </div>
                     </Link>
-                    <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
+                    <h1 className="text-2xl font-bold text-foreground">
+                        {flagOn ? 'Preview sign-in' : 'Prototype sign-in'}
+                    </h1>
                     <p className="text-muted mt-2">
-                        {isRealSessionEnabled()
-                            ? 'Server session required. The client cannot mint a session.'
-                            : 'Sign in to your Fixars account'}
+                        {flagOn
+                            ? 'Mock server session for a named internal preview. Not a live account. The client cannot mint a session.'
+                            : 'Dummy login for the public demo. Not a live Fixars account.'}
                     </p>
                 </div>
 
                 <Card>
                     <CardContent className="p-6">
-                        {magicLinkSent ? (
-                            <div className="text-center py-6 space-y-4 animate-fade-in">
-                                <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto">
-                                    <Mail className="w-8 h-8 text-success" />
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            {error && (
+                                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                                    {error}
                                 </div>
-                                <h2 className="text-xl font-bold text-foreground">Check your email</h2>
-                                <p className="text-muted text-sm max-w-xs mx-auto">
-                                    We've sent a magic login link to <strong className="text-foreground">{email}</strong>.
-                                    Click the link to sign in instantly.
-                                </p>
-                                <Button variant="ghost" onClick={() => setMagicLinkSent(false)}>
-                                    Try another method
-                                </Button>
+                            )}
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Email</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+                                    <Input
+                                        type="email"
+                                        placeholder="you@example.com"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        className="pl-10"
+                                        required
+                                    />
+                                </div>
                             </div>
-                        ) : (
-                            <>
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    {error && (
-                                        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                                            {error}
-                                        </div>
-                                    )}
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-foreground">Email</label>
-                                        <div className="relative">
-                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
-                                            <Input
-                                                type="email"
-                                                placeholder="you@example.com"
-                                                value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
-                                                className="pl-10"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between">
-                                            <label className="text-sm font-medium text-foreground">Password</label>
-                                            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
-                                                Forgot password?
-                                            </Link>
-                                        </div>
-                                        <div className="relative">
-                                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
-                                            <Input
-                                                type="password"
-                                                placeholder="••••••••"
-                                                value={password}
-                                                onChange={(e) => setPassword(e.target.value)}
-                                                className="pl-10"
-                                                required
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <Button type="submit" className="w-full" disabled={submitting}>
-                                        {submitting ? (
-                                            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Signing in...</>
-                                        ) : (
-                                            <>Sign in <ArrowRight className="w-4 h-4 ml-2" /></>
-                                        )}
-                                    </Button>
-                                </form>
-
-                                <div className="relative my-4">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <div className="w-full border-t" />
-                                    </div>
-                                    <div className="relative flex justify-center text-xs">
-                                        <span className="bg-card px-2 text-muted">or</span>
-                                    </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground">Password</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
+                                    <Input
+                                        type="password"
+                                        placeholder="••••••••"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="pl-10"
+                                        required
+                                    />
                                 </div>
+                            </div>
 
-                                <Button
-                                    variant="outline"
-                                    className="w-full"
-                                    onClick={handleMagicLink}
-                                    disabled={sendingMagicLink}
-                                >
-                                    {sendingMagicLink ? (
-                                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
-                                    ) : (
-                                        <><Wand2 className="w-4 h-4 mr-2" /> Sign in with Magic Link</>
-                                    )}
-                                </Button>
+                            <Button type="submit" className="w-full" disabled={submitting}>
+                                {submitting ? (
+                                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {flagOn ? 'Signing in...' : 'Entering demo...'}</>
+                                ) : (
+                                    <>{flagOn ? 'Sign in' : 'Enter demo'} <ArrowRight className="w-4 h-4 ml-2" /></>
+                                )}
+                            </Button>
+                        </form>
 
-                                <div className="mt-6 text-center">
-                                    <p className="text-sm text-muted">
-                                        Don't have an account?{' '}
-                                        <Link to="/signup" className="text-primary font-medium hover:underline">
-                                            Create one
-                                        </Link>
-                                    </p>
-                                </div>
-                            </>
-                        )}
+                        <div className="mt-6 text-center">
+                            <p className="text-sm text-muted">
+                                {flagOn ? "Don't have an account? " : 'Need a demo profile? '}
+                                <Link to="/signup" className="text-primary font-medium hover:underline">
+                                    {flagOn ? 'Create one' : 'Create a dummy profile'}
+                                </Link>
+                            </p>
+                        </div>
                     </CardContent>
                 </Card>
 
                 <p className="text-center text-sm text-muted mt-6">
-                    By signing in, you agree to our{' '}
+                    {flagOn
+                        ? 'Named internal preview. Not a live account. '
+                        : 'Public prototype. Dummy sign-in — not a live account. '}
                     <Link to="/terms" className="text-primary hover:underline">Terms</Link>
-                    {' '}and{' '}
+                    {' · '}
                     <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
                 </p>
             </div>

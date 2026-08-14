@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/AuthContext'
+import { isRealSessionEnabled } from '@/lib/flags'
 import { Mail, Lock, User, ArrowRight, Loader2, CheckCircle } from 'lucide-react'
 
 const BENEFITS = [
@@ -58,7 +59,7 @@ export default function Signup() {
                 setSubmitting(false)
             }
             // Otherwise the useEffect above will navigate once isAuthenticated flips true.
-        } catch (err) {
+        } catch {
             setError('Something went wrong. Please try again.')
             setSubmitting(false)
         }
@@ -77,10 +78,14 @@ export default function Signup() {
                     </Link>
 
                     <h1 className="text-3xl font-bold text-foreground mb-4">
-                        Join the future of connected productivity
+                        {isRealSessionEnabled()
+                            ? 'Preview profile for a named internal stack'
+                            : 'Prototype demo profile'}
                     </h1>
                     <p className="text-muted mb-8">
-                        Start investing in ideas, validating concepts, collaborating, and showcasing skills—all from one account.
+                        {isRealSessionEnabled()
+                            ? 'Mock signup issues a server session. Not a live account. Not live money.'
+                            : 'Dummy signup for the public demo. Not a live Fixars account. Not live money.'}
                     </p>
 
                     <ul className="space-y-4">
@@ -103,7 +108,9 @@ export default function Signup() {
                                 <span className="text-white font-bold text-2xl">F</span>
                             </div>
                         </Link>
-                        <h1 className="text-2xl font-bold text-foreground">Create your account</h1>
+                        <h1 className="text-2xl font-bold text-foreground">
+                            {isRealSessionEnabled() ? 'Create a preview profile' : 'Create a demo profile'}
+                        </h1>
                     </div>
 
                     <Card>
@@ -182,14 +189,14 @@ export default function Signup() {
                                             {submitting ? (
                                                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating account...</>
                                             ) : (
-                                                <>Create account <ArrowRight className="w-4 h-4 ml-2" /></>
+                                                <>{isRealSessionEnabled() ? 'Create preview profile' : 'Create demo profile'} <ArrowRight className="w-4 h-4 ml-2" /></>
                                             )}
                                         </Button>
                                     </form>
 
                                     <div className="mt-6 text-center">
                                         <p className="text-sm text-muted">
-                                            Already have an account?{' '}
+                                            {isRealSessionEnabled() ? 'Already have a preview profile? ' : 'Already have a demo profile? '}
                                             <Link to="/login" className="text-primary font-medium hover:underline">
                                                 Sign in
                                             </Link>
@@ -201,9 +208,11 @@ export default function Signup() {
                     </Card>
 
                     <p className="text-center text-sm text-muted mt-6">
-                        By creating an account, you agree to our{' '}
+                        {isRealSessionEnabled()
+                            ? 'Named internal preview. Not a live account. '
+                            : 'Public prototype. Dummy profile — not a live account. '}
                         <Link to="/terms" className="text-primary hover:underline">Terms</Link>
-                        {' '}and{' '}
+                        {' · '}
                         <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
                     </p>
                 </div>
