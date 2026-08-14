@@ -66,7 +66,7 @@ export async function fetchEscrow() {
 
 export async function fetchKyc() {
     const res = await fetch('/api/kyc', { credentials: 'include' })
-    if (res.status === 401) return null
+    if (res.status === 401 || res.status === 404) return null
     if (!res.ok) throw new Error('Failed to read KYC status')
     return readJson(res)
 }

@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { createApp } from '../app.js'
 import { signSessionId } from '../signed-cookie.js'
+import { assertSessionSecret, cookieShouldBeSecure } from '../session-secret.js'
 import { startTestServer, request, login, TEST_SECRET } from './helpers.js'
 
 test('login issues an httpOnly session cookie the client cannot mint', async (t) => {
@@ -129,4 +131,77 @@ test('flag-off server does not issue sessions', async (t) => {
     assert.equal(health.status, 200)
     assert.equal(health.json.realSession, false)
     assert.equal(health.json.liveRails, false)
+})
+
+test('flag-on login does not attach live money to the mock issuer', async (t) => {
+    const srv = await startTestServer()
+    t.after(() => srv.close())
+
+    const { cookie } = await login(srv.url)
+    const wallet = await request(`${srv.url}/api/wallet`, { cookie })
+    assert.equal(wallet.status, 200)
+    assert.equal(wallet.json.available, 0)
+    assert.equal(wallet.json.held, 0)
+    assert.equal(wallet.json.liveRails, false)
+    assert.equal(wallet.json.source, 'mock-ledger')
+    assert.deepEqual(wallet.json.entries, [])
+})
+
+test('createApp refuses a missing or known-weak SESSION_SECRET when realSession is on', () => {
+    for (const sessionSecret of ['', 'dev', 'secret', 'changeme', 'short', 'password']) {
+        assert.throws(
+            () => createApp({ realSession: true, sessionSecret }),
+            (err) => err && err.code === 'WEAK_SESSION_SECRET',
+        )
+    }
+    assert.doesNotThrow(() => createApp({ realSession: true, sessionSecret: TEST_SECRET }))
+    assert.doesNotThrow(() => createApp({ realSession: false, sessionSecret: '' }))
+})
+
+test('assertSessionSecret rejects empty, short, and known-weak values', () => {
+    assert.throws(() => assertSessionSecret(''), (err) => err.code === 'WEAK_SESSION_SECRET')
+    assert.throws(() => assertSessionSecret('   '), (err) => err.code === 'WEAK_SESSION_SECRET')
+    assert.throws(() => assertSessionSecret('1234567890abcd'), (err) => err.code === 'WEAK_SESSION_SECRET')
+    assert.throws(() => assertSessionSecret('SECRET'), (err) => err.code === 'WEAK_SESSION_SECRET')
+    assert.equal(assertSessionSecret(TEST_SECRET), TEST_SECRET)
+})
+
+test('COOKIE_SECURE=1 sets the Secure flag on the session cookie', async (t) => {
+    const srv = await startTestServer({ secureCookie: true })
+    t.after(() => srv.close())
+
+    const res = await login(srv.url)
+    const header = res.setCookie.find((c) => c.startsWith('fixars_session='))
+    assert.match(header, /Secure/i)
+})
+
+test('x-forwarded-proto https sets the Secure flag without COOKIE_SECURE', async (t) => {
+    const srv = await startTestServer()
+    t.after(() => srv.close())
+
+    const res = await request(`${srv.url}/api/session`, {
+        method: 'POST',
+        body: { email: 'ade@fixars.test', password: 'x', name: 'Ade' },
+        headers: { 'x-forwarded-proto': 'https' },
+    })
+    const header = res.setCookie.find((c) => c.startsWith('fixars_session='))
+    assert.match(header, /Secure/i)
+})
+
+test('plain HTTP login does not set Secure unless COOKIE_SECURE is on', async (t) => {
+    const srv = await startTestServer()
+    t.after(() => srv.close())
+
+    const res = await login(srv.url)
+    const header = res.setCookie.find((c) => c.startsWith('fixars_session='))
+    assert.doesNotMatch(header, /Secure/i)
+})
+
+test('cookieShouldBeSecure follows COOKIE_SECURE, forwarded proto, and TLS', () => {
+    assert.equal(cookieShouldBeSecure({}, { secureCookie: true }), true)
+    assert.equal(cookieShouldBeSecure({ headers: { 'x-forwarded-proto': 'https' } }), true)
+    assert.equal(cookieShouldBeSecure({ headers: { 'x-forwarded-proto': 'http, https' } }), false)
+    assert.equal(cookieShouldBeSecure({ headers: { 'x-forwarded-proto': 'https, http' } }), true)
+    assert.equal(cookieShouldBeSecure({ socket: { encrypted: true } }), true)
+    assert.equal(cookieShouldBeSecure({ headers: {} }), false)
 })

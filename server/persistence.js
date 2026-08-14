@@ -15,13 +15,16 @@ import { createFileEscrowHold } from './adapters/file-escrow-hold.js'
  * PERSISTENCE=file — JSON files under DATA_DIR (default ./data).
  *
  * KYC stays the in-process mock (liveNetwork: false). No NIMC call.
+ * Holder / EscrowHold is the same object — a DMB/MMO adapter replaces it later.
  */
 export function createMockPorts() {
     const ledger = createMockWalletLedger()
+    const escrow = createMockEscrowHold({ ledger })
     return {
         sessions: createMemorySessionStore(),
         ledger,
-        escrow: createMockEscrowHold({ ledger }),
+        escrow,
+        holder: escrow,
         kyc: createMockKycProvider(),
     }
 }
@@ -30,10 +33,12 @@ export function createFilePorts({ dataDir, now } = {}) {
     const dir = resolve(dataDir || process.env.DATA_DIR || 'data')
     mkdirSync(dir, { recursive: true })
     const ledger = createFileWalletLedger({ dataDir: dir })
+    const escrow = createFileEscrowHold({ dataDir: dir, ledger })
     return {
         sessions: createFileSessionStore({ dataDir: dir, now }),
         ledger,
-        escrow: createFileEscrowHold({ dataDir: dir, ledger }),
+        escrow,
+        holder: escrow,
         kyc: createMockKycProvider(),
     }
 }

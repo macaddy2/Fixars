@@ -9,7 +9,6 @@ import {
     Wallet,
     ArrowUpRight,
     ArrowDownLeft,
-    TrendingUp,
     Clock,
     Shield,
     Star,
@@ -24,13 +23,13 @@ import {
 
 const MOCK_TRANSACTIONS = [
     { id: 1, type: 'stake', label: 'Staked on AI Recipe Generator', amount: -2500, date: '2026-05-12', app: 'vestden' },
-    { id: 2, type: 'earning', label: 'Returns from Solar Grid Network', amount: 4200, date: '2026-05-10', app: 'vestden' },
+    { id: 2, type: 'earning', label: 'Demo credit · Solar Grid Network', amount: 4200, date: '2026-05-10', app: 'vestden' },
     { id: 3, type: 'reward', label: 'Points reward — Idea validated', amount: 150, date: '2026-05-09', app: 'conceptnexus' },
     { id: 4, type: 'stake', label: 'Staked on Sustainable Fashion Marketplace', amount: -1800, date: '2026-05-07', app: 'vestden' },
     { id: 5, type: 'earning', label: 'Freelance payment — Logo Design', amount: 3500, date: '2026-05-05', app: 'skillscanvas' },
     { id: 6, type: 'reward', label: 'Points reward — Board completed', amount: 200, date: '2026-05-03', app: 'collaboard' },
     { id: 7, type: 'stake', label: 'Staked on Remote Team Wellness Platform', amount: -1000, date: '2026-05-01', app: 'vestden' },
-    { id: 8, type: 'earning', label: 'Returns from EdTech Pipeline', amount: 2800, date: '2026-04-28', app: 'vestden' },
+    { id: 8, type: 'earning', label: 'Demo credit · EdTech Pipeline', amount: 2800, date: '2026-04-28', app: 'vestden' },
 ]
 
 const TABS = ['All', 'Stakes', 'Earnings', 'Rewards']
@@ -44,7 +43,6 @@ export default function WalletPage() {
         held,
         transactions,
         source,
-        liveRails,
         ledgerLoading,
         realSession,
         payout,
@@ -145,7 +143,7 @@ export default function WalletPage() {
                         </p>
                     )}
                     <p style={{ marginTop: 8, opacity: 0.75, fontSize: 12 }}>
-                        {liveRails ? 'Live rails' : 'No Paystack, Flutterwave, NIP, or NIMC call.'}
+                        No Paystack, Flutterwave, NIP, or NIMC call.
                         {user?.email ? ` Signed in as ${user.email}.` : ''}
                     </p>
                     {!flagOn && (
@@ -163,9 +161,9 @@ export default function WalletPage() {
 
             {flagOn && (
                 <form className="wallet-txn-section" onSubmit={handlePayout} style={{ padding: 20 }}>
-                    <h2 className="wallet-txn-title display">Payout (mock)</h2>
+                    <h2 className="wallet-txn-title display">Mock ledger debit</h2>
                     <p className="page-header-sub" style={{ marginBottom: 12 }}>
-                        Hits the server WalletLedger.payout port. No live processor.
+                        Hits the server WalletLedger mock. Not a live processor. Not client funds.
                     </p>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                         <input
@@ -188,7 +186,7 @@ export default function WalletPage() {
                             style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid var(--color-ink-200)' }}
                         />
                         <button type="submit" className="wallet-action-btn" disabled={payoutBusy}>
-                            {payoutBusy ? 'Posting…' : 'Request mock payout'}
+                            {payoutBusy ? 'Posting…' : 'Post mock debit'}
                         </button>
                     </div>
                     {payoutError && (
@@ -198,17 +196,6 @@ export default function WalletPage() {
             )}
 
             <div className="wallet-stats-row">
-                {!flagOn && (
-                    <div className="wallet-stat">
-                        <div className="wallet-stat-icon" style={{ background: 'var(--color-success-bg)', color: 'var(--color-success)' }}>
-                            <TrendingUp size={18} />
-                        </div>
-                        <div>
-                            <span className="wallet-stat-value display">₦{formatNumber(4200)}</span>
-                            <span className="wallet-stat-label">Dummy returns</span>
-                        </div>
-                    </div>
-                )}
                 <div className="wallet-stat">
                     <div className="wallet-stat-icon" style={{ background: 'var(--color-warning-bg)', color: 'var(--color-warning)' }}>
                         <Star size={18} />

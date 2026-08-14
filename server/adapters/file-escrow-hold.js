@@ -1,21 +1,26 @@
 import { randomBytes } from 'node:crypto'
 import { join } from 'node:path'
 import { createJsonFileStore } from './json-file-store.js'
+import { decorateHold, HOLDER_INFO } from '../holder-meta.js'
 
 /**
- * File-backed EscrowHold. Same port as the in-process mock.
- * Not bank-grade. No licensed custody.
+ * File-backed Holder / EscrowHold. Same port as the in-process mock.
+ * This prototype does not hold client money. No named bank.
  */
 export function createFileEscrowHold({ dataDir, ledger } = {}) {
     if (!dataDir) throw new Error('createFileEscrowHold requires dataDir')
     const store = createJsonFileStore(join(dataDir, 'escrow.json'), { holds: {} })
 
     return {
+        async info() {
+            return { ...HOLDER_INFO }
+        },
+
         async list(userId) {
             const data = store.read()
             return Object.values(data.holds)
                 .filter((h) => h.userId === userId)
-                .map((h) => ({ ...h }))
+                .map((h) => decorateHold(h))
         },
 
         async hold({ userId, amount, ref }) {
@@ -29,15 +34,13 @@ export function createFileEscrowHold({ dataDir, ledger } = {}) {
                 await ledger.holdFromAvailable(userId, value)
             }
             const data = store.read()
-            const record = {
+            const record = decorateHold({
                 id: `esc_${randomBytes(8).toString('hex')}`,
                 userId,
                 amount: value,
                 status: 'held',
                 ref: ref || null,
-                liveRails: false,
-                provider: 'mock',
-            }
+            })
             data.holds[record.id] = record
             store.write(data)
             return { ...record }
@@ -61,7 +64,7 @@ export function createFileEscrowHold({ dataDir, ledger } = {}) {
             }
             record.status = 'released'
             store.write(data)
-            return { ...record }
+            return decorateHold(record)
         },
 
         async refund(holdId) {
@@ -82,7 +85,7 @@ export function createFileEscrowHold({ dataDir, ledger } = {}) {
             }
             record.status = 'refunded'
             store.write(data)
-            return { ...record }
+            return decorateHold(record)
         },
     }
 }

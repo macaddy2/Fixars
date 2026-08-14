@@ -26,6 +26,7 @@ test('file adapters satisfy the published ports', async (t) => {
     assertPort('SessionStore', ports.sessions)
     assertPort('WalletLedger', ports.ledger)
     assertPort('EscrowHold', ports.escrow)
+    assertPort('Holder', ports.holder)
     assertPort('KycProvider', ports.kyc)
     const kyc = await ports.kyc.getStatus('usr_1')
     assert.equal(kyc.liveNetwork, false)
@@ -60,6 +61,9 @@ test('file adapters reload the same session, ledger, and holds after a new proce
     assert.equal(holds[0].amount, 3000)
     assert.equal(holds[0].status, 'held')
     assert.equal(holds[0].liveRails, false)
+    assert.equal(holds[0].holdsClientMoney, false)
+    assert.equal(holds[0].holder, 'prototype')
+    assert.doesNotMatch(JSON.stringify(holds), /GTBank|Providus|the bank holds/i)
 })
 
 test('HTTP session + wallet + escrow survive a server restart on file persistence', async (t) => {
@@ -96,6 +100,9 @@ test('HTTP session + wallet + escrow survive a server restart on file persistenc
     assert.equal(escrow.json.holds[0].amount, 3000)
     assert.equal(escrow.json.holds[0].status, 'held')
     assert.equal(escrow.json.liveRails, false)
+    assert.equal(escrow.json.holdsClientMoney, false)
+    assert.equal(escrow.json.holder, 'prototype')
+    assert.doesNotMatch(JSON.stringify(escrow.json), /GTBank|Providus|the bank holds/i)
 
     const forged = await request(`${second.url}/api/me`, {
         cookie: 'fixars_session=usr_hacker.not-a-real-hmac',

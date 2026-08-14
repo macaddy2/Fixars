@@ -1,11 +1,11 @@
 /**
- * Plug-and-play ports for session, naira ledger, escrow, and KYC.
+ * Plug-and-play ports for session, naira ledger, holder/escrow, and KYC.
  *
- * These are interfaces only. Ship mock adapters. A licensed bank, Paystack,
- * Flutterwave, NIMC, or NIBSS adapter can implement the same methods later
+ * These are interfaces only. Ship mock adapters. A licensed DMB/MMO letter,
+ * or a NIN/BVN identity adapter, can implement the same methods later
  * without changing route handlers.
  *
- * No live rails in this tree.
+ * No live rails in this tree. No named bank. No live NIMC/NIBSS/Smile/Dojah call.
  */
 
 /**
@@ -63,6 +63,16 @@
  */
 
 /**
+ * @typedef {object} HolderInfo
+ * @property {boolean} liveRails
+ * @property {boolean} holdsClientMoney
+ * @property {string} holder  // always 'prototype' on the mock — never a bank name
+ * @property {string} intendedAfter
+ * @property {string} provider
+ * @property {string} note
+ */
+
+/**
  * @typedef {object} EscrowRecord
  * @property {string} id
  * @property {string} userId
@@ -70,16 +80,22 @@
  * @property {string} status
  * @property {string} [ref]
  * @property {boolean} liveRails
+ * @property {boolean} holdsClientMoney
+ * @property {string} holder
+ * @property {string} intendedAfter
  */
 
 /**
- * EscrowHold — hold / release / refund. Mock only until a bank adapter exists.
+ * Holder / EscrowHold — hold / release / refund / list / info.
+ * A licensed DMB or MMO implements this after a letter.
+ * This prototype does not hold client money.
  *
  * @typedef {object} EscrowHold
  * @property {(userId: string) => Promise<EscrowRecord[]>} list
  * @property {(input: { userId: string, amount: number, ref?: string }) => Promise<EscrowRecord>} hold
  * @property {(holdId: string) => Promise<EscrowRecord>} release
  * @property {(holdId: string) => Promise<EscrowRecord>} refund
+ * @property {() => Promise<HolderInfo>} info
  */
 
 /**
@@ -89,22 +105,29 @@
  * @property {string} provider
  * @property {boolean} liveNetwork
  * @property {string} note
+ * @property {string} [channel]
  */
 
 /**
- * KycProvider — NIMC / NIBSS / Smile can implement this later.
- * The mock must never claim a live identity-network check.
+ * KycProvider — NIN (NIMC) and BVN interface.
+ * A licensed identity adapter implements verifyNin / verifyBvn later.
+ * The mock must set liveNetwork: false and must not claim a live check.
  *
  * @typedef {object} KycProvider
  * @property {(userId: string) => Promise<KycStatus>} getStatus
  * @property {(userId: string, payload?: object) => Promise<KycStatus>} startVerification
+ * @property {(userId: string, nin?: string) => Promise<KycStatus>} verifyNin
+ * @property {(userId: string, bvn?: string) => Promise<KycStatus>} verifyBvn
  */
+
+const HOLDER_METHODS = ['list', 'hold', 'release', 'refund', 'info']
 
 export const PORT_METHODS = Object.freeze({
     SessionStore: ['create', 'get', 'destroy'],
     WalletLedger: ['getSnapshot', 'credit', 'debit', 'payout'],
-    EscrowHold: ['list', 'hold', 'release', 'refund'],
-    KycProvider: ['getStatus', 'startVerification'],
+    EscrowHold: HOLDER_METHODS,
+    Holder: HOLDER_METHODS,
+    KycProvider: ['getStatus', 'startVerification', 'verifyNin', 'verifyBvn'],
 })
 
 export function assertPort(name, impl) {

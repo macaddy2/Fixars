@@ -57,16 +57,19 @@ supabase/
 
 See `.env.example`. Never commit a real `.env` — all `.env*` files are gitignored.
 
-The public GitHub Pages build must leave `VITE_REAL_SESSION` unset so the
-static demo path stays dummy. Railway / internal preview may set
-`VITE_REAL_SESSION=1` (build) and `REAL_SESSION=1` plus `SESSION_SECRET`
-(runtime) to turn on the server-issued session stack. That stack still
-uses mock adapters only — no live Paystack, NIMC, or bank rails.
-`isSupabaseConfigured()` stays `false`.
+`VITE_REAL_SESSION` and `REAL_SESSION` stay unset by default so a GitHub
+Pages build is the dummy demo. Do not set them on the Pages workflow.
+Only a named internal preview may turn the stack on (with a strong
+`SESSION_SECRET`; weak or missing secrets refuse to boot). That stack
+still uses mock adapters only — no live Paystack, NIMC, or bank rails.
+`isSupabaseConfigured()` stays `false`. Mock login does not attach live
+money. Set `COOKIE_SECURE=1` when serving HTTPS.
 
 `PERSISTENCE` defaults to `memory` (unit tests). Set `PERSISTENCE=file` and
-optionally `DATA_DIR` so SessionStore, WalletLedger, and EscrowHold survive
-a process restart. KYC stays the in-process mock (`liveNetwork: false`).
+optionally `DATA_DIR` so SessionStore, WalletLedger, and EscrowHold/Holder
+survive a process restart. `KYC_PORT` defaults off; when on, the mock NIN/BVN
+adapter still sets `liveNetwork: false`. The holder mock does not name a bank
+and does not hold client money.
 
 ## Deployment
 

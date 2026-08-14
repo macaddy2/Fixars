@@ -65,7 +65,7 @@ test('payout requires a session and stays on the mock ledger', async (t) => {
 })
 
 test('escrow and KYC routes require a session and stay mock', async (t) => {
-    const srv = await startTestServer()
+    const srv = await startTestServer({ kycPort: true })
     t.after(() => srv.close())
 
     assert.equal((await request(`${srv.url}/api/escrow`)).status, 401)

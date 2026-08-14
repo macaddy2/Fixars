@@ -1,16 +1,22 @@
 import { randomBytes } from 'node:crypto'
+import { decorateHold, HOLDER_INFO } from '../holder-meta.js'
 
 /**
- * In-process mock EscrowHold. Not bank-grade. No licensed custody.
+ * In-process mock Holder / EscrowHold.
+ * This prototype does not hold client money. No named bank.
  */
 export function createMockEscrowHold({ ledger } = {}) {
     const holds = new Map()
 
     return {
+        async info() {
+            return { ...HOLDER_INFO }
+        },
+
         async list(userId) {
             return [...holds.values()]
                 .filter((h) => h.userId === userId)
-                .map((h) => ({ ...h }))
+                .map((h) => decorateHold(h))
         },
 
         async hold({ userId, amount, ref }) {
@@ -23,15 +29,13 @@ export function createMockEscrowHold({ ledger } = {}) {
             if (ledger?.holdFromAvailable) {
                 await ledger.holdFromAvailable(userId, value)
             }
-            const record = {
+            const record = decorateHold({
                 id: `esc_${randomBytes(8).toString('hex')}`,
                 userId,
                 amount: value,
                 status: 'held',
                 ref: ref || null,
-                liveRails: false,
-                provider: 'mock',
-            }
+            })
             holds.set(record.id, record)
             return { ...record }
         },
@@ -52,7 +56,7 @@ export function createMockEscrowHold({ ledger } = {}) {
                 await ledger.releaseHeld(record.userId, record.amount)
             }
             record.status = 'released'
-            return { ...record }
+            return decorateHold(record)
         },
 
         async refund(holdId) {
@@ -71,7 +75,7 @@ export function createMockEscrowHold({ ledger } = {}) {
                 await ledger.releaseHeld(record.userId, record.amount)
             }
             record.status = 'refunded'
-            return { ...record }
+            return decorateHold(record)
         },
     }
 }

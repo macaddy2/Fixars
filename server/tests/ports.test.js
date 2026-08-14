@@ -11,9 +11,11 @@ test('mock adapters satisfy the published ports', () => {
     const ledger = createMockWalletLedger()
     assertPort('SessionStore', createMemorySessionStore())
     assertPort('WalletLedger', ledger)
-    assertPort('EscrowHold', createMockEscrowHold({ ledger }))
+    const holder = createMockEscrowHold({ ledger })
+    assertPort('EscrowHold', holder)
+    assertPort('Holder', holder)
     assertPort('KycProvider', createMockKycProvider())
-    assert.deepEqual(Object.keys(PORT_METHODS), ['SessionStore', 'WalletLedger', 'EscrowHold', 'KycProvider'])
+    assert.deepEqual(Object.keys(PORT_METHODS), ['SessionStore', 'WalletLedger', 'EscrowHold', 'Holder', 'KycProvider'])
 })
 
 test('assertPort rejects an incomplete adapter', () => {
@@ -62,7 +64,12 @@ test('EscrowHold mock moves funds through the ledger interface', async () => {
 
     const held = await escrow.hold({ userId: 'usr_1', amount: 3000, ref: 'm1' })
     assert.equal(held.liveRails, false)
+    assert.equal(held.holdsClientMoney, false)
+    assert.equal(held.holder, 'prototype')
     assert.equal(held.status, 'held')
+    const info = await escrow.info()
+    assert.equal(info.holdsClientMoney, false)
+    assert.equal(info.holder, 'prototype')
     assert.equal((await ledger.getSnapshot('usr_1')).available, 5000)
     assert.equal((await ledger.getSnapshot('usr_1')).held, 3000)
 
@@ -85,4 +92,11 @@ test('KycProvider mock never claims a live NIMC check', async () => {
     const started = await kyc.startVerification('usr_1', { nin: '12345678901' })
     assert.equal(started.liveNetwork, false)
     assert.equal(started.status, 'pending_mock')
+
+    const nin = await kyc.verifyNin('usr_1', '12345678901')
+    assert.equal(nin.liveNetwork, false)
+    assert.equal(nin.channel, 'nin')
+    const bvn = await kyc.verifyBvn('usr_1', '22222222222')
+    assert.equal(bvn.liveNetwork, false)
+    assert.equal(bvn.channel, 'bvn')
 })

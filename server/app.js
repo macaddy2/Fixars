@@ -1,5 +1,6 @@
 import { createPorts } from './persistence.js'
 import { assertPort } from './ports.js'
+import { isKycPortFlag, isRealSessionFlag } from './flags.js'
 import {
     cookieName,
     signSessionId,
@@ -9,22 +10,26 @@ import {
     readCookie,
 } from './signed-cookie.js'
 import { parseJsonBody, sendJson, pathnameOf, userIdFromEmail } from './http-util.js'
+import { assertSessionSecret, cookieShouldBeSecure } from './session-secret.js'
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000
 
 export function createApp(options = {}) {
-    const realSession = options.realSession ?? process.env.REAL_SESSION === '1'
+    const realSession = options.realSession ?? isRealSessionFlag()
+    const kycPort = options.kycPort ?? isKycPortFlag()
     const secret = options.sessionSecret ?? process.env.SESSION_SECRET ?? ''
     const secureCookie = options.secureCookie ?? process.env.COOKIE_SECURE === '1'
     const ports = options.ports ?? createPorts()
+    const holder = ports.holder || ports.escrow
 
     assertPort('SessionStore', ports.sessions)
     assertPort('WalletLedger', ports.ledger)
     assertPort('EscrowHold', ports.escrow)
+    assertPort('Holder', holder)
     assertPort('KycProvider', ports.kyc)
 
-    if (realSession && !secret) {
-        throw new Error('SESSION_SECRET is required when REAL_SESSION=1')
+    if (realSession) {
+        assertSessionSecret(secret)
     }
 
     async function readSession(req) {
@@ -34,11 +39,12 @@ export function createApp(options = {}) {
         return ports.sessions.get(sessionId)
     }
 
-    function setSessionCookie(res, session) {
+    function setSessionCookie(req, res, session) {
         const token = signSessionId(session.id, secret)
         const maxAgeSec = Math.max(0, Math.floor((session.expiresAt - Date.now()) / 1000))
+        const secure = cookieShouldBeSecure(req, { secureCookie })
         return {
-            'Set-Cookie': serializeSessionCookie(token, { maxAgeSec, secure: secureCookie }),
+            'Set-Cookie': serializeSessionCookie(token, { maxAgeSec, secure }),
         }
     }
 
@@ -59,6 +65,7 @@ export function createApp(options = {}) {
             sendJson(res, 200, {
                 ok: true,
                 realSession,
+                kycPort,
                 rails: 'mock',
                 liveRails: false,
             })
@@ -91,7 +98,7 @@ export function createApp(options = {}) {
                 // The session is still server-issued; a client-supplied session field is ignored.
                 const user = { id: userIdFromEmail(email), email, name }
                 const session = await ports.sessions.create(user, { ttlMs: DEFAULT_TTL_MS })
-                sendJson(res, 200, { user: session.user }, setSessionCookie(res, session))
+                sendJson(res, 200, { user: session.user }, setSessionCookie(req, res, session))
                 return
             }
 
@@ -100,7 +107,7 @@ export function createApp(options = {}) {
                 const sessionId = verifySessionCookie(raw, secret)
                 if (sessionId) await ports.sessions.destroy(sessionId)
                 sendJson(res, 200, { ok: true }, {
-                    'Set-Cookie': clearSessionCookie({ secure: secureCookie }),
+                    'Set-Cookie': clearSessionCookie({ secure: cookieShouldBeSecure(req, { secureCookie }) }),
                 })
                 return
             }
@@ -135,17 +142,37 @@ export function createApp(options = {}) {
             if (path === '/api/escrow' && method === 'GET') {
                 const session = await requireSession(req, res)
                 if (!session) return
-                const holds = await ports.escrow.list(session.user.id)
-                sendJson(res, 200, { holds, liveRails: false, provider: 'mock' })
+                const holds = await holder.list(session.user.id)
+                const info = await holder.info()
+                sendJson(res, 200, { holds, ...info })
                 return
             }
 
-            if (path === '/api/kyc' && method === 'GET') {
+            if (path.startsWith('/api/kyc')) {
+                if (!kycPort) {
+                    sendJson(res, 404, {
+                        error: 'kyc_port_off',
+                        liveNetwork: false,
+                        message: 'KYC port is flagged off. Set KYC_PORT=1 for the mock NIN/BVN adapter. Not live.',
+                    })
+                    return
+                }
                 const session = await requireSession(req, res)
                 if (!session) return
-                const status = await ports.kyc.getStatus(session.user.id)
-                sendJson(res, 200, status)
-                return
+                if (path === '/api/kyc' && method === 'GET') {
+                    sendJson(res, 200, await ports.kyc.getStatus(session.user.id))
+                    return
+                }
+                if (path === '/api/kyc/nin' && method === 'POST') {
+                    const body = await parseJsonBody(req)
+                    sendJson(res, 200, await ports.kyc.verifyNin(session.user.id, body.nin))
+                    return
+                }
+                if (path === '/api/kyc/bvn' && method === 'POST') {
+                    const body = await parseJsonBody(req)
+                    sendJson(res, 200, await ports.kyc.verifyBvn(session.user.id, body.bvn))
+                    return
+                }
             }
 
             sendJson(res, 404, { error: 'not_found' })
@@ -184,5 +211,5 @@ export function createApp(options = {}) {
         sendJson(res, 404, { error: 'not_found' })
     }
 
-    return { handler, handleApi, ports, realSession }
+    return { handler, handleApi, ports, realSession, kycPort }
 }

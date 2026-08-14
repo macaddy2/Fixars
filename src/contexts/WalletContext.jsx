@@ -19,10 +19,10 @@ const WalletContext = createContext(null)
 const DEFAULT_BALANCE = 284500
 
 const SEED_TRANSACTIONS = [
-    { id: 't1', type: 'reward', label: 'Idea validated — payout', amount: 60000, app: 'conceptnexus', date: '2026-06-06' },
-    { id: 't2', type: 'stake', label: 'Stake · SolarShare Lagos', amount: -50000, app: 'vestden', date: '2026-06-04' },
-    { id: 't3', type: 'escrow', label: 'Milestone 2 released', amount: 120000, app: 'collaboard', date: '2026-06-01' },
-    { id: 't4', type: 'topup', label: 'Top-up · bank transfer', amount: 150000, app: 'wallet', date: '2026-05-28' },
+    { id: 't1', type: 'reward', label: 'Idea validated (demo)', amount: 60000, app: 'conceptnexus', date: '2026-06-06' },
+    { id: 't2', type: 'stake', label: 'Demo stake · SolarShare Lagos', amount: -50000, app: 'vestden', date: '2026-06-04' },
+    { id: 't3', type: 'escrow', label: 'Demo hold released', amount: 120000, app: 'collaboard', date: '2026-06-01' },
+    { id: 't4', type: 'topup', label: 'Demo credit', amount: 150000, app: 'wallet', date: '2026-05-28' },
 ]
 
 function load(key, fallback) {
