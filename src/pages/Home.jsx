@@ -5,20 +5,20 @@ import fixarsMark from '@/assets/fixars-mark.png'
 const SUBAPPS = [
     { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Ready for vestDen' },
     { key: 'invest', glyph: 'V', name: 'vestDen', tagline: 'Fund campaigns', stat: '14.2%', statLabel: 'Avg Target IRR' },
-    { key: 'collab', glyph: 'B', name: 'CollaBoard', tagline: 'Execute sprints', stat: '₦68M', statLabel: 'In Escrow' },
+    { key: 'collab', glyph: 'B', name: 'CollaBoard', tagline: 'Execute sprints', stat: '12', statLabel: 'Active sprints' },
     { key: 'skills', glyph: 'S', name: 'SkillsCanvas', tagline: 'Provable talent', stat: '76%', statLabel: 'Verified Profiles' },
 ]
 
 const FLOAT_CARDS = [
     { cls: 'fc1', icon: TrendingUp, title: '₦25k Stake Added', meta: 'SolarShare Lagos' },
     { cls: 'fc2', icon: Lightbulb, title: 'Idea Validated', meta: 'Score: 84/100' },
-    { cls: 'fc3', icon: Check, title: 'Milestone Done', meta: '₦340k Released' },
+    { cls: 'fc3', icon: Check, title: 'Milestone Done', meta: 'On CollaBoard' },
 ]
 
 const HOW_IT_WORKS = [
     { num: '01', key: 'concept', glyph: 'C', title: 'Validate', desc: "Submit ideas to ConceptNexus. Peer reviewers and AI agents stress-test it until it's ready for funding." },
-    { num: '02', key: 'invest', glyph: 'V', title: 'Fund', desc: 'Graduated ideas move to vestDen. Backers stake capital from ₦5,000, locked in milestone-based escrow.' },
-    { num: '03', key: 'collab', glyph: 'B', title: 'Build', desc: 'Project leads use CollaBoard to run sprints. Escrowed funds release automatically as milestones ship.' },
+    { num: '02', key: 'invest', glyph: 'V', title: 'Fund', desc: 'Graduated ideas move to vestDen. Planned milestone holds — this prototype does not hold client money.' },
+    { num: '03', key: 'collab', glyph: 'B', title: 'Build', desc: 'Project leads use CollaBoard to run sprints as milestones ship. Not a live-money path.' },
     { num: '04', key: 'skills', glyph: 'S', title: 'Earn', desc: 'Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.' },
 ]
 
@@ -72,7 +72,7 @@ export default function Home() {
                         </span>
                         <span>
                             <div className="ic"><Shield className="w-4 h-4" /></div>
-                            Bank-grade Escrow
+                            Prototype only
                         </span>
                         <span>
                             <div className="ic"><Lock className="w-4 h-4" /></div>
@@ -128,7 +128,7 @@ export default function Home() {
             <section id="howitworks" className="splash-section dark">
                 <div className="inner">
                     <h2>How Fixars works.</h2>
-                    <p className="lede">One identity. Four districts. The entire lifecycle of innovation—from whiteboard to payout—happens securely across one interconnected ecosystem.</p>
+                    <p className="lede">One identity. Four districts. A public demo of the lifecycle—from whiteboard to shipped work. Not a licensed custody product.</p>
                     
                     <div className="howit-grid">
                         {HOW_IT_WORKS.map((step) => (

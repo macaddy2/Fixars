@@ -29,7 +29,9 @@ The app runs without Supabase configured — it falls back to local mock data, b
 | --------------- | ----------------------------------------- |
 | `npm run dev`   | Start Vite dev server with HMR            |
 | `npm run build` | Production build to `dist/`               |
-| `npm run start` | Build and serve `dist/` (used by Railway) |
+| `npm run start` | Serve `dist/` (and `/api` when `REAL_SESSION=1`) |
+| `npm run server`| Same as start; use `PORT=8787` for Vite proxy |
+| `npm test`      | Session, wallet, and port-adapter tests |
 | `npm run lint`  | ESLint (flat config, `eslint.config.js`)  |
 
 ## Project layout
@@ -54,6 +56,20 @@ supabase/
 ## Environment
 
 See `.env.example`. Never commit a real `.env` — all `.env*` files are gitignored.
+
+`VITE_REAL_SESSION` and `REAL_SESSION` stay unset by default so a GitHub
+Pages build is the dummy demo. Do not set them on the Pages workflow.
+Only a named internal preview may turn the stack on (with a strong
+`SESSION_SECRET`; weak or missing secrets refuse to boot). That stack
+still uses mock adapters only — no live Paystack, NIMC, or bank rails.
+`isSupabaseConfigured()` stays `false`. Mock login does not attach live
+money. Set `COOKIE_SECURE=1` when serving HTTPS.
+
+`PERSISTENCE` defaults to `memory` (unit tests). Set `PERSISTENCE=file` and
+optionally `DATA_DIR` so SessionStore, WalletLedger, and EscrowHold/Holder
+survive a process restart. `KYC_PORT` defaults off; when on, the mock NIN/BVN
+adapter still sets `liveNetwork: false`. The holder mock does not name a bank
+and does not hold client money.
 
 ## Deployment
 

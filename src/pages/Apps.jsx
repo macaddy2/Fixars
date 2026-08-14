@@ -16,14 +16,14 @@ const APPS = [
         slug: 'vestden',
         name: 'VestDen',
         tagline: 'Stake on ideas, innovations, and risks',
-        description: 'Be part of the next big thing — earn returns for your vision. VestDen connects visionaries with capital, letting you stake on the projects that matter.',
+        description: 'Be part of the next big thing — planned campaigns, not live money. VestDen connects visionaries with capital on a prototype path.',
         icon: TrendingUp,
         color: 'var(--color-invest)',
         gradient: 'linear-gradient(140deg, #10B981, #047857)',
         stats: [
             { label: 'Active Stakes', value: '2.4K' },
             { label: 'Total Staked', value: '₦12.8M' },
-            { label: 'Avg Returns', value: '3.2x' },
+            { label: 'Demo multiple', value: '3.2x' },
         ]
     },
     {

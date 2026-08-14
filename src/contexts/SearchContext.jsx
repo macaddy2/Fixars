@@ -12,7 +12,7 @@ const PAGES = [
     { id: 'analytics', label: 'Analytics', sub: 'Ecosystem metrics', path: '/analytics' },
     { id: 'concept', label: 'ConceptNexus', sub: 'Validate ideas', path: '/apps/conceptnexus' },
     { id: 'invest', label: 'vestDen', sub: 'Fund campaigns', path: '/apps/vestden' },
-    { id: 'collab', label: 'CollaBoard', sub: 'Escrowed sprints', path: '/apps/collaboard' },
+    { id: 'collab', label: 'CollaBoard', sub: 'Team sprints', path: '/apps/collaboard' },
     { id: 'skills', label: 'SkillsCanvas', sub: 'Verified talent', path: '/apps/skillscanvas' },
     { id: 'profile', label: 'Profile', sub: 'Your identity', path: '/profile' },
     { id: 'receipts', label: 'Receipts', sub: 'Your decision log', path: '/receipts' },

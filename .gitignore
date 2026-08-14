@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# File-backed session / ledger / escrow (PERSISTENCE=file)
+/data/
+*.tmp
+
 # Env files
 .env
 .env.local

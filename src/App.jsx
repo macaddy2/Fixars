@@ -34,6 +34,7 @@ import ProfilePage from '@/pages/ProfilePage'
 import SettingsPage from '@/pages/SettingsPage'
 import WalletPage from '@/pages/WalletPage'
 import ReceiptsPage from '@/pages/ReceiptsPage'
+import RequireSession from '@/components/RequireSession'
 
 // Sub-apps
 import VestDen from '@/apps/vestden/VestDen'
@@ -98,9 +99,9 @@ function ForgotPassword() {
       <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
         <span className="text-3xl">🔑</span>
       </div>
-      <h1 className="text-2xl font-bold text-foreground mb-2">Reset your password</h1>
-      <p className="text-muted mb-6">Password reset is handled via Magic Link on Fixars. Head back to login and use the "Sign in with Magic Link" button to access your account without a password.</p>
-      <a href="/login" className="inline-block px-6 py-2 rounded-lg bg-primary text-white font-semibold hover:opacity-90 transition-opacity">Back to Login</a>
+      <h1 className="text-2xl font-bold text-foreground mb-2">No live password reset</h1>
+      <p className="text-muted mb-6">This is a public prototype. Dummy sign-in does not reset a live account. Go back to login and enter the demo.</p>
+      <a href="/login" className="inline-block px-6 py-2 rounded-lg bg-primary text-white font-semibold hover:opacity-90 transition-opacity">Back to prototype sign-in</a>
     </div>
   )
 }
@@ -152,8 +153,8 @@ function AppLayout() {
             <Route path="/apps/skillscanvas" element={<SkillsCanvas />} />
             <Route path="/apps/skillscanvas/talent/:id" element={<TalentProfile />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/wallet" element={<WalletPage />} />
-            <Route path="/receipts" element={<ReceiptsPage />} />
+            <Route path="/wallet" element={<RequireSession><WalletPage /></RequireSession>} />
+            <Route path="/receipts" element={<RequireSession><ReceiptsPage /></RequireSession>} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/developers" element={<ApiDocs />} />
@@ -183,7 +184,7 @@ function AppLayout() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/apps" element={<Apps />} />
               <Route path="/feed" element={<Feed />} />
-              <Route path="/wallet" element={<WalletPage />} />
+              <Route path="/wallet" element={<RequireSession><WalletPage /></RequireSession>} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/about" element={<About />} />
@@ -199,7 +200,7 @@ function AppLayout() {
 
               {/* Account */}
               <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/receipts" element={<ReceiptsPage />} />
+              <Route path="/receipts" element={<RequireSession><ReceiptsPage /></RequireSession>} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/developers" element={<ApiDocs />} />
