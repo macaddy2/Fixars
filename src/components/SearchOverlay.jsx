@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSearch } from '@/contexts/SearchContext'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     Search, X, TrendingUp, Lightbulb,
     LayoutGrid, Palette, ArrowRight, CornerDownLeft, ArrowUp, ArrowDown, Compass
@@ -15,7 +16,9 @@ const APP_CONFIG = {
 }
 
 // Render order of the result groups inside the palette.
-const GROUP_ORDER = ['pages', 'ideas', 'stakes', 'boards', 'talents']
+const GROUP_ORDER = isVestDenStakingEnabled()
+    ? ['pages', 'ideas', 'stakes', 'boards', 'talents']
+    : ['pages', 'ideas', 'boards', 'talents']
 
 function HighlightedText({ text, query }) {
     if (!text || !query) return <span>{text}</span>
@@ -132,7 +135,7 @@ export default function SearchOverlay() {
                             type="text"
                             value={query}
                             onChange={e => setQuery(e.target.value)}
-                            placeholder="Search pages, ideas, campaigns, talent…"
+                            placeholder={isVestDenStakingEnabled() ? 'Search pages, ideas, campaigns, talent…' : 'Search pages, ideas, talent…'}
                             className="flex-1 py-4 bg-transparent text-foreground text-base outline-none placeholder:text-muted-foreground"
                         />
                         {query && (

@@ -4,6 +4,7 @@ import {
     ArrowRight, Sparkles, ChevronRight,
     Zap, ArrowUpRight
 } from 'lucide-react'
+import { isVestDenStakingEnabled } from '@/lib/features'
 
 /* ====================================================================
    Apps Hub Page — Phase 2 Redesign
@@ -120,7 +121,7 @@ export default function Apps() {
 
             {/* Sub-App Cards */}
             <div className="apps-list">
-                {APPS.map((app, i) => {
+                {APPS.filter(app => isVestDenStakingEnabled() || app.slug !== 'vestden').map((app, i) => {
                     const Icon = app.icon
                     return (
                         <Link to={`/apps/${app.slug}`} key={app.slug} className="app-full-card" style={{ '--app-color': app.color, animationDelay: `${i * 80}ms` }}>
@@ -161,7 +162,7 @@ export default function Apps() {
                     </p>
                 </div>
                 <div className="apps-flow-grid">
-                    {FLOW_STEPS.map((step) => {
+                    {FLOW_STEPS.filter(step => isVestDenStakingEnabled() || step.title !== 'Fund').map((step) => {
                         const Icon = step.icon
                         return (
                             <div key={step.step} className="flow-step-card">

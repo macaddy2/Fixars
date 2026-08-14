@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import { useData } from './DataContext'
+import { isVestDenStakingEnabled } from '@/lib/features'
 
 const SearchContext = createContext(null)
 
@@ -57,13 +58,17 @@ export function SearchProvider({ children }) {
     const [query, setQuery] = useState('')
 
     const results = useMemo(() => {
+        const pages = isVestDenStakingEnabled()
+            ? PAGES
+            : PAGES.filter(p => p.id !== 'invest')
+
         // Empty / short query → offer the "Go to" pages so the palette is
         // useful as a navigator even before typing.
         if (!query || query.length < 2) {
-            return { pages: PAGES, stakes: [], ideas: [], boards: [], talents: [], total: PAGES.length }
+            return { pages, stakes: [], ideas: [], boards: [], talents: [], total: pages.length }
         }
 
-        const searchPages = PAGES
+        const searchPages = pages
             .map(p => {
                 const labelMatch = fuzzyMatch(p.label, query)
                 const subMatch = fuzzyMatch(p.sub, query)
@@ -72,7 +77,7 @@ export function SearchProvider({ children }) {
             .filter(p => p._matched)
             .sort((a, b) => b._score - a._score)
 
-        const searchStakes = stakes
+        const searchStakes = !isVestDenStakingEnabled() ? [] : stakes
             .map(s => {
                 const titleMatch = fuzzyMatch(s.title, query)
                 const descMatch = fuzzyMatch(s.description, query)

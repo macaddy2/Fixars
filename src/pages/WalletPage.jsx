@@ -5,6 +5,7 @@ import { useData } from '@/contexts/DataContext'
 import { useWallet } from '@/contexts/WalletContext'
 import { isRealSessionEnabled } from '@/lib/flags'
 import { formatNumber } from '@/lib/utils'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     Wallet,
     ArrowUpRight,
@@ -32,7 +33,9 @@ const MOCK_TRANSACTIONS = [
     { id: 8, type: 'earning', label: 'Demo credit · EdTech Pipeline', amount: 2800, date: '2026-04-28', app: 'vestden' },
 ]
 
-const TABS = ['All', 'Stakes', 'Earnings', 'Rewards']
+const TABS = isVestDenStakingEnabled()
+    ? ['All', 'Stakes', 'Earnings', 'Rewards']
+    : ['All', 'Earnings', 'Rewards']
 
 export default function WalletPage() {
     const { user } = useAuth()
@@ -55,9 +58,11 @@ export default function WalletPage() {
 
     const flagOn = isRealSessionEnabled() || realSession
 
-    const allTransactions = flagOn
+    const sourceRows = flagOn
         ? transactions
         : [...transactions, ...MOCK_TRANSACTIONS]
+    const allTransactions = sourceRows
+        .filter(t => isVestDenStakingEnabled() || t.type !== 'stake')
     const filtered = activeTab === 'All'
         ? allTransactions
         : allTransactions.filter(t => t.type === activeTab.toLowerCase().slice(0, -1))
@@ -205,7 +210,7 @@ export default function WalletPage() {
                         <span className="wallet-stat-label">Fixars Points</span>
                     </div>
                 </div>
-                {!flagOn && (
+                {!flagOn && isVestDenStakingEnabled() && (
                     <div className="wallet-stat">
                         <div className="wallet-stat-icon" style={{ background: 'var(--color-info-bg)', color: 'var(--color-info)' }}>
                             <Shield size={18} />

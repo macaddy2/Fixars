@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Twitter, Github, Linkedin, Mail } from 'lucide-react'
+import { isVestDenStakingEnabled } from '@/lib/features'
 
 const APPS = [
     { name: 'vestDen', path: '/apps/vestden' },
@@ -36,7 +37,7 @@ export default function Footer() {
                             <span className="font-bold text-2xl text-foreground">Fixars</span>
                         </Link>
                         <p className="text-muted text-sm max-w-xs mb-4">
-                            The future of connected productivity. Invest, collaborate, validate ideas, and find talent—all in one ecosystem.
+                            The future of connected productivity. Collaborate, validate ideas, and find talent—all in one ecosystem.
                         </p>
                         <div className="flex items-center gap-3">
                             <a href="#" className="p-2 rounded-full bg-muted/10 hover:bg-primary/10 hover:text-primary transition-colors">
@@ -58,7 +59,7 @@ export default function Footer() {
                     <div>
                         <h4 className="font-semibold text-foreground mb-4">Apps</h4>
                         <ul className="space-y-2">
-                            {APPS.map(app => (
+                            {APPS.filter(app => isVestDenStakingEnabled() || app.path !== '/apps/vestden').map(app => (
                                 <li key={app.path}>
                                     <Link to={app.path} className="text-sm text-muted hover:text-primary transition-colors">
                                         {app.name}

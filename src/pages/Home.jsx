@@ -1,35 +1,38 @@
 import { Link } from 'react-router-dom'
 import { Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check, Lock, Layers, BookOpen, RefreshCw } from 'lucide-react'
 import fixarsMark from '@/assets/fixars-mark.png'
+import { isVestDenStakingEnabled } from '@/lib/features'
 
 const SUBAPPS = [
-    { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Ready for vestDen' },
-    { key: 'invest', glyph: 'V', name: 'vestDen', tagline: 'Fund campaigns', stat: '14.2%', statLabel: 'Avg Target IRR' },
+    { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Peer-reviewed' },
+    ...(isVestDenStakingEnabled() ? [{ key: 'invest', glyph: 'V', name: 'vestDen', tagline: 'Fund campaigns', stat: '14.2%', statLabel: 'Avg Target IRR' }] : []),
     { key: 'collab', glyph: 'B', name: 'CollaBoard', tagline: 'Execute sprints', stat: '12', statLabel: 'Active sprints' },
     { key: 'skills', glyph: 'S', name: 'SkillsCanvas', tagline: 'Provable talent', stat: '76%', statLabel: 'Verified Profiles' },
 ]
 
 const FLOAT_CARDS = [
-    { cls: 'fc1', icon: TrendingUp, title: '₦25k Stake Added', meta: 'SolarShare Lagos' },
+    ...(isVestDenStakingEnabled() ? [{ cls: 'fc1', icon: TrendingUp, title: '₦25k Stake Added', meta: 'SolarShare Lagos' }] : []),
     { cls: 'fc2', icon: Lightbulb, title: 'Idea Validated', meta: 'Score: 84/100' },
     { cls: 'fc3', icon: Check, title: 'Milestone Done', meta: 'On CollaBoard' },
 ]
 
 const HOW_IT_WORKS = [
-    { num: '01', key: 'concept', glyph: 'C', title: 'Validate', desc: "Submit ideas to ConceptNexus. Peer reviewers and AI agents stress-test it until it's ready for funding." },
-    { num: '02', key: 'invest', glyph: 'V', title: 'Fund', desc: 'Graduated ideas move to vestDen. Planned milestone holds — this prototype does not hold client money.' },
+    { num: '01', key: 'concept', glyph: 'C', title: 'Validate', desc: "Submit ideas to ConceptNexus. Peer reviewers and AI agents stress-test it until it's ready to ship." },
+    ...(isVestDenStakingEnabled() ? [{ num: '02', key: 'invest', glyph: 'V', title: 'Fund', desc: 'Graduated ideas move to vestDen. Planned milestone holds — this prototype does not hold client money.' }] : []),
     { num: '03', key: 'collab', glyph: 'B', title: 'Build', desc: 'Project leads use CollaBoard to run sprints as milestones ship. Not a live-money path.' },
     { num: '04', key: 'skills', glyph: 'S', title: 'Earn', desc: 'Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.' },
 ]
 
 const SOVEREIGNTY = [
-    { icon: Layers, title: 'Models commoditise; your context compounds', desc: 'Every idea validated, stake placed and milestone shipped is written into a context layer you own. AI models come and go — your operating manual only gets more valuable.' },
+    { icon: Layers, title: 'Models commoditise; your context compounds', desc: 'Every idea validated and milestone shipped is written into a context layer you own. AI models come and go — your operating manual only gets more valuable.' },
     { icon: BookOpen, title: 'The manual, not the consultant', desc: 'A trader’s real edge lives in an invisible notebook — who supplies, who owes, who delivers. Fixars writes your notebook down once, so it can finally be delegated, financed and protected.' },
     { icon: RefreshCw, title: 'Model-agnostic by design', desc: 'Your rules and records never depend on one AI vendor. Point today’s best rented intelligence at your business — under your rules — and swap it tomorrow without losing a thing.' },
 ]
 
 const FOOTER_COLS = [
-    { heading: 'Ecosystem', links: ['ConceptNexus', 'vestDen', 'CollaBoard', 'SkillsCanvas'] },
+    { heading: 'Ecosystem', links: isVestDenStakingEnabled()
+        ? ['ConceptNexus', 'vestDen', 'CollaBoard', 'SkillsCanvas']
+        : ['ConceptNexus', 'CollaBoard', 'SkillsCanvas'] },
     { heading: 'Resources', links: ['Documentation', 'Whitepaper', 'FCS Scoring', 'Sovereignty Pledge', 'Help Center'] },
     { heading: 'Company', links: ['About Us', 'Careers', 'Terms of Service', 'Privacy Policy'] },
 ]
@@ -56,7 +59,7 @@ export default function Home() {
             <header className="splash-hero">
                 <div>
                     <h1 className="splash-h1">Your operating system<br />for African <em>innovation</em>.</h1>
-                    <p className="splash-sub">Validate ideas, fund what matters, ship with verified teams. Identity, wallet, and reputation—built for the builders of tomorrow, and owned by them.</p>
+                    <p className="splash-sub">Validate ideas and ship with verified teams. Identity, wallet, and reputation—built for the builders of tomorrow, and owned by them.</p>
                     
                     <div className="splash-cta">
                         <Link to="/dashboard" className="btn btn-primary">Start building</Link>
@@ -81,10 +84,6 @@ export default function Home() {
                     </div>
                     
                     <div className="splash-stats">
-                        <div>
-                            <div className="v">₦142M</div>
-                            <div className="k">Capital Deployed</div>
-                        </div>
                         <div>
                             <div className="v">1,240</div>
                             <div className="k">Ideas in Motion</div>

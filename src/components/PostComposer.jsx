@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { getInitials } from '@/lib/utils'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import { Send, TrendingUp, Lightbulb, LayoutGrid, Palette, Link2, X } from 'lucide-react'
 
 const APP_OPTIONS = [
@@ -102,7 +103,7 @@ export default function PostComposer({ onPost }) {
 
                         <div className="flex justify-between items-center">
                             <div className="flex gap-1.5">
-                                {APP_OPTIONS.map(({ key, label, icon: Icon, color }) => (
+                                {APP_OPTIONS.filter(opt => isVestDenStakingEnabled() || opt.key !== 'vestden').map(({ key, label, icon: Icon, color }) => (
                                     <Badge
                                         key={key}
                                         variant="secondary"

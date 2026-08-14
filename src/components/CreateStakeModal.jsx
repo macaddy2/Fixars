@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import { TrendingUp, Loader2 } from 'lucide-react'
 
 const CATEGORIES = ['tech', 'marketplace', 'health', 'fintech', 'sustainability', 'media', 'other']
@@ -55,6 +56,7 @@ export default function CreateStakeModal({ open, onClose, initialData = null }) 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
+        if (!isVestDenStakingEnabled()) return setError('Staking is not available in this build')
         if (title.trim().length < 5) return setError('Title must be at least 5 characters')
         if (description.trim().length < 20) return setError('Describe the stake in at least 20 characters')
         if (targetAmount < 100) return setError('Target amount must be at least ₦100')
@@ -84,6 +86,8 @@ export default function CreateStakeModal({ open, onClose, initialData = null }) 
             setSubmitting(false)
         }
     }
+
+    if (!isVestDenStakingEnabled()) return null
 
     return (
         <Modal
