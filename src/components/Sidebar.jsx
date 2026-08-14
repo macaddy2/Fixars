@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSocial } from '@/contexts/SocialContext'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import fixarsMark from '@/assets/fixars-mark.png'
 import {
   Home, LayoutGrid, AlignLeft, Wallet,
@@ -64,7 +65,7 @@ export default function Sidebar() {
       ))}
 
       <div className="nav-section">Sub-apps</div>
-      {subApps.map(item => (
+      {subApps.filter(item => isVestDenStakingEnabled() || item.to !== '/apps/vestden').map(item => (
         <NavLink
           key={item.to}
           to={item.to}

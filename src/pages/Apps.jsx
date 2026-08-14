@@ -4,6 +4,7 @@ import {
     ArrowRight, Sparkles, ChevronRight,
     Zap, ArrowUpRight
 } from 'lucide-react'
+import { isVestDenStakingEnabled } from '@/lib/features'
 
 /* ====================================================================
    Apps Hub Page — Phase 2 Redesign
@@ -30,7 +31,9 @@ const APPS = [
         slug: 'conceptnexus',
         name: 'ConceptNexus',
         tagline: 'Gather, validate, and supercharge ideas',
-        description: 'Build the future collaboratively. ConceptNexus is where raw ideas become validated, community-backed concepts ready for funding and execution.',
+        description: isVestDenStakingEnabled()
+            ? 'Build the future collaboratively. ConceptNexus is where raw ideas become validated, community-backed concepts ready for funding and execution.'
+            : 'Build the future collaboratively. ConceptNexus is where raw ideas become validated, community-backed concepts ready for review and execution.',
         icon: Lightbulb,
         color: 'var(--color-concept)',
         gradient: 'linear-gradient(140deg, #7C3AED, #5B21B6)',
@@ -88,7 +91,9 @@ const FLOW_STEPS = [
     {
         step: '03',
         title: 'Build',
-        desc: 'Funded projects spin up CollaBoard workspaces. Teams collaborate with structure.',
+        desc: isVestDenStakingEnabled()
+            ? 'Funded projects spin up CollaBoard workspaces. Teams collaborate with structure.'
+            : 'Validated projects spin up CollaBoard workspaces. Teams collaborate with structure.',
         color: 'var(--color-collab)',
         icon: Users,
     },
@@ -120,7 +125,7 @@ export default function Apps() {
 
             {/* Sub-App Cards */}
             <div className="apps-list">
-                {APPS.map((app, i) => {
+                {APPS.filter(app => isVestDenStakingEnabled() || app.slug !== 'vestden').map((app, i) => {
                     const Icon = app.icon
                     return (
                         <Link to={`/apps/${app.slug}`} key={app.slug} className="app-full-card" style={{ '--app-color': app.color, animationDelay: `${i * 80}ms` }}>
@@ -161,7 +166,7 @@ export default function Apps() {
                     </p>
                 </div>
                 <div className="apps-flow-grid">
-                    {FLOW_STEPS.map((step) => {
+                    {FLOW_STEPS.filter(step => isVestDenStakingEnabled() || step.title !== 'Fund').map((step) => {
                         const Icon = step.icon
                         return (
                             <div key={step.step} className="flow-step-card">

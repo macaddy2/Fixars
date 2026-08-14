@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react'
 import { useAuth } from './AuthContext'
 import { isRealSessionEnabled } from '@/lib/flags'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import { fetchWallet, requestPayout } from '@/lib/sessionApi'
 
 /**
@@ -96,6 +97,9 @@ export function WalletProvider({ children }) {
         if (!user) return { ok: false, error: 'Sign in to use the demo wallet' }
         const value = Number(amount)
         if (!value || value <= 0) return { ok: false, error: 'Enter an amount greater than zero' }
+        if ((meta.type === 'stake' || meta.app === 'vestden') && !isVestDenStakingEnabled()) {
+            return { ok: false, error: 'Staking is not available in this build' }
+        }
         if (value > demoBalance) return { ok: false, error: 'Amount exceeds your wallet balance' }
         setDemoBalance(b => b - value)
         record(-value, { label: meta.label || 'Wallet debit', app: meta.app || 'wallet', type: meta.type || 'stake' })

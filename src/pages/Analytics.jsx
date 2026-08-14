@@ -12,6 +12,7 @@ import StatCard from '@/components/charts/StatCard'
 import MiniChart from '@/components/charts/MiniChart'
 import ActivityHeatmap from '@/components/charts/ActivityHeatmap'
 import { formatNumber } from '@/lib/utils'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     BarChart3,
     TrendingUp,
@@ -58,7 +59,7 @@ export default function Analytics() {
 
     // Per-app breakdown data
     const appBreakdown = [
-        { name: 'vestDen', color: 'vestden', value: stakes.length, icon: TrendingUp },
+        ...(isVestDenStakingEnabled() ? [{ name: 'vestDen', color: 'vestden', value: stakes.length, icon: TrendingUp }] : []),
         { name: 'ConceptNexus', color: 'conceptnexus', value: ideas.length, icon: Lightbulb },
         { name: 'CollaBoard', color: 'collaboard', value: boards.length, icon: Users },
         { name: 'SkillsCanvas', color: 'skillscanvas', value: talents.length, icon: Palette }
@@ -98,6 +99,7 @@ export default function Analytics() {
 
                 {/* Stat Cards Grid */}
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    {isVestDenStakingEnabled() && (
                     <StatCard
                         label="Total Staked"
                         value={`₦${formatNumber(totalStaked)}`}
@@ -107,6 +109,7 @@ export default function Analytics() {
                         color="vestden"
                         sparkData={genSparkline(totalStaked * 0.8, totalStaked * 0.2)}
                     />
+                    )}
                     <StatCard
                         label="Ideas Submitted"
                         value={ideas.length}

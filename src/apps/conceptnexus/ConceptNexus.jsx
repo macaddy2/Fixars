@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import AIRecommendations from '@/components/AIRecommendations'
 import SubmitIdeaModal from '@/components/SubmitIdeaModal'
 import CreateStakeModal from '@/components/CreateStakeModal'
@@ -66,8 +67,8 @@ function IdeaCard({ idea, onVote, onLaunchCampaign }) {
                 </button>
 
                 <div className="ml-auto flex items-center gap-2 flex-wrap">
-                    {/* Launch / Link Campaign to vestDen */}
-                    {idea.status === 'validated' && !idea.linkedStakeId && (
+                    {/* Launch / Link Campaign to vestDen — gated for sandbox */}
+                    {isVestDenStakingEnabled() && idea.status === 'validated' && !idea.linkedStakeId && (
                         <button
                             className="btn-app btn-app-invest text-xs px-3 py-1.5"
                             onClick={() => onLaunchCampaign?.(idea)}
@@ -75,7 +76,7 @@ function IdeaCard({ idea, onVote, onLaunchCampaign }) {
                             <TrendingUp className="w-3.5 h-3.5" /> Launch Campaign
                         </button>
                     )}
-                    {idea.linkedStakeId && (
+                    {isVestDenStakingEnabled() && idea.linkedStakeId && (
                         <Link to="/apps/vestden" className="btn-ghost text-xs text-invest border-invest/30">
                             <ExternalLink className="w-3.5 h-3.5" /> On vestDen
                         </Link>
@@ -141,7 +142,7 @@ export default function ConceptNexus() {
 
     const stats = [
         { k: 'Total ideas', v: ideas.length, t: 'in the nexus' },
-        { k: 'Validated', v: validatedCount, t: 'ready to fund', tColor: 'var(--color-success)' },
+        { k: 'Validated', v: validatedCount, t: 'peer-reviewed', tColor: 'var(--color-success)' },
         { k: 'In validation', v: validatingCount, t: 'gathering signal', tColor: 'var(--color-concept)' },
         { k: 'Community votes', v: totalVotes, t: 'peer reviews cast' },
     ]
@@ -154,7 +155,7 @@ export default function ConceptNexus() {
                     glyph="C"
                     tag="Idea validation"
                     title="ConceptNexus"
-                    sub="Where African innovation gets stress-tested before it gets funded."
+                    sub="Where African innovation gets stress-tested by peers before it ships."
                     actions={isAuthenticated && (
                         <Button variant="conceptnexus" size="lg" onClick={() => setSubmitOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> Submit Idea
@@ -194,11 +195,13 @@ export default function ConceptNexus() {
             </div>
 
             <SubmitIdeaModal open={submitOpen} onClose={() => setSubmitOpen(false)} />
-            <CreateStakeModal
-                open={campaignState.open}
-                onClose={() => setCampaignState({ open: false, initialData: null })}
-                initialData={campaignState.initialData}
-            />
+            {isVestDenStakingEnabled() && (
+                <CreateStakeModal
+                    open={campaignState.open}
+                    onClose={() => setCampaignState({ open: false, initialData: null })}
+                    initialData={campaignState.initialData}
+                />
+            )}
         </main>
     )
 }

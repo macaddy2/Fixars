@@ -49,12 +49,12 @@ function About() {
     <div className="max-w-4xl mx-auto px-4 py-16">
       <h1 className="text-3xl font-bold text-foreground mb-4">About Fixars</h1>
       <p className="text-muted mb-4">
-        Fixars is the future of connected productivity—a unified platform that brings together investing,
+        Fixars is the future of connected productivity—a unified platform that brings together
         idea validation, collaboration, and talent sourcing under one seamless ecosystem.
       </p>
       <p className="text-muted mb-4">
         Our vision is to create an interconnected world where ideas flow freely between apps,
-        where a validated concept in ConceptNexus can instantly become a funded stake in VestDen,
+        where a validated concept in ConceptNexus can
         be executed on Collaboard, and staffed from SkillsCanvas—all with a single login and
         a unified points system that rewards every action.
       </p>

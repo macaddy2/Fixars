@@ -5,6 +5,7 @@ import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { formatNumber } from '@/lib/utils'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import PageHead from '@/components/PageHead'
 import { StatRow, Toolbar, ListGrid, EmptyState } from '@/components/SubAppKit'
 import { Plus, Sparkles, ExternalLink } from 'lucide-react'
@@ -85,7 +86,27 @@ function CampaignCard({ stake, onStake, onCreateBoard }) {
     )
 }
 
-export default function VestDen() {
+function VestDenHibernated() {
+    return (
+        <main className="py-8">
+            <div className="subapp-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <PageHead
+                    app="invest"
+                    glyph="V"
+                    tag="Not available"
+                    title="vestDen"
+                    sub="Staking and investment in ideas are not available in this build."
+                />
+                <EmptyState
+                    title="Staking is not available"
+                    sub="This build does not accept stakes or solicit investment. The naira wallet stays a dummy balance and is not a live-money path."
+                />
+            </div>
+        </main>
+    )
+}
+
+function VestDenLive() {
     const { stakes, makeStake, createBoard, logActivity } = useData()
     const { isAuthenticated, user } = useAuth()
     const { awardPoints } = usePoints()
@@ -210,4 +231,8 @@ export default function VestDen() {
             <CreateStakeModal open={createOpen} onClose={() => setCreateOpen(false)} />
         </main>
     )
+}
+
+export default function VestDen() {
+    return isVestDenStakingEnabled() ? <VestDenLive /> : <VestDenHibernated />
 }

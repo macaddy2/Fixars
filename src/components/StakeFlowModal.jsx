@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { X, TrendingUp } from 'lucide-react'
 import { useWallet } from '@/contexts/WalletContext'
 import { formatNumber } from '@/lib/utils'
+import { isVestDenStakingEnabled } from '@/lib/features'
 
 const QUICK_AMOUNTS = [10000, 25000, 50000, 100000]
 const INVEST = 'var(--color-invest)'
@@ -41,13 +42,14 @@ export default function StakeFlowModal({ campaign, onClose, onConfirm }) {
     const pct = campaign ? Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100)) : 0
     const days = daysLeft(campaign?.deadline)
 
-    if (!campaign) return null
+    if (!campaign || !isVestDenStakingEnabled()) return null
 
     const numeric = Number(amount) || 0
     const overBalance = numeric > balance
 
     const handleConfirm = () => {
         setError('')
+        if (!isVestDenStakingEnabled()) { setError('Staking is not available in this build'); return }
         if (numeric <= 0) { setError('Enter an amount greater than zero'); return }
         const res = spend(numeric, { label: `Stake · ${campaign.title}`, app: 'vestden', type: 'stake' })
         if (!res.ok) { setError(res.error); return }

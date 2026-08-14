@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { getInitials, formatNumber } from '@/lib/utils'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     Star, Shield, Award, TrendingUp,
     Lightbulb, Users, Palette, CheckCircle2,
@@ -81,7 +82,7 @@ export default function ProfilePage() {
     const fcsTier = fcsBand(fcsScore).label
 
     const profileStats = [
-        { label: 'Active Stakes', value: stakes.filter(s => s.status === 'active').length, icon: TrendingUp, color: 'var(--color-invest)' },
+        ...(isVestDenStakingEnabled() ? [{ label: 'Active Stakes', value: stakes.filter(s => s.status === 'active').length, icon: TrendingUp, color: 'var(--color-invest)' }] : []),
         { label: 'Ideas Created', value: ideas.filter(i => i.creatorId === user.id).length, icon: Lightbulb, color: 'var(--color-concept)' },
         { label: 'Board Member', value: boards.filter(b => b.members.some(m => m.userId === user.id)).length, icon: Users, color: 'var(--color-collab)' },
         { label: 'Skills Listed', value: user.skills?.length || 0, icon: Palette, color: 'var(--color-skills)' },
@@ -96,7 +97,7 @@ export default function ProfilePage() {
     ]
 
     const recentActivity = [
-        { label: 'Staked on AI Recipe Generator', type: 'stake', time: '2 days ago' },
+        ...(isVestDenStakingEnabled() ? [{ label: 'Staked on AI Recipe Generator', type: 'stake', time: '2 days ago' }] : []),
         { label: 'Idea "Solar Grid Network" validated', type: 'idea', time: '4 days ago' },
         { label: 'Joined board "Mobile Wellness"', type: 'board', time: '1 week ago' },
         { label: 'Skill "React" verified by peer', type: 'skill', time: '1 week ago' },

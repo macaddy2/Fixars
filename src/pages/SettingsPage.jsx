@@ -6,6 +6,7 @@ import { useWallet } from '@/contexts/WalletContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { exportSnapshot, downloadSnapshot, deleteLocalData } from '@/lib/ledger'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     Settings, Sun, Moon, Coffee,
     Minus, Equal, AlignJustify,
@@ -156,7 +157,7 @@ export default function SettingsPage() {
                     </h3>
                     <div className="settings-notif-list">
                         {[
-                            { key: 'stakes', label: 'Stake updates', desc: 'Get notified when your staked projects have updates.' },
+                            ...(isVestDenStakingEnabled() ? [{ key: 'stakes', label: 'Stake updates', desc: 'Get notified when your staked projects have updates.' }] : []),
                             { key: 'ideas', label: 'Idea validations', desc: 'Know when your ideas get validated or scored.' },
                             { key: 'messages', label: 'Direct messages', desc: 'Receive notifications for new messages.' },
                             { key: 'weekly', label: 'Weekly digest', desc: 'A weekly summary of your ecosystem activity.' },
@@ -239,11 +240,13 @@ export default function SettingsPage() {
                             <span>SkillsCanvas · List or manage your skills</span>
                             <ChevronRight size={14} className="ml-auto" style={{ color: 'var(--color-blue-500)' }} />
                         </Link>
-                        <Link to="/apps/vestden" className="settings-account-row">
-                            <RefreshCw size={16} />
-                            <span>vestDen · View active campaigns</span>
-                            <ChevronRight size={14} className="ml-auto" style={{ color: 'var(--color-blue-500)' }} />
-                        </Link>
+                        {isVestDenStakingEnabled() && (
+                            <Link to="/apps/vestden" className="settings-account-row">
+                                <RefreshCw size={16} />
+                                <span>vestDen · View active campaigns</span>
+                                <ChevronRight size={14} className="ml-auto" style={{ color: 'var(--color-blue-500)' }} />
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>
