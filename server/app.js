@@ -1,7 +1,4 @@
-import { createMemorySessionStore } from './adapters/memory-session-store.js'
-import { createMockWalletLedger } from './adapters/mock-wallet-ledger.js'
-import { createMockEscrowHold } from './adapters/mock-escrow-hold.js'
-import { createMockKycProvider } from './adapters/mock-kyc-provider.js'
+import { createPorts } from './persistence.js'
 import { assertPort } from './ports.js'
 import {
     cookieName,
@@ -15,21 +12,11 @@ import { parseJsonBody, sendJson, pathnameOf, userIdFromEmail } from './http-uti
 
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000
 
-export function createMockPorts() {
-    const ledger = createMockWalletLedger()
-    return {
-        sessions: createMemorySessionStore(),
-        ledger,
-        escrow: createMockEscrowHold({ ledger }),
-        kyc: createMockKycProvider(),
-    }
-}
-
 export function createApp(options = {}) {
     const realSession = options.realSession ?? process.env.REAL_SESSION === '1'
     const secret = options.sessionSecret ?? process.env.SESSION_SECRET ?? ''
     const secureCookie = options.secureCookie ?? process.env.COOKIE_SECURE === '1'
-    const ports = options.ports ?? createMockPorts()
+    const ports = options.ports ?? createPorts()
 
     assertPort('SessionStore', ports.sessions)
     assertPort('WalletLedger', ports.ledger)

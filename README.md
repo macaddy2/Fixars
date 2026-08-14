@@ -64,6 +64,10 @@ static demo path stays dummy. Railway / internal preview may set
 uses mock adapters only — no live Paystack, NIMC, or bank rails.
 `isSupabaseConfigured()` stays `false`.
 
+`PERSISTENCE` defaults to `memory` (unit tests). Set `PERSISTENCE=file` and
+optionally `DATA_DIR` so SessionStore, WalletLedger, and EscrowHold survive
+a process restart. KYC stays the in-process mock (`liveNetwork: false`).
+
 ## Deployment
 
 Configured for Railway via `railway.json`; the `start` script builds and serves the static `dist/` folder on `$PORT`.
