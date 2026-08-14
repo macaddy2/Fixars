@@ -5,7 +5,7 @@ import { useData } from '@/contexts/DataContext'
 import { useWallet } from '@/contexts/WalletContext'
 import { isRealSessionEnabled } from '@/lib/flags'
 import { formatNumber } from '@/lib/utils'
-import { isVestDenStakingEnabled } from '@/lib/features'
+import { isVestDenStakingEnabled, isVestDenStakingLedgerRow } from '@/lib/features'
 import {
     Wallet,
     ArrowUpRight,
@@ -35,7 +35,7 @@ const MOCK_TRANSACTIONS = [
 
 const TABS = isVestDenStakingEnabled()
     ? ['All', 'Stakes', 'Earnings', 'Rewards']
-    : ['All', 'Earnings', 'Rewards']
+    : ['All', 'Rewards']
 
 export default function WalletPage() {
     const { user } = useAuth()
@@ -62,7 +62,7 @@ export default function WalletPage() {
         ? transactions
         : [...transactions, ...MOCK_TRANSACTIONS]
     const allTransactions = sourceRows
-        .filter(t => isVestDenStakingEnabled() || t.type !== 'stake')
+        .filter(t => isVestDenStakingEnabled() || !isVestDenStakingLedgerRow(t))
     const filtered = activeTab === 'All'
         ? allTransactions
         : allTransactions.filter(t => t.type === activeTab.toLowerCase().slice(0, -1))

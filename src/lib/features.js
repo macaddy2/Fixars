@@ -13,3 +13,15 @@
 export function isVestDenStakingEnabled() {
     return false
 }
+
+/**
+ * Ledger rows that solicit staking or VestDen returns/IRR.
+ * Sandbox filter must drop these — not only type === 'stake'.
+ * Covers VestDen earnings such as "Returns from Solar Grid Network".
+ */
+export function isVestDenStakingLedgerRow(txn) {
+    if (!txn) return false
+    if (txn.type === 'stake') return true
+    if (txn.app === 'vestden') return true
+    return false
+}
