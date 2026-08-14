@@ -298,8 +298,8 @@ export default function Dashboard() {
             color: 'var(--color-blue-500)',
         },
         ...(isVestDenStakingEnabled() ? [{
-            k: 'Active stakes', v: activeStakes.length,
-            t: `across ${stakes.length} campaigns`, spark: [6, 8, 8, 10, 11, 13, 14],
+            k: 'Gated items', v: activeStakes.length,
+            t: 'prototype surface only', spark: [6, 8, 8, 10, 11, 13, 14],
             color: 'var(--color-invest)',
         }] : [{
             k: 'Ideas in motion', v: ideas.length,
@@ -322,7 +322,7 @@ export default function Dashboard() {
 
     const subApps = [
         ...(isVestDenStakingEnabled() ? [{
-            icon: TrendingUp, name: 'vestDen', label: 'Active stakes',
+            icon: TrendingUp, name: 'vestDen', label: 'Hibernated prototype',
             color: 'var(--color-invest)', gradient: 'linear-gradient(140deg, #10B981, #047857)',
             value: stakes.filter(s => s.status === 'active').length, to: '/apps/vestden'
         }] : []),

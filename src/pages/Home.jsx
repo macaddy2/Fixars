@@ -5,20 +5,20 @@ import { isVestDenStakingEnabled } from '@/lib/features'
 
 const SUBAPPS = [
     { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Peer-reviewed' },
-    ...(isVestDenStakingEnabled() ? [{ key: 'invest', glyph: 'V', name: 'vestDen', tagline: 'Fund campaigns', stat: '14.2%', statLabel: 'Avg Target IRR' }] : []),
+    ...(isVestDenStakingEnabled() ? [{ key: 'invest', glyph: 'V', name: 'vestDen', tagline: 'Hibernated prototype', stat: '—', statLabel: 'Not live money' }] : []),
     { key: 'collab', glyph: 'B', name: 'CollaBoard', tagline: 'Execute sprints', stat: '12', statLabel: 'Active sprints' },
     { key: 'skills', glyph: 'S', name: 'SkillsCanvas', tagline: 'Provable talent', stat: '76%', statLabel: 'Verified Profiles' },
 ]
 
 const FLOAT_CARDS = [
-    ...(isVestDenStakingEnabled() ? [{ cls: 'fc1', icon: TrendingUp, title: '₦25k Stake Added', meta: 'SolarShare Lagos' }] : []),
+    ...(isVestDenStakingEnabled() ? [{ cls: 'fc1', icon: TrendingUp, title: 'Prototype note', meta: 'Not a live-money path' }] : []),
     { cls: 'fc2', icon: Lightbulb, title: 'Idea Validated', meta: 'Score: 84/100' },
     { cls: 'fc3', icon: Check, title: 'Milestone Done', meta: 'On CollaBoard' },
 ]
 
 const HOW_IT_WORKS = [
     { num: '01', key: 'concept', glyph: 'C', title: 'Validate', desc: "Submit ideas to ConceptNexus. Peer reviewers and AI agents stress-test it until it's ready to ship." },
-    ...(isVestDenStakingEnabled() ? [{ num: '02', key: 'invest', glyph: 'V', title: 'Fund', desc: 'Graduated ideas move to vestDen. Planned milestone holds — this prototype does not hold client money.' }] : []),
+    ...(isVestDenStakingEnabled() ? [{ num: '02', key: 'invest', glyph: 'V', title: 'Review', desc: 'VestDen stays a prototype surface. This build does not hold client money and does not solicit stakes.' }] : []),
     { num: '03', key: 'collab', glyph: 'B', title: 'Build', desc: 'Project leads use CollaBoard to run sprints as milestones ship. Not a live-money path.' },
     { num: '04', key: 'skills', glyph: 'S', title: isVestDenStakingEnabled() ? 'Earn' : 'Staff', desc: isVestDenStakingEnabled()
         ? 'Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.'
@@ -168,9 +168,7 @@ export default function Home() {
                                 <img src={fixarsMark} alt="Fixars" />
                                 <div className="nm">Fixars</div>
                             </Link>
-                            <p className="footer-blurb">{isVestDenStakingEnabled()
-                                ? 'The operating system for African innovation. We connect ideas, capital, and talent to build the future. Your context compounds; it belongs to you.'
-                                : 'The operating system for African innovation. We connect ideas, teams, and talent to build the future. Your context compounds; it belongs to you.'}</p>
+                            <p className="footer-blurb">The operating system for African innovation. We connect ideas, teams, and talent to build the future. Your context compounds; it belongs to you.</p>
                             <div className="footer-socials">
                                 <a aria-label="Twitter"><ArrowUpRight className="w-4 h-4" /></a>
                                 <a aria-label="LinkedIn"><ArrowUpRight className="w-4 h-4" /></a>

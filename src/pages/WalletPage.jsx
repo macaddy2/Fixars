@@ -218,7 +218,7 @@ export default function WalletPage() {
                         </div>
                         <div>
                             <span className="wallet-stat-value display">{stakes.filter(s => s.status === 'active').length}</span>
-                            <span className="wallet-stat-label">Active Stakes (demo)</span>
+                            <span className="wallet-stat-label">Gated prototype items</span>
                         </div>
                     </div>
                 )}

@@ -101,7 +101,7 @@ export default function Analytics() {
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     {isVestDenStakingEnabled() && (
                     <StatCard
-                        label="Total Staked"
+                        label="Prototype tally"
                         value={`₦${formatNumber(totalStaked)}`}
                         trend={12}
                         trendLabel="vs last period"
