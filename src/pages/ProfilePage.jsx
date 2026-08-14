@@ -82,7 +82,7 @@ export default function ProfilePage() {
     const fcsTier = fcsBand(fcsScore).label
 
     const profileStats = [
-        ...(isVestDenStakingEnabled() ? [{ label: 'Active Stakes', value: stakes.filter(s => s.status === 'active').length, icon: TrendingUp, color: 'var(--color-invest)' }] : []),
+        ...(isVestDenStakingEnabled() ? [{ label: 'Gated items', value: stakes.filter(s => s.status === 'active').length, icon: TrendingUp, color: 'var(--color-invest)' }] : []),
         { label: 'Ideas Created', value: ideas.filter(i => i.creatorId === user.id).length, icon: Lightbulb, color: 'var(--color-concept)' },
         { label: 'Board Member', value: boards.filter(b => b.members.some(m => m.userId === user.id)).length, icon: Users, color: 'var(--color-collab)' },
         { label: 'Skills Listed', value: user.skills?.length || 0, icon: Palette, color: 'var(--color-skills)' },

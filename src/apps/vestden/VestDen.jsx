@@ -63,7 +63,7 @@ function CampaignCard({ stake, onStake, onCreateBoard }) {
                         className="btn-app btn-app-invest text-xs px-3 py-1.5 w-full justify-center"
                         onClick={() => onStake?.(stake)}
                     >
-                        Back This Project
+                        View campaign
                     </button>
                 ) : (
                     <div className="flex items-center justify-between w-full">
@@ -95,7 +95,7 @@ function VestDenHibernated() {
                     glyph="V"
                     tag="Not available"
                     title="vestDen"
-                    sub="Staking and investment in ideas are not available in this build."
+                    sub="Hibernated prototype. Not a live-money path and not a stake or invest surface."
                 />
                 <EmptyState
                     title="Staking is not available"
@@ -166,14 +166,14 @@ function VestDenLive() {
         ? [
             { k: 'Managed capital', v: `₦${formatNumber(portfolioTotal)}`, mono: true, t: 'across your stakes', tColor: 'var(--color-invest)' },
             { k: 'Staked projects', v: userStakes.length, t: 'in your portfolio' },
-            { k: 'Active stakes', v: userStakes.filter(s => s.status === 'active').length, t: 'still running' },
+            { k: 'Open items', v: userStakes.filter(s => s.status === 'active').length, t: 'still running' },
             { k: 'Awaiting returns', v: `₦${formatNumber(userStakes.filter(s => s.status === 'funded').reduce((sum, s) => sum + (s.stakers.find(st => st.userId === user?.id)?.amount || 0), 0))}`, mono: true, t: 'in funded deals', tColor: 'var(--color-success)' },
         ]
         : [
-            { k: 'Total staked', v: `₦${formatNumber(totalStaked)}`, mono: true, t: 'deployed to founders' },
-            { k: 'Active opportunities', v: activeStakes, t: 'open for backing' },
-            { k: 'Avg target return', v: '3.2x', t: 'across live campaigns', tColor: 'var(--color-invest)' },
-            { k: 'Backers', v: totalBackers, t: 'community investors' },
+            { k: 'Prototype tally', v: `₦${formatNumber(totalStaked)}`, mono: true, t: 'dummy figures only' },
+            { k: 'Open items', v: activeStakes, t: 'gated prototype surface' },
+            { k: 'Prototype note', v: '—', t: 'not a live-money path', tColor: 'var(--color-invest)' },
+            { k: 'Participants', v: totalBackers, t: 'dummy figures only' },
         ]
 
     return (
@@ -182,12 +182,12 @@ function VestDenLive() {
                 <PageHead
                     app="invest"
                     glyph="V"
-                    tag="Capital · Den of investors"
+                    tag="Prototype · gated"
                     title="vestDen"
-                    sub="Fund the validated future. From ₦5,000 to ₦5M, every stake is tracked, escrowed, and milestone-paid."
+                    sub="Gated prototype surface. Not a live-money path. This build does not solicit stakes or investment."
                     actions={isAuthenticated && (
                         <Button variant="vestden" size="lg" onClick={() => setCreateOpen(true)}>
-                            <Plus className="w-4 h-4 mr-2" /> Create Stake
+                            <Plus className="w-4 h-4 mr-2" /> New campaign
                         </Button>
                     )}
                 />
@@ -227,7 +227,7 @@ function VestDenLive() {
                 />
             )}
 
-            {/* Create Stake Modal */}
+            {/* Gated campaign modal */}
             <CreateStakeModal open={createOpen} onClose={() => setCreateOpen(false)} />
         </main>
     )

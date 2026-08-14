@@ -77,7 +77,7 @@ export default function StakeFlowModal({ campaign, onClose, onConfirm }) {
                     </div>
                     <div className="flex-1 min-w-0">
                         <h3 className="font-display text-[18px] font-medium leading-tight">Stake in {campaign.title}</h3>
-                        <p className="text-xs text-muted mt-0.5">Back this campaign from your Fixars wallet.</p>
+                        <p className="text-xs text-muted mt-0.5">Gated prototype action. Not a live-money path.</p>
                     </div>
                     <button onClick={onClose} className="p-1 rounded-md hover:bg-muted/10" aria-label="Close">
                         <X className="w-4.5 h-4.5 text-muted" />
@@ -85,7 +85,7 @@ export default function StakeFlowModal({ campaign, onClose, onConfirm }) {
                 </div>
 
                 <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
-                    {/* IRR / progress banner */}
+                    {/* Progress banner */}
                     <div className="rounded-xl p-4" style={{ background: 'var(--color-invest-bg)' }}>
                         <div className="flex items-end justify-between">
                             <div>
