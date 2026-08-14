@@ -20,6 +20,7 @@ import {
    Wallet Page — Phase 2
    Flag-off: dummy public-demo chrome. Not a live-money path.
    Flag-on: figures from the server mock ledger. Still not live rails.
+   Staking / VestDen returns stay gated regardless of session flag.
    ==================================================================== */
 
 const MOCK_TRANSACTIONS = [
