@@ -20,7 +20,9 @@ const HOW_IT_WORKS = [
     { num: '01', key: 'concept', glyph: 'C', title: 'Validate', desc: "Submit ideas to ConceptNexus. Peer reviewers and AI agents stress-test it until it's ready to ship." },
     ...(isVestDenStakingEnabled() ? [{ num: '02', key: 'invest', glyph: 'V', title: 'Fund', desc: 'Graduated ideas move to vestDen. Planned milestone holds — this prototype does not hold client money.' }] : []),
     { num: '03', key: 'collab', glyph: 'B', title: 'Build', desc: 'Project leads use CollaBoard to run sprints as milestones ship. Not a live-money path.' },
-    { num: '04', key: 'skills', glyph: 'S', title: 'Earn', desc: 'Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.' },
+    { num: '04', key: 'skills', glyph: 'S', title: isVestDenStakingEnabled() ? 'Earn' : 'Staff', desc: isVestDenStakingEnabled()
+        ? 'Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.'
+        : 'Talents collect verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.' },
 ]
 
 const SOVEREIGNTY = [
@@ -127,7 +129,9 @@ export default function Home() {
             <section id="howitworks" className="splash-section dark">
                 <div className="inner">
                     <h2>How Fixars works.</h2>
-                    <p className="lede">One identity. Four districts. A public demo of the lifecycle—from whiteboard to shipped work. Not a licensed custody product.</p>
+                    <p className="lede">{isVestDenStakingEnabled()
+                        ? 'One identity. Four districts. A public demo of the lifecycle—from whiteboard to shipped work. Not a licensed custody product.'
+                        : 'One identity. Three districts. A public demo of the lifecycle—from whiteboard to shipped work. Not a licensed custody product.'}</p>
                     
                     <div className="howit-grid">
                         {HOW_IT_WORKS.map((step) => (
@@ -164,7 +168,9 @@ export default function Home() {
                                 <img src={fixarsMark} alt="Fixars" />
                                 <div className="nm">Fixars</div>
                             </Link>
-                            <p className="footer-blurb">The operating system for African innovation. We connect ideas, capital, and talent to build the future. Your context compounds; it belongs to you.</p>
+                            <p className="footer-blurb">{isVestDenStakingEnabled()
+                                ? 'The operating system for African innovation. We connect ideas, capital, and talent to build the future. Your context compounds; it belongs to you.'
+                                : 'The operating system for African innovation. We connect ideas, teams, and talent to build the future. Your context compounds; it belongs to you.'}</p>
                             <div className="footer-socials">
                                 <a aria-label="Twitter"><ArrowUpRight className="w-4 h-4" /></a>
                                 <a aria-label="LinkedIn"><ArrowUpRight className="w-4 h-4" /></a>

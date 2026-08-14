@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/AuthContext'
 import { isRealSessionEnabled } from '@/lib/flags'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import { Mail, Lock, User, ArrowRight, Loader2, CheckCircle } from 'lucide-react'
 
 const BENEFITS = [
-    'Single login for all 4 apps',
+    isVestDenStakingEnabled() ? 'Single login for all 4 apps' : 'Single login across the apps',
     'Earn points for every action',
     'Connect with innovators worldwide',
     'Free to get started'

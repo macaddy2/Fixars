@@ -31,7 +31,9 @@ const APPS = [
         slug: 'conceptnexus',
         name: 'ConceptNexus',
         tagline: 'Gather, validate, and supercharge ideas',
-        description: 'Build the future collaboratively. ConceptNexus is where raw ideas become validated, community-backed concepts ready for funding and execution.',
+        description: isVestDenStakingEnabled()
+            ? 'Build the future collaboratively. ConceptNexus is where raw ideas become validated, community-backed concepts ready for funding and execution.'
+            : 'Build the future collaboratively. ConceptNexus is where raw ideas become validated, community-backed concepts ready for review and execution.',
         icon: Lightbulb,
         color: 'var(--color-concept)',
         gradient: 'linear-gradient(140deg, #7C3AED, #5B21B6)',
@@ -89,7 +91,9 @@ const FLOW_STEPS = [
     {
         step: '03',
         title: 'Build',
-        desc: 'Funded projects spin up CollaBoard workspaces. Teams collaborate with structure.',
+        desc: isVestDenStakingEnabled()
+            ? 'Funded projects spin up CollaBoard workspaces. Teams collaborate with structure.'
+            : 'Validated projects spin up CollaBoard workspaces. Teams collaborate with structure.',
         color: 'var(--color-collab)',
         icon: Users,
     },
