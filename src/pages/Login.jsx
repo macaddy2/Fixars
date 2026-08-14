@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/AuthContext'
+import { isRealSessionEnabled } from '@/lib/flags'
 import { Mail, Lock, ArrowRight, Loader2, Wand2, CheckCircle } from 'lucide-react'
 
 export default function Login() {
@@ -85,7 +86,11 @@ export default function Login() {
                         </div>
                     </Link>
                     <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
-                    <p className="text-muted mt-2">Sign in to your Fixars account</p>
+                    <p className="text-muted mt-2">
+                        {isRealSessionEnabled()
+                            ? 'Server session required. The client cannot mint a session.'
+                            : 'Sign in to your Fixars account'}
+                    </p>
                 </div>
 
                 <Card>

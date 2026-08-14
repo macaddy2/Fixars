@@ -72,7 +72,7 @@ export default function Home() {
                         </span>
                         <span>
                             <div className="ic"><Shield className="w-4 h-4" /></div>
-                            Bank-grade Escrow
+                            Prototype only
                         </span>
                         <span>
                             <div className="ic"><Lock className="w-4 h-4" /></div>
@@ -128,7 +128,7 @@ export default function Home() {
             <section id="howitworks" className="splash-section dark">
                 <div className="inner">
                     <h2>How Fixars works.</h2>
-                    <p className="lede">One identity. Four districts. The entire lifecycle of innovation—from whiteboard to payout—happens securely across one interconnected ecosystem.</p>
+                    <p className="lede">One identity. Four districts. A public demo of the lifecycle—from whiteboard to shipped work. Not a licensed custody product.</p>
                     
                     <div className="howit-grid">
                         {HOW_IT_WORKS.map((step) => (

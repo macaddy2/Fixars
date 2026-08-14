@@ -34,6 +34,7 @@ import ProfilePage from '@/pages/ProfilePage'
 import SettingsPage from '@/pages/SettingsPage'
 import WalletPage from '@/pages/WalletPage'
 import ReceiptsPage from '@/pages/ReceiptsPage'
+import RequireSession from '@/components/RequireSession'
 
 // Sub-apps
 import VestDen from '@/apps/vestden/VestDen'
@@ -152,8 +153,8 @@ function AppLayout() {
             <Route path="/apps/skillscanvas" element={<SkillsCanvas />} />
             <Route path="/apps/skillscanvas/talent/:id" element={<TalentProfile />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/wallet" element={<WalletPage />} />
-            <Route path="/receipts" element={<ReceiptsPage />} />
+            <Route path="/wallet" element={<RequireSession><WalletPage /></RequireSession>} />
+            <Route path="/receipts" element={<RequireSession><ReceiptsPage /></RequireSession>} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/developers" element={<ApiDocs />} />
@@ -183,7 +184,7 @@ function AppLayout() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/apps" element={<Apps />} />
               <Route path="/feed" element={<Feed />} />
-              <Route path="/wallet" element={<WalletPage />} />
+              <Route path="/wallet" element={<RequireSession><WalletPage /></RequireSession>} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/about" element={<About />} />
@@ -199,7 +200,7 @@ function AppLayout() {
 
               {/* Account */}
               <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/receipts" element={<ReceiptsPage />} />
+              <Route path="/receipts" element={<RequireSession><ReceiptsPage /></RequireSession>} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/developers" element={<ApiDocs />} />

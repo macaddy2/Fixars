@@ -261,7 +261,7 @@ export default function Dashboard() {
     const { user, isAuthenticated, isLoading } = useAuth()
     const { points, level, getNextLevel, LEVELS } = usePoints()
     const { stakes, ideas, boards, talents, activities } = useData()
-    const { balance: walletBalance } = useWallet()
+    const { balance: walletBalance, source: walletSource, realSession } = useWallet()
     const location = useLocation()
 
     // While auth is resolving, show a loader instead of redirecting — avoids
@@ -292,8 +292,8 @@ export default function Dashboard() {
             color: 'var(--color-success)',
         },
         {
-            k: 'Wallet', v: `₦${formatNumber(walletBalance)}`, mono: true, tUp: true,
-            t: '↑ ₦12,400 this week', spark: [180, 205, 196, 228, 241, 272, 284],
+            k: 'Wallet', v: walletBalance == null ? '—' : `₦${formatNumber(walletBalance)}`, mono: true, tUp: false,
+            t: realSession ? `${walletSource || 'mock-ledger'} · not live rails` : 'Dummy · not a live-money path', spark: [180, 205, 196, 228, 241, 272, 284],
             color: 'var(--color-blue-500)',
         },
         {

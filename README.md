@@ -29,7 +29,9 @@ The app runs without Supabase configured — it falls back to local mock data, b
 | --------------- | ----------------------------------------- |
 | `npm run dev`   | Start Vite dev server with HMR            |
 | `npm run build` | Production build to `dist/`               |
-| `npm run start` | Build and serve `dist/` (used by Railway) |
+| `npm run start` | Serve `dist/` (and `/api` when `REAL_SESSION=1`) |
+| `npm run server`| Same as start; use `PORT=8787` for Vite proxy |
+| `npm test`      | Session, wallet, and port-adapter tests |
 | `npm run lint`  | ESLint (flat config, `eslint.config.js`)  |
 
 ## Project layout
@@ -54,6 +56,13 @@ supabase/
 ## Environment
 
 See `.env.example`. Never commit a real `.env` — all `.env*` files are gitignored.
+
+The public GitHub Pages build must leave `VITE_REAL_SESSION` unset so the
+static demo path stays dummy. Railway / internal preview may set
+`VITE_REAL_SESSION=1` (build) and `REAL_SESSION=1` plus `SESSION_SECRET`
+(runtime) to turn on the server-issued session stack. That stack still
+uses mock adapters only — no live Paystack, NIMC, or bank rails.
+`isSupabaseConfigured()` stays `false`.
 
 ## Deployment
 
