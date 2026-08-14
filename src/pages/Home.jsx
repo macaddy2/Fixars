@@ -73,7 +73,7 @@ export default function Home() {
                     <div className="trust-strip">
                         <span>
                             <div className="ic"><Users className="w-4 h-4" /></div>
-                            50K+ Active Users
+                            Public prototype
                         </span>
                         <span>
                             <div className="ic"><Shield className="w-4 h-4" /></div>

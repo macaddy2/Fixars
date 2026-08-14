@@ -93,8 +93,8 @@ export default function CreateStakeModal({ open, onClose, initialData = null }) 
         <Modal
             open={open}
             onClose={close}
-            title="Create a stake"
-            subtitle="Raise capital from the community for your venture"
+            title="New campaign"
+            subtitle="Prototype form. Not a live-money path and not a client-funds path."
             gradient="gradient-vestden"
         >
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -149,7 +149,7 @@ export default function CreateStakeModal({ open, onClose, initialData = null }) 
                 <div className="flex gap-3 pt-2">
                     <Button type="button" variant="ghost" onClick={close} className="flex-1" disabled={submitting}>Cancel</Button>
                     <Button type="submit" variant="vestden" className="flex-1" disabled={submitting}>
-                        {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</> : <><TrendingUp className="w-4 h-4 mr-2" /> Create stake</>}
+                        {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <><TrendingUp className="w-4 h-4 mr-2" /> Save draft</>}
                     </Button>
                 </div>
             </form>

@@ -63,7 +63,7 @@ function CampaignCard({ stake, onStake, onCreateBoard }) {
                         className="btn-app btn-app-invest text-xs px-3 py-1.5 w-full justify-center"
                         onClick={() => onStake?.(stake)}
                     >
-                        Back This Project
+                        View campaign
                     </button>
                 ) : (
                     <div className="flex items-center justify-between w-full">
@@ -172,8 +172,8 @@ function VestDenLive() {
         : [
             { k: 'Prototype tally', v: `₦${formatNumber(totalStaked)}`, mono: true, t: 'dummy figures only' },
             { k: 'Open items', v: activeStakes, t: 'gated prototype surface' },
-            { k: 'Avg target return', v: '3.2x', t: 'across live campaigns', tColor: 'var(--color-invest)' },
-            { k: 'Backers', v: totalBackers, t: 'community investors' },
+            { k: 'Prototype note', v: '—', t: 'not a live-money path', tColor: 'var(--color-invest)' },
+            { k: 'Participants', v: totalBackers, t: 'dummy figures only' },
         ]
 
     return (
@@ -187,7 +187,7 @@ function VestDenLive() {
                     sub="Gated prototype surface. Not a live-money path. This build does not solicit stakes or investment."
                     actions={isAuthenticated && (
                         <Button variant="vestden" size="lg" onClick={() => setCreateOpen(true)}>
-                            <Plus className="w-4 h-4 mr-2" /> Create Stake
+                            <Plus className="w-4 h-4 mr-2" /> New campaign
                         </Button>
                     )}
                 />
@@ -227,7 +227,7 @@ function VestDenLive() {
                 />
             )}
 
-            {/* Create Stake Modal */}
+            {/* Gated campaign modal */}
             <CreateStakeModal open={createOpen} onClose={() => setCreateOpen(false)} />
         </main>
     )
