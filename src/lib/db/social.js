@@ -258,3 +258,90 @@ export async function markNotificationsReadDB(userId) {
 
     if (error) throw error
 }
+
+// ── Delete a notification ──
+export async function deleteNotificationDB(id) {
+    const { error } = await supabase
+        .from(TABLES.NOTIFICATIONS)
+        .delete()
+        .eq('id', id)
+
+    if (error) throw error
+}
+
+// ── Fetch comments for a post ──
+export async function fetchComments(postId) {
+    const { data, error } = await supabase
+        .from(TABLES.POST_COMMENTS)
+        .select('*')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true })
+        .limit(100)
+
+    if (error) throw error
+
+    return (data || []).map(c => ({
+        id: c.id,
+        postId: c.post_id,
+        authorId: c.author_id,
+        authorName: c.author_name,
+        content: c.content,
+        createdAt: c.created_at
+    }))
+}
+
+// ── Add a comment to a post ──
+// posts.comment_count is incremented by the on_comment_insert DB trigger.
+export async function createCommentDB(postId, userId, authorName, content) {
+    const { data, error } = await supabase
+        .from(TABLES.POST_COMMENTS)
+        .insert({
+            post_id: postId,
+            author_id: userId,
+            author_name: authorName,
+            content
+        })
+        .select()
+        .single()
+
+    if (error) throw error
+
+    return {
+        id: data.id,
+        postId: data.post_id,
+        authorId: data.author_id,
+        authorName: data.author_name,
+        content: data.content,
+        createdAt: data.created_at
+    }
+}
+
+// ── Follow / unfollow ──
+export async function fetchFollowing(userId) {
+    const { data, error } = await supabase
+        .from(TABLES.FOLLOWS)
+        .select('following_id')
+        .eq('follower_id', userId)
+
+    if (error) throw error
+    return new Set((data || []).map(r => r.following_id))
+}
+
+export async function followUserDB(followerId, followingId) {
+    const { error } = await supabase
+        .from(TABLES.FOLLOWS)
+        .insert({ follower_id: followerId, following_id: followingId })
+
+    // Ignore duplicate follows (unique constraint) but surface real errors
+    if (error && error.code !== '23505') throw error
+}
+
+export async function unfollowUserDB(followerId, followingId) {
+    const { error } = await supabase
+        .from(TABLES.FOLLOWS)
+        .delete()
+        .eq('follower_id', followerId)
+        .eq('following_id', followingId)
+
+    if (error) throw error
+}

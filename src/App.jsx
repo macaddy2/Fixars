@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { PointsProvider } from '@/contexts/PointsContext'
@@ -91,7 +91,66 @@ function NotFound() {
   )
 }
 
+/** Gate for authenticated-only routes. */
+function RequireAuth({ children }) {
+  const { isAuthenticated, isLoading } = useAuth()
+  const location = useLocation()
 
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    )
+  }
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  }
+  return children
+}
+
+/** Keeps signed-in users away from the auth pages. */
+function RedirectIfAuth({ children }) {
+  const { isAuthenticated } = useAuth()
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />
+  return children
+}
+
+
+
+// Shared route definitions. `guard` wraps protected routes.
+function AppRoutes({ guard }) {
+  return (
+    <>
+      <Route path="/login" element={<RedirectIfAuth><Login /></RedirectIfAuth>} />
+      <Route path="/signup" element={<RedirectIfAuth><Signup /></RedirectIfAuth>} />
+      <Route path="/about" element={<About />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/developers" element={<ApiDocs />} />
+
+      {/* Protected app routes */}
+      <Route path="/dashboard" element={guard(<Dashboard />)} />
+      <Route path="/apps" element={guard(<Apps />)} />
+      <Route path="/apps/vestden" element={guard(<VestDen />)} />
+      <Route path="/apps/conceptnexus" element={guard(<ConceptNexus />)} />
+      <Route path="/apps/collaboard" element={guard(<Collaboard />)} />
+      <Route path="/apps/skillscanvas" element={guard(<SkillsCanvas />)} />
+      <Route path="/apps/skillscanvas/talent/:id" element={guard(<TalentProfile />)} />
+      <Route path="/profile" element={guard(<ProfilePage />)} />
+      <Route path="/wallet" element={guard(<WalletPage />)} />
+      <Route path="/notifications" element={guard(<NotificationsPage />)} />
+      <Route path="/analytics" element={guard(<Analytics />)} />
+      <Route path="/settings" element={guard(<SettingsPage />)} />
+      <Route path="/messages" element={guard(<Feed />)} />
+
+      {/* Public feed — browsing is open, posting requires auth */}
+      <Route path="/feed" element={<Feed />} />
+
+      <Route path="*" element={<NotFound />} />
+    </>
+  )
+}
 
 /**
  * Layout wrapper that shows either the authenticated shell (sidebar+topbar)
@@ -121,29 +180,7 @@ function AppLayout() {
         <SearchOverlay />
         <div className="flex-1">
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-
-            {/* Authenticated routes also available here as fallback */}
-            <Route path="/apps" element={<Apps />} />
-            <Route path="/feed" element={<Feed />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/apps/vestden" element={<VestDen />} />
-            <Route path="/apps/conceptnexus" element={<ConceptNexus />} />
-            <Route path="/apps/collaboard" element={<Collaboard />} />
-            <Route path="/apps/skillscanvas" element={<SkillsCanvas />} />
-            <Route path="/apps/skillscanvas/talent/:id" element={<TalentProfile />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/wallet" element={<WalletPage />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/developers" element={<ApiDocs />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/messages" element={<Feed />} />
-            <Route path="*" element={<NotFound />} />
+            <AppRoutes guard={(el) => <RequireAuth>{el}</RequireAuth>} />
           </Routes>
         </div>
         <Footer />
@@ -163,33 +200,9 @@ function AppLayout() {
           <SearchOverlay />
           <section className="fx-content">
             <Routes>
+              {/* Authenticated shell serves the dashboard at "/" */}
               <Route path="/" element={<Dashboard />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/apps" element={<Apps />} />
-              <Route path="/feed" element={<Feed />} />
-              <Route path="/wallet" element={<WalletPage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
-
-              {/* Sub-apps */}
-              <Route path="/apps/vestden" element={<VestDen />} />
-              <Route path="/apps/conceptnexus" element={<ConceptNexus />} />
-              <Route path="/apps/collaboard" element={<Collaboard />} />
-              <Route path="/apps/skillscanvas" element={<SkillsCanvas />} />
-              <Route path="/apps/skillscanvas/talent/:id" element={<TalentProfile />} />
-
-              {/* Account */}
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/developers" element={<ApiDocs />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/messages" element={<Feed />} />
-
-              <Route path="*" element={<NotFound />} />
+              <AppRoutes guard={(el) => el} />
             </Routes>
           </section>
         </main>

@@ -12,6 +12,28 @@ const EMOJI_OPTIONS = ['👍', '🔥', '💡', '🎉', '💪', '❤️']
 export default function PostCard({ post, onReact }) {
     const [showReactions, setShowReactions] = useState(false)
     const [bookmarked, setBookmarked] = useState(false)
+    const [shared, setShared] = useState(false)
+
+    const handleShare = async (post) => {
+        const url = `${window.location.origin}/feed`
+        const shareData = {
+            title: `Post by ${post.authorName} · Fixars`,
+            text: post.content.slice(0, 140),
+            url
+        }
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData)
+            } else {
+                await navigator.clipboard.writeText(`${post.content}\n${url}`)
+                setShared(true)
+                setTimeout(() => setShared(false), 1500)
+            }
+        } catch (err) {
+            // User cancelled the native share sheet — not an error
+            if (err?.name !== 'AbortError') console.error('Share failed:', err)
+        }
+    }
 
     const totalReactions = Object.values(post.reactions).reduce((a, b) => a + b, 0)
     const topEmojis = Object.entries(post.reactions)
@@ -115,12 +137,19 @@ export default function PostCard({ post, onReact }) {
                             variant="ghost"
                             size="sm"
                             className="gap-1.5"
+                            aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark post'}
                             onClick={() => setBookmarked(!bookmarked)}
                         >
                             <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-primary text-primary' : ''}`} />
                         </Button>
-                        <Button variant="ghost" size="sm" className="gap-1.5">
-                            <Share2 className="w-4 h-4" />
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5"
+                            aria-label="Share post"
+                            onClick={() => handleShare(post)}
+                        >
+                            <Share2 className={`w-4 h-4 ${shared ? 'text-primary' : ''}`} />
                         </Button>
                     </div>
                 </div>

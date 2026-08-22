@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured, TABLES } from '@/lib/supabase'
+import { isSupabaseConfigured } from '@/lib/supabase'
 
 /**
  * Public API client wrapper for Fixars platform.
@@ -22,6 +22,7 @@ export class FixarsAPI {
     }
 
     async _request(method, path, body) {
+        void method // kept for API symmetry; only GET is used today
         if (!this.baseUrl) {
             return { data: getMockResponse(path, method), error: null }
         }
@@ -33,6 +34,10 @@ export class FixarsAPI {
                 ...(body ? { body: JSON.stringify(body) } : {})
             })
             const data = await res.json()
+            if (!res.ok) {
+                // PostgREST returns error payloads like { message, code, details }
+                return { data: null, error: data?.message || `HTTP ${res.status}` }
+            }
             return { data, error: null }
         } catch (error) {
             return { data: null, error: error.message }
@@ -41,7 +46,7 @@ export class FixarsAPI {
 
     // Stakes
     async getStakes(limit = 20) {
-        return this._request('GET', `/stakes?select=*&order=created_at.desc&limit=${limit}`)
+        return this._request('GET', `/stakes?select=*&order=created_at.desc&limit=${clampLimit(limit)}`)
     }
 
     async getStakeById(id) {
@@ -50,23 +55,30 @@ export class FixarsAPI {
 
     // Ideas
     async getIdeas(limit = 20) {
-        return this._request('GET', `/ideas?select=*&order=created_at.desc&limit=${limit}`)
+        return this._request('GET', `/ideas?select=*&order=created_at.desc&limit=${clampLimit(limit)}`)
     }
 
     // Boards
     async getBoards(limit = 20) {
-        return this._request('GET', `/boards?select=*&order=created_at.desc&limit=${limit}`)
+        return this._request('GET', `/boards?select=*&order=created_at.desc&limit=${clampLimit(limit)}`)
     }
 
     // Talents
     async getTalents(limit = 20) {
-        return this._request('GET', `/talents?select=*&is_active=eq.true&order=rating.desc&limit=${limit}`)
+        return this._request('GET', `/talents?select=*&is_active=eq.true&order=rating.desc&limit=${clampLimit(limit)}`)
     }
 
     // Posts
     async getPosts(limit = 20) {
-        return this._request('GET', `/posts?select=*&visibility=eq.public&order=created_at.desc&limit=${limit}`)
+        return this._request('GET', `/posts?select=*&visibility=eq.public&order=created_at.desc&limit=${clampLimit(limit)}`)
     }
+}
+
+// Clamp user-supplied limits to a safe PostgREST range
+function clampLimit(limit) {
+    const n = Number.parseInt(limit, 10)
+    if (Number.isNaN(n) || n < 1) return 20
+    return Math.min(n, 100)
 }
 
 /**
@@ -78,9 +90,9 @@ export const API_ENDPOINTS = [
         path: '/stakes',
         description: 'List all active investment stakes',
         params: [
-            { name: 'limit', type: 'integer', default: '20', description: 'Max results to return' },
+            { name: 'limit', type: 'integer', default: '20', description: 'Max results to return (max 100)' },
             { name: 'category', type: 'string', description: 'Filter by category (tech, marketplace, health)' },
-            { name: 'status', type: 'string', description: 'Filter by status (active, funded, expired)' }
+            { name: 'status', type: 'string', description: 'Filter by status (active, funded, closed, cancelled)' }
         ],
         response: `[{
   "id": "uuid",
@@ -106,8 +118,8 @@ export const API_ENDPOINTS = [
   "id": "uuid",
   "title": "Community Solar Grid Network",
   "validation_score": 82,
-  "votes_up": 156,
-  "votes_down": 18,
+  "upvotes": 156,
+  "downvotes": 18,
   "status": "validated",
   "impact_tags": ["environmental", "community"]
 }]`
@@ -115,7 +127,7 @@ export const API_ENDPOINTS = [
     {
         method: 'GET',
         path: '/boards',
-        description: 'List project collaboration boards',
+        description: 'List project collaboration boards (requires board membership)',
         params: [
             { name: 'limit', type: 'integer', default: '20' }
         ],
@@ -123,7 +135,7 @@ export const API_ENDPOINTS = [
   "id": "uuid",
   "title": "Fixars Core Development",
   "description": "...",
-  "member_count": 3,
+  "creator_id": "uuid",
   "created_at": "2026-01-01T00:00:00Z"
 }]`
     },
@@ -133,15 +145,15 @@ export const API_ENDPOINTS = [
         description: 'List active talent profiles',
         params: [
             { name: 'limit', type: 'integer', default: '20' },
-            { name: 'availability', type: 'string', description: 'Filter: full-time, part-time, contract' }
+            { name: 'availability', type: 'string', description: 'Filter: full-time, part-time, unavailable' }
         ],
         response: `[{
   "id": "uuid",
-  "display_name": "Jessica Lee",
+  "user_id": "uuid",
   "hourly_rate": 95,
   "rating": 4.9,
   "availability": "part-time",
-  "skills": [{"name": "React", "level": "expert"}]
+  "completed_projects": 34
 }]`
     },
     {
@@ -182,7 +194,7 @@ export const API_ENDPOINTS = [
 ]
 
 // Mock responses for demo mode
-function getMockResponse(path, method) {
+function getMockResponse(path) {
     if (path.includes('/stakes')) return [{ id: 'demo-1', title: 'Demo Stake', status: 'active', target_amount: 10000, current_amount: 5000 }]
     if (path.includes('/ideas')) return [{ id: 'demo-1', title: 'Demo Idea', validation_score: 75, status: 'validating' }]
     if (path.includes('/boards')) return [{ id: 'demo-1', title: 'Demo Board', member_count: 3 }]

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,31 +14,26 @@ import { StatRow, Toolbar, ListGrid, EmptyState } from '@/components/SubAppKit'
 import {
     Users,
     Plus,
-    MoreVertical,
     CheckCircle,
     Clock,
     ArrowRight,
     MessageSquare,
-    Calendar,
-    ExternalLink
+    Calendar
 } from 'lucide-react'
 
 
-function TaskCard({ task, columnId }) {
+function TaskCard({ task }) {
     return (
-        <div className="p-3 bg-card rounded-lg border shadow-sm hover:shadow-md transition-all duration-200 cursor-move">
-            <div className="flex items-start justify-between mb-2">
-                <div className="flex flex-wrap gap-1">
-                    {task.labels?.map(label => (
+        <div className="p-3 bg-card rounded-lg border shadow-sm hover:shadow-md transition-all duration-200">
+            {task.labels?.length > 0 && (
+                <div className="flex items-start flex-wrap gap-1 mb-2">
+                    {task.labels.map(label => (
                         <Badge key={label} variant="secondary" className="text-xs">
                             {label}
                         </Badge>
                     ))}
                 </div>
-                <button className="p-1 rounded hover:bg-muted/20">
-                    <MoreVertical className="w-4 h-4 text-muted" />
-                </button>
-            </div>
+            )}
 
             <h4 className="font-medium text-foreground text-sm mb-2">{task.title}</h4>
 
@@ -61,7 +56,7 @@ function TaskCard({ task, columnId }) {
     )
 }
 
-function BoardColumn({ column, boardId, onAddTask }) {
+function BoardColumn({ column, onAddTask }) {
     const columnStyles = {
         todo: { icon: Clock, color: 'text-muted' },
         progress: { icon: ArrowRight, color: 'text-collaboard' },
@@ -92,7 +87,7 @@ function BoardColumn({ column, boardId, onAddTask }) {
 
             <div className="space-y-2 p-2 rounded-xl bg-muted/10 min-h-[200px]">
                 {column.tasks.map(task => (
-                    <TaskCard key={task.id} task={task} columnId={column.id} />
+                    <TaskCard key={task.id} task={task} />
                 ))}
                 {column.tasks.length === 0 && (
                     <p className="text-center text-sm text-muted py-8">No tasks</p>
@@ -154,28 +149,33 @@ function ProjectCard({ board, onOpen }) {
 export default function Collaboard() {
     const { boards, getRecommendedTalents } = useData()
     const { isAuthenticated, user } = useAuth()
-    const [searchParams] = useSearchParams()
-    const [selectedBoard, setSelectedBoard] = useState(null)
+    // Board selection is fully derived: a ?boardId= deep link wins unless the
+    // user has opened another board (override) — no state-sync effects needed.
+    const [searchParams, setSearchParams] = useSearchParams()
+    const urlBoardId = searchParams.get('boardId')
+    const [overrideId, setOverrideId] = useState(null)
+    const selectedBoardId = overrideId ?? urlBoardId
     const [createOpen, setCreateOpen] = useState(false)
     const [addTaskState, setAddTaskState] = useState({ open: false, column: 'todo' })
     const [search, setSearch] = useState('')
     const [filter, setFilter] = useState('all')
 
-    useEffect(() => {
-        const boardId = searchParams.get('boardId')
-        if (boardId) {
-            setSelectedBoard(boardId)
-        }
-    }, [searchParams])
+    const closeBoard = () => {
+        setOverrideId(null)
+        if (urlBoardId) setSearchParams({}, { replace: true })
+    }
 
-    if (selectedBoard) {
-        const board = boards.find(b => b.id === selectedBoard)
-        if (!board) {
-            setSelectedBoard(null)
-            return null
-        }
+    // Derived — never call setState during render
+    const board = selectedBoardId ? boards.find(b => b.id === selectedBoardId) : null
+    const recommendations = useMemo(
+        () => (board ? getRecommendedTalents(board.id) : []),
+        [board, getRecommendedTalents]
+    )
 
-        const recommendations = getRecommendedTalents(board.id)
+    // If the selected board isn't (yet) in the list, the list view renders
+    // below automatically — nothing to clear.
+
+    if (board) {
 
         return (
             <main className="py-8">
@@ -183,7 +183,7 @@ export default function Collaboard() {
                     {/* Board Header */}
                     <div className="flex items-center justify-between mb-6">
                         <div className="flex items-center gap-4">
-                            <Button variant="ghost" onClick={() => setSelectedBoard(null)}>
+                            <Button variant="ghost" onClick={closeBoard}>
                                 ← Back
                             </Button>
                             <div>
@@ -210,7 +210,6 @@ export default function Collaboard() {
                                 <BoardColumn
                                     key={column.id}
                                     column={column}
-                                    boardId={board.id}
                                     onAddTask={(colId) => setAddTaskState({ open: true, column: colId })}
                                 />
                             ))}
@@ -244,8 +243,15 @@ export default function Collaboard() {
                                                         <Badge key={i} variant="secondary" className="text-[10px] px-1 py-0">{s.name}</Badge>
                                                     ))}
                                                 </div>
-                                                <Button variant="outline" size="sm" className="w-full h-8 text-xs group-hover:bg-collaboard group-hover:text-white">
-                                                    Summon Help
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full h-8 text-xs group-hover:bg-collaboard group-hover:text-white"
+                                                    asChild
+                                                >
+                                                    <Link to={`/apps/skillscanvas/talent/${talent.id}`}>
+                                                        Summon Help
+                                                    </Link>
                                                 </Button>
                                             </div>
                                         ))
@@ -337,7 +343,7 @@ export default function Collaboard() {
                 <ListGrid>
                     {visibleBoards.length > 0 ? (
                         visibleBoards.map(board => (
-                            <ProjectCard key={board.id} board={board} onOpen={setSelectedBoard} />
+                            <ProjectCard key={board.id} board={board} onOpen={setOverrideId} />
                         ))
                     ) : (
                         <EmptyState
@@ -352,7 +358,7 @@ export default function Collaboard() {
             <CreateBoardModal
                 open={createOpen}
                 onClose={() => setCreateOpen(false)}
-                onCreated={(board) => setSelectedBoard(board.id)}
+                onCreated={(created) => setOverrideId(created.id)}
             />
         </main>
     )

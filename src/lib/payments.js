@@ -40,26 +40,24 @@ export async function createPaymentIntent(stakeId, amount, metadata = {}) {
 /**
  * Confirm a payment intent.
  * Simulates a 2-second processing delay in mock mode.
+ *
+ * SECURITY: raw card details must NEVER be sent to this backend — tokenize
+ * with Stripe Elements / Paystack inline first and pass only the token.
  */
-export async function confirmPayment(intentId, cardDetails = {}) {
+export async function confirmPayment(intentId, { token } = {}) {
     if (!isSupabaseConfigured() || intentId.startsWith('pi_mock') || intentId.startsWith('pi_fallback')) {
         // Mock: simulate processing time
         await new Promise(resolve => setTimeout(resolve, 2000))
         return {
             id: intentId,
             status: 'succeeded',
-            confirmedAt: new Date().toISOString(),
-            receipt: {
-                last4: cardDetails.number?.slice(-4) || '4242',
-                brand: 'visa',
-                amount: cardDetails.amount || 0
-            }
+            confirmedAt: new Date().toISOString()
         }
     }
 
     try {
         const { data, error } = await supabase.functions.invoke('confirm-payment', {
-            body: { intentId, cardDetails }
+            body: { intentId, token }
         })
 
         if (error) throw error
@@ -124,12 +122,12 @@ export async function fetchPaymentHistory(userId) {
 }
 
 /**
- * Format amount as currency string.
+ * Format amount as currency string (Naira — matches the rest of the app).
  */
 export function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-NG', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'NGN',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(amount)

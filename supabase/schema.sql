@@ -205,8 +205,48 @@ CREATE TABLE IF NOT EXISTS post_reactions (
   UNIQUE(post_id, user_id, emoji)
 );
 
+CREATE TABLE IF NOT EXISTS post_comments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  post_id UUID REFERENCES posts(id) ON DELETE CASCADE NOT NULL,
+  author_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  author_name TEXT NOT NULL,
+  content TEXT NOT NULL CHECK (char_length(content) <= 2000),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS follows (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  follower_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  following_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CHECK (follower_id <> following_id),
+  UNIQUE(follower_id, following_id)
+);
+
+-- Payment ledger. Rows are written exclusively by the payment provider
+-- webhook / service role — there is deliberately NO insert policy for
+-- authenticated clients.
+CREATE TABLE IF NOT EXISTS payments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  stake_id UUID REFERENCES stakes(id) ON DELETE SET NULL,
+  amount DECIMAL(12,2) NOT NULL CHECK (amount > 0),
+  currency TEXT DEFAULT 'NGN',
+  status TEXT CHECK (status IN ('pending', 'succeeded', 'failed', 'refunded')) DEFAULT 'pending',
+  provider TEXT DEFAULT 'paystack',
+  provider_ref TEXT UNIQUE,
+  card_last4 TEXT,
+  card_brand TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS conversations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  -- Deterministic key for 1:1 DMs ("smaller-uuid:larger-uuid") that prevents
+  -- duplicate conversations when both users message simultaneously.
+  -- Uniqueness is enforced by ux_conversations_dm_key (see INDEXES).
+  dm_key TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   last_activity TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -319,6 +359,15 @@ CREATE INDEX IF NOT EXISTS idx_skill_requests_requester_id ON skill_requests(req
 CREATE INDEX IF NOT EXISTS idx_posts_author ON posts(author_id);
 CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_post_reactions_post ON post_reactions(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_comments_post ON post_comments(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_comments_created ON post_comments(created_at);
+CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id);
+CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id);
+CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
+CREATE INDEX IF NOT EXISTS idx_payments_stake ON payments(stake_id);
+-- Unique (not just indexed) so concurrent DM creation can't produce duplicates;
+-- a unique index works both for fresh and pre-existing deployments.
+CREATE UNIQUE INDEX IF NOT EXISTS ux_conversations_dm_key ON conversations(dm_key);
 CREATE INDEX IF NOT EXISTS idx_conv_participants_conv ON conversation_participants(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_conv_participants_user ON conversation_participants(user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id);
@@ -348,7 +397,9 @@ RETURNS SETOF UUID AS $$
   SELECT conversation_id FROM conversation_participants WHERE user_id = auth.uid();
 $$ LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public;
 
--- Creates a DM conversation between two users (bypasses RLS for recipient insertion)
+-- Creates (or returns the existing) DM conversation between two users.
+-- Uses a deterministic dm_key + upsert so two simultaneous first-messages
+-- converge on ONE conversation instead of creating duplicates.
 CREATE OR REPLACE FUNCTION create_dm_conversation(
   p_user_id UUID,
   p_user_name TEXT,
@@ -358,12 +409,25 @@ CREATE OR REPLACE FUNCTION create_dm_conversation(
 RETURNS UUID AS $$
 DECLARE
   v_conv_id UUID;
+  v_dm_key TEXT;
 BEGIN
-  INSERT INTO conversations DEFAULT VALUES RETURNING id INTO v_conv_id;
+  v_dm_key := concat_ws(':',
+    least(p_user_id::TEXT, p_recipient_id::TEXT),
+    greatest(p_user_id::TEXT, p_recipient_id::TEXT)
+  );
+
+  INSERT INTO conversations (dm_key)
+  VALUES (v_dm_key)
+  ON CONFLICT (dm_key) DO UPDATE SET last_activity = NOW()
+  RETURNING id INTO v_conv_id;
+
+  -- Idempotent participant insert (both rows, bypassing RLS via DEFINER)
   INSERT INTO conversation_participants (conversation_id, user_id, user_name)
   VALUES
     (v_conv_id, p_user_id, p_user_name),
-    (v_conv_id, p_recipient_id, p_recipient_name);
+    (v_conv_id, p_recipient_id, p_recipient_name)
+  ON CONFLICT (conversation_id, user_id) DO NOTHING;
+
   RETURN v_conv_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
@@ -386,20 +450,26 @@ ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE skill_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE post_reactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE follows ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE conversation_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE points_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
 -- RLS POLICIES
 -- ============================================================
 
 -- ── Profiles ──
+-- Row visibility is limited to authenticated users; profiles.email is
+-- considered private (never selected by app queries for other users).
+DROP POLICY IF EXISTS "profiles_select" ON profiles;
 CREATE POLICY "profiles_select" ON profiles
-  FOR SELECT USING (true);
+  FOR SELECT USING (auth.uid() IS NOT NULL);
 CREATE POLICY "profiles_insert" ON profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "profiles_update" ON profiles
@@ -553,6 +623,28 @@ CREATE POLICY "post_reactions_insert" ON post_reactions
 CREATE POLICY "post_reactions_delete" ON post_reactions
   FOR DELETE USING (auth.uid() = user_id);
 
+-- ── Post Comments ──
+DROP POLICY IF EXISTS "post_comments_select" ON post_comments;
+CREATE POLICY "post_comments_select" ON post_comments
+  FOR SELECT USING (true);
+DROP POLICY IF EXISTS "post_comments_insert" ON post_comments;
+CREATE POLICY "post_comments_insert" ON post_comments
+  FOR INSERT WITH CHECK (auth.uid() = author_id);
+DROP POLICY IF EXISTS "post_comments_delete" ON post_comments;
+CREATE POLICY "post_comments_delete" ON post_comments
+  FOR DELETE USING (auth.uid() = author_id);
+
+-- ── Follows ──
+DROP POLICY IF EXISTS "follows_select" ON follows;
+CREATE POLICY "follows_select" ON follows
+  FOR SELECT USING (true);
+DROP POLICY IF EXISTS "follows_insert" ON follows;
+CREATE POLICY "follows_insert" ON follows
+  FOR INSERT WITH CHECK (auth.uid() = follower_id AND follower_id <> following_id);
+DROP POLICY IF EXISTS "follows_delete" ON follows;
+CREATE POLICY "follows_delete" ON follows
+  FOR DELETE USING (auth.uid() = follower_id);
+
 -- ── Conversations (uses helper function to avoid self-referencing RLS) ──
 CREATE POLICY "conversations_select" ON conversations
   FOR SELECT USING (id IN (SELECT get_my_conversation_ids()));
@@ -577,8 +669,12 @@ CREATE POLICY "messages_insert" ON messages
 -- ── Notifications ──
 CREATE POLICY "notifications_select" ON notifications
   FOR SELECT USING (auth.uid() = user_id);
+-- Users may only create notifications for THEMSELVES (e.g. local echo of a
+-- server-side event). Cross-user notification spam is impossible; real
+-- cross-user notifications must be written via service role / triggers.
+DROP POLICY IF EXISTS "notifications_insert" ON notifications;
 CREATE POLICY "notifications_insert" ON notifications
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "notifications_update" ON notifications
   FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "notifications_delete" ON notifications
@@ -595,6 +691,12 @@ CREATE POLICY "points_history_select" ON points_history
   FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "points_history_insert" ON points_history
   FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- ── Payments ──
+-- Read-only for owners; writes happen exclusively via the payment provider
+-- webhook using the service role (which bypasses RLS).
+CREATE POLICY "payments_select" ON payments
+  FOR SELECT USING (auth.uid() = user_id);
 
 -- ============================================================
 -- FUNCTIONS & TRIGGERS
@@ -755,3 +857,33 @@ CREATE TRIGGER on_message_insert
   AFTER INSERT ON messages
   FOR EACH ROW
   EXECUTE FUNCTION update_conversation_activity();
+
+-- Keep posts.comment_count in sync with post_comments (SECURITY DEFINER so the
+-- commenter doesn't need UPDATE rights on the author's post row)
+CREATE OR REPLACE FUNCTION update_post_comment_count()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_new_count INTEGER;
+  v_post_id UUID := COALESCE(NEW.post_id, OLD.post_id);
+BEGIN
+  SELECT COUNT(*) INTO v_new_count FROM post_comments WHERE post_id = v_post_id;
+
+  UPDATE posts
+  SET comment_count = v_new_count
+  WHERE id = v_post_id;
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_comment_insert ON post_comments;
+CREATE TRIGGER on_comment_insert
+  AFTER INSERT ON post_comments
+  FOR EACH ROW
+  EXECUTE FUNCTION update_post_comment_count();
+
+DROP TRIGGER IF EXISTS on_comment_delete ON post_comments;
+CREATE TRIGGER on_comment_delete
+  AFTER DELETE ON post_comments
+  FOR EACH ROW
+  EXECUTE FUNCTION update_post_comment_count();

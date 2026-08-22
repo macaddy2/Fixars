@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Home, LayoutGrid, Wallet, User, Plus } from 'lucide-react'
 
 const tabs = [
@@ -11,6 +11,7 @@ const tabs = [
 
 export default function MobileNav() {
   const location = useLocation()
+  const navigate = useNavigate()
 
   const isActive = (path) => {
     if (!path) return false
@@ -24,7 +25,12 @@ export default function MobileNav() {
         {tabs.map((tab, i) => {
           if (tab.isCreate) {
             return (
-              <button key={i} className="tab-create" aria-label="Create">
+              <button
+                key={i}
+                className="tab-create"
+                aria-label="Create — pick an app"
+                onClick={() => navigate('/apps')}
+              >
                 <Plus size={26} />
               </button>
             )

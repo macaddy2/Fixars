@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
 
 /**
  * WalletContext — the shared, spendable wallet balance (v2 model).
@@ -35,7 +35,14 @@ export function WalletProvider({ children }) {
     const [transactions, setTransactions] = useState(() => load('wallet_txns', SEED_TRANSACTIONS))
     const [toast, setToast] = useState(null)
 
-    useEffect(() => { localStorage.setItem('wallet_balance', JSON.stringify(balance)) }, [balance])
+    // Ref mirror of balance so synchronous validation never reads a stale
+    // render-closure value (two rapid spends could otherwise both pass).
+    const balanceRef = useRef(balance)
+
+    useEffect(() => {
+        balanceRef.current = balance
+        localStorage.setItem('wallet_balance', JSON.stringify(balance))
+    }, [balance])
     useEffect(() => { localStorage.setItem('wallet_txns', JSON.stringify(transactions)) }, [transactions])
 
     const notify = useCallback((message) => {
@@ -59,15 +66,17 @@ export function WalletProvider({ children }) {
     const spend = useCallback((amount, meta = {}) => {
         const value = Number(amount)
         if (!value || value <= 0) return { ok: false, error: 'Enter an amount greater than zero' }
-        if (value > balance) return { ok: false, error: 'Amount exceeds your wallet balance' }
+        if (value > balanceRef.current) return { ok: false, error: 'Amount exceeds your wallet balance' }
+        balanceRef.current -= value
         setBalance(b => b - value)
         record(-value, { label: meta.label || 'Wallet debit', app: meta.app || 'wallet', type: meta.type || 'stake' })
         return { ok: true }
-    }, [balance, record])
+    }, [record])
 
     const deposit = useCallback((amount, meta = {}) => {
         const value = Number(amount)
         if (!value || value <= 0) return { ok: false, error: 'Enter a valid amount' }
+        balanceRef.current += value
         setBalance(b => b + value)
         record(value, { label: meta.label || 'Wallet credit', app: meta.app || 'wallet', type: meta.type || 'topup' })
         return { ok: true }

@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
 import { Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 const SUBAPPS = [
-    { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Ready for vestDen' },
-    { key: 'invest', glyph: 'V', name: 'vestDen', tagline: 'Fund campaigns', stat: '14.2%', statLabel: 'Avg Target IRR' },
-    { key: 'collab', glyph: 'B', name: 'CollaBoard', tagline: 'Execute sprints', stat: '₦68M', statLabel: 'In Escrow' },
-    { key: 'skills', glyph: 'S', name: 'SkillsCanvas', tagline: 'Provable talent', stat: '76%', statLabel: 'Verified Profiles' },
+    { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Ready for vestDen', to: '/apps/conceptnexus' },
+    { key: 'invest', glyph: 'V', name: 'vestDen', tagline: 'Fund campaigns', stat: '14.2%', statLabel: 'Avg Target IRR', to: '/apps/vestden' },
+    { key: 'collab', glyph: 'B', name: 'CollaBoard', tagline: 'Execute sprints', stat: '₦68M', statLabel: 'In Escrow', to: '/apps/collaboard' },
+    { key: 'skills', glyph: 'S', name: 'SkillsCanvas', tagline: 'Provable talent', stat: '76%', statLabel: 'Verified Profiles', to: '/apps/skillscanvas' },
 ]
 
 const FLOAT_CARDS = [
@@ -21,13 +22,38 @@ const HOW_IT_WORKS = [
     { num: '04', key: 'skills', glyph: 'S', title: 'Earn', desc: 'Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.' },
 ]
 
+// Only link to pages that actually exist — dead anchors confuse users.
 const FOOTER_COLS = [
-    { heading: 'Ecosystem', links: ['ConceptNexus', 'vestDen', 'CollaBoard', 'SkillsCanvas'] },
-    { heading: 'Resources', links: ['Documentation', 'Whitepaper', 'FCS Scoring', 'Help Center'] },
-    { heading: 'Company', links: ['About Us', 'Careers', 'Terms of Service', 'Privacy Policy'] },
+    {
+        heading: 'Ecosystem',
+        links: [
+            { label: 'ConceptNexus', to: '/apps/conceptnexus' },
+            { label: 'vestDen', to: '/apps/vestden' },
+            { label: 'CollaBoard', to: '/apps/collaboard' },
+            { label: 'SkillsCanvas', to: '/apps/skillscanvas' }
+        ]
+    },
+    {
+        heading: 'Resources',
+        links: [
+            { label: 'Developers / API', to: '/developers' },
+            { label: 'Activity Feed', to: '/feed' }
+        ]
+    },
+    {
+        heading: 'Company',
+        links: [
+            { label: 'About Us', to: '/about' },
+            { label: 'Terms of Service', to: '/terms' },
+            { label: 'Privacy Policy', to: '/privacy' }
+        ]
+    },
 ]
 
 export default function Home() {
+    const { isAuthenticated } = useAuth()
+    const primaryTarget = isAuthenticated ? '/dashboard' : '/signup'
+
     return (
         <div className="splash">
             <nav className="splash-nav">
@@ -41,8 +67,8 @@ export default function Home() {
                     <a href="#about">About</a>
                 </div>
                 <div className="splash-nav-cta">
-                    <Link to="/dashboard" className="btn" style={{ background: 'transparent', color: 'var(--color-ink-700)', border: '1px solid transparent' }}>Sign in</Link>
-                    <Link to="/dashboard" className="btn btn-primary">Dashboard</Link>
+                    <Link to="/login" className="btn" style={{ background: 'transparent', color: 'var(--color-ink-700)', border: '1px solid transparent' }}>Sign in</Link>
+                    <Link to={primaryTarget} className="btn btn-primary">{isAuthenticated ? 'Dashboard' : 'Get started'}</Link>
                 </div>
             </nav>
 
@@ -50,9 +76,9 @@ export default function Home() {
                 <div>
                     <h1 className="splash-h1">Your operating system<br />for African <em>innovation</em>.</h1>
                     <p className="splash-sub">Validate ideas, fund what matters, ship with verified teams. Identity, wallet, and reputation—built for the builders of tomorrow.</p>
-                    
+
                     <div className="splash-cta">
-                        <Link to="/dashboard" className="btn btn-primary">Start building</Link>
+                        <Link to={primaryTarget} className="btn btn-primary">{isAuthenticated ? 'Open dashboard' : 'Start building'}</Link>
                         <a href="#howitworks" className="btn" style={{ background: 'var(--color-paper)', border: '1px solid var(--color-ink-200)', color: 'var(--color-navy-900)' }}>
                             See how it works
                         </a>
@@ -88,7 +114,7 @@ export default function Home() {
                 <div className="splash-visual">
                     <div className="subapp-2x2">
                         {SUBAPPS.map((app) => (
-                            <Link key={app.key} to="/dashboard" className={`sa-card ${app.key}`}>
+                            <Link key={app.key} to={app.to} className={`sa-card ${app.key}`}>
                                 <div className="glyph">{app.glyph}</div>
                                 <div>
                                     <div className="nm">{app.name}</div>
@@ -152,7 +178,9 @@ export default function Home() {
                                 <h5>{col.heading}</h5>
                                 <ul>
                                     {col.links.map((link) => (
-                                        <li key={link}><a>{link}</a></li>
+                                        <li key={link.label}>
+                                            <Link to={link.to}>{link.label}</Link>
+                                        </li>
                                     ))}
                                 </ul>
                             </div>

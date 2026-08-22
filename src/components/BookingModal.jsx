@@ -6,8 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { useSocial } from '@/contexts/SocialContext'
+import { createBookingRequest } from '@/lib/db/bookings'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { getInitials } from '@/lib/utils'
-import { X, Send, Palette, CheckCircle, Star } from 'lucide-react'
+import { X, Send, CheckCircle, Star, Loader2, AlertCircle } from 'lucide-react'
 
 export default function BookingModal({ talent, onClose }) {
     const { user, isAuthenticated } = useAuth()
@@ -16,23 +18,40 @@ export default function BookingModal({ talent, onClose }) {
     const [message, setMessage] = useState('')
     const [selectedBoard, setSelectedBoard] = useState('')
     const [submitted, setSubmitted] = useState(false)
+    const [submitting, setSubmitting] = useState(false)
+    const [error, setError] = useState('')
 
     if (!talent) return null
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!message.trim()) return
+        if (!isAuthenticated) {
+            setError('Please sign in to send a booking request.')
+            return
+        }
 
-        // In a real app, this would call createBookingRequest from lib/db/bookings
-        // For now, simulate the booking
-        addNotification({
-            id: 'notif-book-' + Date.now(),
-            type: 'talent_request',
-            title: `Booking request sent to ${talent.display_name || talent.displayName}`,
-            message: message.trim(),
-            userId: user?.id
-        })
+        setSubmitting(true)
+        setError('')
+        try {
+            if (isSupabaseConfigured()) {
+                // Persist the booking so the talent actually receives it
+                await createBookingRequest(user.id, talent.id, message.trim())
+            }
 
-        setSubmitted(true)
+            addNotification({
+                type: 'talent_request',
+                title: `Booking request sent to ${talent.display_name || talent.displayName}`,
+                message: message.trim(),
+                userId: user?.id
+            })
+
+            setSubmitted(true)
+        } catch (err) {
+            console.error('Error creating booking request:', err)
+            setError(err.message || 'Could not send your request. Please try again.')
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     if (submitted) {
@@ -76,6 +95,13 @@ export default function BookingModal({ talent, onClose }) {
                     </CardHeader>
 
                     <CardContent className="space-y-5">
+                        {error && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                {error}
+                            </div>
+                        )}
+
                         {/* Talent preview */}
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/5 border">
                             <Avatar className="w-12 h-12">
@@ -138,14 +164,18 @@ export default function BookingModal({ talent, onClose }) {
 
                         {/* Actions */}
                         <div className="flex gap-3 pt-2">
-                            <Button variant="ghost" onClick={onClose} className="flex-1">Cancel</Button>
+                            <Button variant="ghost" onClick={onClose} className="flex-1" disabled={submitting}>Cancel</Button>
                             <Button
                                 variant="skillscanvas"
                                 onClick={handleSubmit}
-                                disabled={!message.trim()}
+                                disabled={!message.trim() || submitting || !isAuthenticated}
                                 className="flex-1"
                             >
-                                <Send className="w-4 h-4 mr-2" /> Send Request
+                                {submitting ? (
+                                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
+                                ) : (
+                                    <><Send className="w-4 h-4 mr-2" /> Send Request</>
+                                )}
                             </Button>
                         </div>
                     </CardContent>

@@ -1,8 +1,14 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useSearch } from '@/contexts/SearchContext'
+import { useSocial } from '@/contexts/SocialContext'
 import { Search, Bell } from 'lucide-react'
 
 export default function MobileHeader() {
   const { setIsSearchOpen } = useSearch()
+  const navigate = useNavigate()
+  const { unreadCount } = useSocial()
+  const [notifOpen, setNotifOpen] = useState(false)
 
   return (
     <header className="fx-mobile-header">
@@ -12,9 +18,21 @@ export default function MobileHeader() {
         <button className="icon-btn" onClick={() => setIsSearchOpen(true)} aria-label="Search">
           <Search size={18} />
         </button>
-        <button className="icon-btn" aria-label="Notifications">
+        <button
+          className="icon-btn"
+          aria-label={`Notifications${unreadCount ? ` (${unreadCount} unread)` : ''}`}
+          onClick={() => {
+            if (notifOpen) {
+              setNotifOpen(false)
+              return
+            }
+            setNotifOpen(true)
+            navigate('/notifications')
+          }}
+          onBlur={() => setNotifOpen(false)}
+        >
           <Bell size={18} />
-          <span className="dot-notif" />
+          {unreadCount > 0 && <span className="dot-notif" />}
         </button>
       </div>
     </header>

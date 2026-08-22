@@ -58,7 +58,7 @@ export default function Signup() {
                 setSubmitting(false)
             }
             // Otherwise the useEffect above will navigate once isAuthenticated flips true.
-        } catch (err) {
+        } catch {
             setError('Something went wrong. Please try again.')
             setSubmitting(false)
         }

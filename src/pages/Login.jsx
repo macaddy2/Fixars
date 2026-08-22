@@ -9,10 +9,11 @@ import { Mail, Lock, ArrowRight, Loader2, Wand2, CheckCircle } from 'lucide-reac
 export default function Login() {
     const navigate = useNavigate()
     const location = useLocation()
-    const { login, loginWithMagicLink, isAuthenticated, isLoading } = useAuth()
+    const { login, loginWithMagicLink, resetPassword, isAuthenticated } = useAuth()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [info, setInfo] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [magicLinkSent, setMagicLinkSent] = useState(false)
     const [sendingMagicLink, setSendingMagicLink] = useState(false)
@@ -25,6 +26,21 @@ export default function Login() {
             navigate(redirectTo, { replace: true })
         }
     }, [isAuthenticated, navigate, redirectTo])
+
+    const handleForgotPassword = async () => {
+        setError('')
+        setInfo('')
+        if (!email) {
+            setError('Enter your email above first, then click "Forgot password?"')
+            return
+        }
+        const result = await resetPassword(email)
+        if (result.error) {
+            setError(result.error.message || 'Could not send reset email')
+        } else {
+            setInfo(`Password reset link sent to ${email}. Check your inbox.`)
+        }
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -47,7 +63,7 @@ export default function Login() {
 
             // Navigation happens in the useEffect once isAuthenticated flips true.
             // Keep submitting=true until then so the button stays in its loading state.
-        } catch (err) {
+        } catch {
             setError('Something went wrong. Please try again.')
             setSubmitting(false)
         }
@@ -68,7 +84,7 @@ export default function Login() {
             } else {
                 setMagicLinkSent(true)
             }
-        } catch (err) {
+        } catch {
             setError('Failed to send magic link. Please try again.')
         } finally {
             setSendingMagicLink(false)
@@ -112,6 +128,11 @@ export default function Login() {
                                             {error}
                                         </div>
                                     )}
+                                    {info && (
+                                        <div className="p-3 rounded-lg bg-success/10 text-success text-sm">
+                                            {info}
+                                        </div>
+                                    )}
 
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-foreground">Email</label>
@@ -131,9 +152,13 @@ export default function Login() {
                                     <div className="space-y-2">
                                         <div className="flex justify-between">
                                             <label className="text-sm font-medium text-foreground">Password</label>
-                                            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                                            <button
+                                                type="button"
+                                                onClick={handleForgotPassword}
+                                                className="text-sm text-primary hover:underline"
+                                            >
                                                 Forgot password?
-                                            </Link>
+                                            </button>
                                         </div>
                                         <div className="relative">
                                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />

@@ -39,17 +39,18 @@ export async function awardPointsDB(userId, action, points, label, metadata = {}
 
 // ── Spend points ──
 export async function spendPointsDB(userId, amount, reason) {
-    const { data: profile } = await supabase
+    const { data: profile, error: fetchError } = await supabase
         .from(TABLES.PROFILES)
         .select('points')
         .eq('id', userId)
         .single()
 
+    if (fetchError) throw fetchError
     if (!profile || profile.points < amount) return false
 
     const newPoints = profile.points - amount
 
-    await supabase
+    const { error: histError } = await supabase
         .from(TABLES.POINTS_HISTORY)
         .insert({
             user_id: userId,
@@ -57,14 +58,18 @@ export async function spendPointsDB(userId, amount, reason) {
             points: -amount,
             label: reason
         })
+    if (histError) throw histError
 
-    await supabase
+    const { error: updateError } = await supabase
         .from(TABLES.PROFILES)
         .update({
             points: newPoints,
             level: getLevel(newPoints)
         })
         .eq('id', userId)
+
+    // A failed debit must never be reported as success
+    if (updateError) throw updateError
 
     return newPoints
 }

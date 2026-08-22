@@ -5,7 +5,9 @@ import { subscribeToTable, TABLES } from '@/lib/realtime'
 import {
     fetchPosts, createPostDB, reactToPostDB,
     fetchConversations, sendMessageDB,
-    fetchNotifications, createNotificationDB, markNotificationsReadDB
+    fetchNotifications, createNotificationDB, markNotificationsReadDB, deleteNotificationDB,
+    fetchComments, createCommentDB,
+    fetchFollowing, followUserDB, unfollowUserDB
 } from '@/lib/db/social'
 
 const SocialContext = createContext(null)
@@ -71,10 +73,15 @@ export function SocialProvider({ children }) {
     const { user } = useAuth()
     const isConfigured = isSupabaseConfigured()
 
-    const [posts, setPosts] = useState(isConfigured ? [] : MOCK_POSTS)
-    const [conversations, setConversations] = useState(isConfigured ? [] : MOCK_MESSAGES)
-    const [followedUsers, setFollowedUsers] = useState(new Set(['user-002', 'user-003']))
-    const [comments, setComments] = useState({
+    // Lazy initializers: mock data contains Date.now()/new Date(), which must
+    // not be re-evaluated on every render.
+    const [posts, setPosts] = useState(() => (isConfigured ? [] : MOCK_POSTS))
+    const [conversations, setConversations] = useState(() => (isConfigured ? [] : MOCK_MESSAGES))
+    // Hardcoded demo follows only in unconfigured (mock) mode
+    const [followedUsers, setFollowedUsers] = useState(() =>
+        new Set(isConfigured ? [] : ['user-002', 'user-003'])
+    )
+    const [comments, setComments] = useState(() => (isConfigured ? {} : {
         'post-001': [
             { id: 'c1', authorName: 'Marcus Williams', content: 'This is amazing! 🔥', createdAt: '2026-01-20T16:00:00Z' },
             { id: 'c2', authorName: 'David Kim', content: 'Congrats on the launch!', createdAt: '2026-01-20T16:30:00Z' }
@@ -82,17 +89,17 @@ export function SocialProvider({ children }) {
         'post-002': [
             { id: 'c3', authorName: 'Sarah Chen', content: 'Great milestone, team!', createdAt: '2026-01-19T11:00:00Z' }
         ]
-    })
-    const [notifications, setNotifications] = useState(isConfigured ? [] : [
+    }))
+    const [notifications, setNotifications] = useState(() => (isConfigured ? [] : [
         { id: 'notif-001', type: 'idea_voted', title: 'Your idea received 5 new upvotes', message: 'Community Solar Grid Network is gaining traction!', userId: 'user-001', read: false, createdAt: new Date().toISOString() },
-        { id: 'notif-002', type: 'stake_received', title: 'New stake: $2,500 on AI Recipe Generator', message: 'A new investor backed your project', userId: 'user-001', read: false, createdAt: new Date(Date.now() - 3600000).toISOString() },
+        { id: 'notif-002', type: 'stake_received', title: 'New stake: ₦2,500 on AI Recipe Generator', message: 'A new investor backed your project', userId: 'user-001', read: false, createdAt: new Date(Date.now() - 3600000).toISOString() },
         { id: 'notif-003', type: 'task_assigned', title: 'You were assigned a new task', message: '"Design points leaderboard" on Fixars Core Development', userId: 'user-001', read: false, createdAt: new Date(Date.now() - 7200000).toISOString() },
         { id: 'notif-004', type: 'project_launched', title: 'Solar Grid Project launched!', message: 'David Kim launched a new project from a validated idea', userId: 'user-001', read: true, createdAt: new Date(Date.now() - 86400000).toISOString() },
         { id: 'notif-005', type: 'reaction_received', title: 'Your post got 12 reactions 🔥', message: 'Your VestDen update is trending', userId: 'user-001', read: true, createdAt: new Date(Date.now() - 172800000).toISOString() },
         { id: 'notif-006', type: 'talent_request', title: 'New talent inquiry', message: 'Emily Rodriguez wants to connect about React development', userId: 'user-001', read: true, createdAt: new Date(Date.now() - 259200000).toISOString() },
         { id: 'notif-007', type: 'idea_validated', title: '🎉 Your idea was validated!', message: 'Community Solar Grid Network passed the validation threshold', userId: 'user-001', read: true, createdAt: new Date(Date.now() - 432000000).toISOString() },
         { id: 'notif-008', type: 'points_earned', title: 'You earned 50 FixPoints!', message: 'Validated idea bonus awarded', userId: 'user-001', read: true, createdAt: new Date(Date.now() - 518400000).toISOString() }
-    ])
+    ]))
 
     // Fetch data from Supabase on mount
     useEffect(() => {
@@ -100,14 +107,16 @@ export function SocialProvider({ children }) {
 
         async function loadSocial() {
             try {
-                const [postsData, convsData, notifsData] = await Promise.all([
+                const [postsData, convsData, notifsData, followingData] = await Promise.all([
                     fetchPosts(),
                     fetchConversations(user.id),
-                    fetchNotifications(user.id)
+                    fetchNotifications(user.id),
+                    fetchFollowing(user.id).catch(() => new Set())
                 ])
                 setPosts(postsData)
                 setConversations(convsData)
                 setNotifications(notifsData)
+                setFollowedUsers(followingData)
             } catch (err) {
                 console.error('Error loading social data:', err)
             }
@@ -116,25 +125,35 @@ export function SocialProvider({ children }) {
         loadSocial()
     }, [isConfigured, user?.id])
 
-    // Realtime subscriptions
+    // Realtime subscriptions — debounced so bursts of events cause one
+    // reconciliation refetch instead of one per row change.
     useEffect(() => {
         if (!isConfigured || !user?.id) return
 
+        const timers = {}
+        const debounced = (key, fn, delay = 800) => {
+            clearTimeout(timers[key])
+            timers[key] = setTimeout(() => fn().catch(console.error), delay)
+        }
+
         const unsubs = [
             subscribeToTable(TABLES.POSTS, {
-                onInsert: () => fetchPosts().then(setPosts).catch(console.error),
-                onUpdate: () => fetchPosts().then(setPosts).catch(console.error)
+                onInsert: () => debounced('posts', async () => setPosts(await fetchPosts())),
+                onUpdate: () => debounced('posts', async () => setPosts(await fetchPosts()))
             }),
             subscribeToTable(TABLES.NOTIFICATIONS, {
-                onInsert: () => fetchNotifications(user.id).then(setNotifications).catch(console.error),
-                onUpdate: () => fetchNotifications(user.id).then(setNotifications).catch(console.error)
+                onInsert: () => debounced('notifs', async () => setNotifications(await fetchNotifications(user.id))),
+                onUpdate: () => debounced('notifs', async () => setNotifications(await fetchNotifications(user.id)))
             }, `user_id=eq.${user.id}`),
             subscribeToTable(TABLES.MESSAGES, {
-                onInsert: () => fetchConversations(user.id).then(setConversations).catch(console.error)
+                onInsert: () => debounced('convs', async () => setConversations(await fetchConversations(user.id)))
             })
         ]
 
-        return () => unsubs.forEach(fn => fn())
+        return () => {
+            Object.values(timers).forEach(clearTimeout)
+            unsubs.forEach(fn => fn())
+        }
     }, [isConfigured, user?.id])
 
     const createPost = useCallback(async (content, sourceApp = 'fixars', linkedEntity = null) => {
@@ -182,16 +201,21 @@ export function SocialProvider({ children }) {
             return
         }
 
-        if (user?.id) {
+        if (!user?.id) return
+
+        // Only bump the local count after the insert actually succeeded
+        // (duplicate reactions are ignored server-side and must not inflate).
+        try {
             await reactToPostDB(postId, user.id, emoji)
+            setPosts(prev => prev.map(post => {
+                if (post.id !== postId) return post
+                const reactions = { ...post.reactions }
+                reactions[emoji] = (reactions[emoji] || 0) + 1
+                return { ...post, reactions }
+            }))
+        } catch (err) {
+            console.error('Error reacting to post:', err)
         }
-        // Optimistic update
-        setPosts(prev => prev.map(post => {
-            if (post.id !== postId) return post
-            const reactions = { ...post.reactions }
-            reactions[emoji] = (reactions[emoji] || 0) + 1
-            return { ...post, reactions }
-        }))
     }, [isConfigured, user])
 
     const sendMessage = useCallback(async (recipientId, recipientName, content) => {
@@ -250,7 +274,11 @@ export function SocialProvider({ children }) {
         }
 
         if (isConfigured && notification.userId) {
-            await createNotificationDB(notification)
+            try {
+                await createNotificationDB(notification)
+            } catch (err) {
+                console.error('Error persisting notification:', err)
+            }
         }
 
         setNotifications(prev => [notif, ...prev].slice(0, 50))
@@ -258,43 +286,96 @@ export function SocialProvider({ children }) {
 
     const markNotificationsRead = useCallback(async () => {
         if (isConfigured && user?.id) {
-            await markNotificationsReadDB(user.id)
+            try {
+                await markNotificationsReadDB(user.id)
+            } catch (err) {
+                console.error('Error marking notifications read:', err)
+            }
         }
         setNotifications(prev => prev.map(n => ({ ...n, read: true })))
     }, [isConfigured, user])
 
-    const deleteNotification = useCallback((id) => {
+    const deleteNotification = useCallback(async (id) => {
         setNotifications(prev => prev.filter(n => n.id !== id))
-    }, [])
+        if (isConfigured) {
+            try {
+                await deleteNotificationDB(id)
+            } catch (err) {
+                console.error('Error deleting notification:', err)
+            }
+        }
+    }, [isConfigured])
 
-    const followUser = useCallback((userId) => {
+    const followUser = useCallback(async (userId) => {
         setFollowedUsers(prev => new Set(prev).add(userId))
-    }, [])
+        if (isConfigured && user?.id) {
+            try {
+                await followUserDB(user.id, userId)
+            } catch (err) {
+                console.error('Error following user:', err)
+            }
+        }
+    }, [isConfigured, user])
 
-    const unfollowUser = useCallback((userId) => {
+    const unfollowUser = useCallback(async (userId) => {
         setFollowedUsers(prev => {
             const next = new Set(prev)
             next.delete(userId)
             return next
         })
-    }, [])
-
-    const addComment = useCallback((postId, content) => {
-        if (!user) return
-        const comment = {
-            id: 'c-' + Date.now(),
-            authorName: user.name,
-            content,
-            createdAt: new Date().toISOString()
+        if (isConfigured && user?.id) {
+            try {
+                await unfollowUserDB(user.id, userId)
+            } catch (err) {
+                console.error('Error unfollowing user:', err)
+            }
         }
-        setComments(prev => ({
-            ...prev,
-            [postId]: [...(prev[postId] || []), comment]
-        }))
-        setPosts(prev => prev.map(p =>
-            p.id === postId ? { ...p, commentCount: (p.commentCount || 0) + 1 } : p
-        ))
-    }, [user])
+    }, [isConfigured, user])
+
+    const loadComments = useCallback(async (postId) => {
+        if (!isConfigured) return
+        try {
+            const postComments = await fetchComments(postId)
+            setComments(prev => ({ ...prev, [postId]: postComments }))
+        } catch (err) {
+            console.error('Error loading comments:', err)
+        }
+    }, [isConfigured])
+
+    const addComment = useCallback(async (postId, content) => {
+        if (!user) return
+
+        if (!isConfigured) {
+            const comment = {
+                id: 'c-' + Date.now(),
+                authorName: user.name,
+                content,
+                createdAt: new Date().toISOString()
+            }
+            setComments(prev => ({
+                ...prev,
+                [postId]: [...(prev[postId] || []), comment]
+            }))
+            setPosts(prev => prev.map(p =>
+                p.id === postId ? { ...p, commentCount: (p.commentCount || 0) + 1 } : p
+            ))
+            return
+        }
+
+        try {
+            const comment = await createCommentDB(postId, user.id, user.name, content)
+            setComments(prev => ({
+                ...prev,
+                [postId]: [...(prev[postId] || []), comment]
+            }))
+            // posts.comment_count is incremented by a DB trigger; reflect it locally
+            setPosts(prev => prev.map(p =>
+                p.id === postId ? { ...p, commentCount: (p.commentCount || 0) + 1 } : p
+            ))
+        } catch (err) {
+            console.error('Error adding comment:', err)
+        }
+    }, [user, isConfigured])
 
     const getComments = useCallback((postId) => {
         return comments[postId] || []
@@ -322,6 +403,7 @@ export function SocialProvider({ children }) {
             followUser,
             unfollowUser,
             isFollowing,
+            loadComments,
             addComment,
             getComments
         }}>

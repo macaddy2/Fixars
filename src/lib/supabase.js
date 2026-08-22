@@ -9,22 +9,40 @@ if (!supabaseUrl || !supabaseAnonKey) {
     )
 }
 
-export const supabase = createClient(
-    supabaseUrl || 'https://placeholder.supabase.co',
-    supabaseAnonKey || 'placeholder-key',
-    {
-        auth: {
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: true
-        }
-    }
-)
+// Lazily-created client: only constructed when credentials exist, so no code
+// path can fire doomed network requests against a placeholder URL.
+let client = null
 
-export const isSupabaseConfigured = () => {
-    // Force disabled for demo purposes as requested by user
-    return false
+export function getSupabase() {
+    if (!isSupabaseConfigured()) return null
+    if (!client) {
+        client = createClient(supabaseUrl, supabaseAnonKey, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true
+            }
+        })
+    }
+    return client
 }
+
+// Kept as a named export for existing imports; it is null when Supabase is not
+// configured — all DB access is guarded by isSupabaseConfigured().
+export const supabase = new Proxy({}, {
+    get(_target, prop) {
+        const real = getSupabase()
+        if (!real) {
+            throw new Error(
+                'Supabase is not configured. Guard calls with isSupabaseConfigured() before using the client.'
+            )
+        }
+        const value = real[prop]
+        return typeof value === 'function' ? value.bind(real) : value
+    }
+})
+
+export const isSupabaseConfigured = () => Boolean(supabaseUrl && supabaseAnonKey)
 
 // Database table names
 export const TABLES = {
@@ -48,6 +66,8 @@ export const TABLES = {
     // Social
     POSTS: 'posts',
     POST_REACTIONS: 'post_reactions',
+    POST_COMMENTS: 'post_comments',
+    FOLLOWS: 'follows',
     CONVERSATIONS: 'conversations',
     CONVERSATION_PARTICIPANTS: 'conversation_participants',
     MESSAGES: 'messages',

@@ -29,31 +29,35 @@ export function AuthProvider({ children }) {
             // Use localStorage mock for development
             const savedUser = localStorage.getItem('fixars_user')
             if (savedUser) {
-                setUser(JSON.parse(savedUser))
+                try {
+                    setUser(JSON.parse(savedUser))
+                } catch {
+                    localStorage.removeItem('fixars_user')
+                }
             }
             setIsLoading(false)
             return
         }
 
-        // Get initial session
-        supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-            setSession(initialSession)
-            if (initialSession?.user) {
-                fetchProfile(initialSession.user.id)
-            } else {
-                setIsLoading(false)
-            }
-        })
+        let didFetchProfile = false
 
-        // Listen for auth changes
+        // Listen for auth changes — INITIAL_SESSION covers the initial
+        // getSession() case, so no separate fetch (and no duplicate/racing
+        // profile requests) is needed.
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, currentSession) => {
                 setSession(currentSession)
 
-                if (event === 'SIGNED_IN' && currentSession?.user) {
+                if ((event === 'INITIAL_SESSION' || event === 'SIGNED_IN') && currentSession?.user && !didFetchProfile) {
+                    didFetchProfile = true
+                    await fetchProfile(currentSession.user.id)
+                } else if (event === 'SIGNED_IN' && currentSession?.user) {
                     await fetchProfile(currentSession.user.id)
                 } else if (event === 'SIGNED_OUT') {
+                    didFetchProfile = false
                     setUser(null)
+                    setIsLoading(false)
+                } else if (event === 'INITIAL_SESSION') {
                     setIsLoading(false)
                 }
             }
@@ -264,16 +268,21 @@ export function AuthProvider({ children }) {
 
         if (!user?.id) return { error: 'Not authenticated' }
 
-        const { error } = await supabase
-            .from(TABLES.PROFILES)
-            .update({
-                display_name: updates.name,
-                avatar_url: updates.avatar,
-                bio: updates.bio,
-                points: updates.points,
-                level: updates.level
-            })
-            .eq('id', user.id)
+        // Only send defined, profile-owned columns. points/level are managed
+        // server-side (points ledger) and must never be written directly.
+        const payload = {}
+        if (updates.name !== undefined) payload.display_name = updates.name
+        if (updates.avatar !== undefined) payload.avatar_url = updates.avatar
+        if (updates.bio !== undefined) payload.bio = updates.bio
+
+        let error = null
+        if (Object.keys(payload).length > 0) {
+            const result = await supabase
+                .from(TABLES.PROFILES)
+                .update(payload)
+                .eq('id', user.id)
+            error = result.error
+        }
 
         if (!error) {
             setUser(prev => ({ ...prev, ...updates }))

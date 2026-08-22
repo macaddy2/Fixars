@@ -24,12 +24,14 @@ export function formatDate(date) {
 }
 
 export function getInitials(name) {
+    if (!name || typeof name !== 'string') return '?'
     return name
+        .trim()
         .split(' ')
         .map(word => word[0])
         .join('')
         .toUpperCase()
-        .slice(0, 2)
+        .slice(0, 2) || '?'
 }
 
 export function getRelativeTime(date) {
