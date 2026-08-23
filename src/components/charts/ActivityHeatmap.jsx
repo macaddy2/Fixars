@@ -27,13 +27,23 @@ export default function ActivityHeatmap({ activities = [], weeks = 12 }) {
             if (day) day.count++
         }
 
-        // If no real activities, generate mock data
+        // If no real activities, generate stable pseudo-random mock data
+        // (seeded per-date so renders stay pure/deterministic)
         if (activities.length === 0) {
+            const seeded = (dateStr) => {
+                let h = 2166136261
+                for (let c = 0; c < dateStr.length; c++) {
+                    h ^= dateStr.charCodeAt(c)
+                    h = Math.imul(h, 16777619)
+                }
+                return ((h >>> 0) % 100) / 100
+            }
             days.forEach(d => {
-                d.count = Math.random() < 0.3 ? 0 :
-                    Math.random() < 0.5 ? Math.ceil(Math.random() * 3) :
-                        Math.random() < 0.8 ? Math.ceil(Math.random() * 6) :
-                            Math.ceil(Math.random() * 10)
+                const r = seeded(d.date)
+                d.count = r < 0.3 ? 0 :
+                    r < 0.5 ? Math.ceil(r * 6) :
+                        r < 0.8 ? Math.ceil(r * 12) :
+                            Math.ceil(r * 20)
             })
         }
 

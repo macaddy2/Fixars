@@ -241,6 +241,21 @@ CREATE TABLE IF NOT EXISTS payments (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Naira wallet ledger. The balance is DERIVED (SUM of signed amounts) — it is
+-- never stored, so it cannot drift. Rows are written exclusively by
+-- SECURITY DEFINER functions (wallet_spend) or the payment webhook using the
+-- service role; clients have NO insert/update policy.
+CREATE TABLE IF NOT EXISTS wallet_transactions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  type TEXT CHECK (type IN ('deposit', 'stake', 'refund', 'payout', 'withdrawal')) DEFAULT 'deposit',
+  label TEXT,
+  app TEXT DEFAULT 'wallet',
+  amount DECIMAL(12,2) NOT NULL CHECK (amount <> 0),
+  ref TEXT UNIQUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS conversations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   -- Deterministic key for 1:1 DMs ("smaller-uuid:larger-uuid") that prevents
@@ -365,6 +380,8 @@ CREATE INDEX IF NOT EXISTS idx_follows_follower ON follows(follower_id);
 CREATE INDEX IF NOT EXISTS idx_follows_following ON follows(following_id);
 CREATE INDEX IF NOT EXISTS idx_payments_user ON payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_stake ON payments(stake_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_user ON wallet_transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_wallet_created ON wallet_transactions(user_id, created_at DESC);
 -- Unique (not just indexed) so concurrent DM creation can't produce duplicates;
 -- a unique index works both for fresh and pre-existing deployments.
 CREATE UNIQUE INDEX IF NOT EXISTS ux_conversations_dm_key ON conversations(dm_key);
@@ -459,6 +476,7 @@ ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE points_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wallet_transactions ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
 -- RLS POLICIES
@@ -698,6 +716,12 @@ CREATE POLICY "points_history_insert" ON points_history
 CREATE POLICY "payments_select" ON payments
   FOR SELECT USING (auth.uid() = user_id);
 
+-- ── Wallet Transactions ──
+-- Read-only for owners. Balances change ONLY via wallet_spend() (SECURITY
+-- DEFINER, server-validated) or the payment webhook (service role).
+CREATE POLICY "wallet_select" ON wallet_transactions
+  FOR SELECT USING (auth.uid() = user_id);
+
 -- ============================================================
 -- FUNCTIONS & TRIGGERS
 -- All trigger functions that modify other users' rows use
@@ -887,3 +911,179 @@ CREATE TRIGGER on_comment_delete
   AFTER DELETE ON post_comments
   FOR EACH ROW
   EXECUTE FUNCTION update_post_comment_count();
+
+-- ============================================================
+-- SERVER-AUTHORITATIVE MONEY & POINTS (RPCs)
+-- The client can NEVER send raw point amounts or stake totals.
+-- Every mutation goes through these SECURITY DEFINER functions,
+-- which enforce the rules server-side and are atomic.
+-- ============================================================
+
+-- Points level ladder (mirrors src/contexts/PointsContext.jsx LEVELS)
+CREATE OR REPLACE FUNCTION get_level_for_points(p_points INTEGER)
+RETURNS TEXT AS $$
+  SELECT name FROM (VALUES
+    ('Legend', 10000),
+    ('Visionary', 5000),
+    ('Trailblazer', 2500),
+    ('Pioneer', 1000),
+    ('Contributor', 500),
+    ('Explorer', 100),
+    ('Newcomer', 0)
+  ) AS levels(name, min_points)
+  WHERE p_points >= min_points
+  ORDER BY min_points DESC
+  LIMIT 1;
+$$ LANGUAGE sql STABLE SET search_path = public;
+
+-- Award points for a KNOWN action. The amount is resolved server-side from the
+-- action key, so a tampered client cannot mint arbitrary points.
+CREATE OR REPLACE FUNCTION award_points(p_action TEXT)
+RETURNS INTEGER AS $$
+DECLARE
+  v_points INTEGER;
+  v_new INTEGER;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+
+  v_points := CASE p_action
+    WHEN 'DAILY_LOGIN' THEN 5
+    WHEN 'SUBMIT_IDEA' THEN 10
+    WHEN 'VALIDATE_IDEA' THEN 5
+    WHEN 'IDEA_VALIDATED' THEN 50
+    WHEN 'MAKE_STAKE' THEN 15
+    WHEN 'COMPLETE_TASK' THEN 10
+    WHEN 'GET_HIRED' THEN 25
+    WHEN 'PROFILE_COMPLETE' THEN 20
+    WHEN 'FIRST_MESSAGE' THEN 5
+    WHEN 'REFERRAL' THEN 100
+    WHEN 'POST_STATUS' THEN 3
+    WHEN 'RECEIVE_REACTION' THEN 1
+    -- Ecosystem-engine reasons (src/engine/effects.js POINTS)
+    WHEN 'CONCEPT_VALIDATED' THEN 50
+    WHEN 'CAMPAIGN_FUNDED' THEN 200
+    WHEN 'MILESTONE_VERIFIED' THEN 75
+    WHEN 'ENGAGEMENT_COMPLETED' THEN 60
+    ELSE NULL
+  END;
+
+  IF v_points IS NULL THEN
+    RAISE EXCEPTION 'unknown point action "%"', p_action;
+  END IF;
+
+  INSERT INTO points_history (user_id, action, points, label)
+  VALUES (auth.uid(), p_action, v_points, NULL);
+
+  UPDATE profiles
+  SET points = points + v_points,
+      level = get_level_for_points(points + v_points)
+  WHERE id = auth.uid()
+  RETURNING points INTO v_new;
+
+  RETURN v_new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Spend points atomically. Returns the new balance, or NULL when the balance
+-- is insufficient (callers treat NULL as "declined").
+CREATE OR REPLACE FUNCTION spend_points(p_amount INTEGER)
+RETURNS INTEGER AS $$
+DECLARE
+  v_new INTEGER;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  IF p_amount IS NULL OR p_amount <= 0 THEN RAISE EXCEPTION 'amount must be positive'; END IF;
+
+  UPDATE profiles
+  SET points = points - p_amount,
+      level = get_level_for_points(points - p_amount)
+  WHERE id = auth.uid() AND points >= p_amount
+  RETURNING points INTO v_new;
+
+  IF v_new IS NULL THEN
+    RETURN NULL; -- insufficient balance
+  END IF;
+
+  INSERT INTO points_history (user_id, action, points, label)
+  VALUES (auth.uid(), 'SPEND', -p_amount, NULL);
+
+  RETURN v_new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Place a stake server-side. Validates campaign state and refuses to
+-- over-fund past the target. Amounts are summed from stakers rows by the
+-- existing trigger; this function is the ONLY sanctioned write path.
+CREATE OR REPLACE FUNCTION make_stake(p_stake_id UUID, p_amount NUMERIC)
+RETURNS NUMERIC AS $$
+DECLARE
+  v_status TEXT;
+  v_target NUMERIC;
+  v_current NUMERIC;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  IF p_amount IS NULL OR p_amount <= 0 THEN RAISE EXCEPTION 'stake amount must be positive'; END IF;
+
+  SELECT status, target_amount, current_amount
+  INTO v_status, v_target, v_current
+  FROM stakes
+  WHERE id = p_stake_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'campaign not found'; END IF;
+  IF v_status <> 'active' THEN RAISE EXCEPTION 'campaign is no longer active'; END IF;
+  IF v_current + p_amount > v_target THEN
+    RAISE EXCEPTION 'amount exceeds remaining funding target';
+  END IF;
+
+  -- Upsert: a backer staking again adds to their previous amount
+  INSERT INTO stakers (stake_id, user_id, amount)
+  VALUES (p_stake_id, auth.uid(), p_amount)
+  ON CONFLICT (stake_id, user_id)
+  DO UPDATE SET amount = stakers.amount + EXCLUDED.amount;
+
+  RETURN v_current + p_amount;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Wallet balance is derived from the ledger (never stored).
+CREATE OR REPLACE FUNCTION wallet_balance()
+RETURNS NUMERIC AS $$
+  SELECT COALESCE(SUM(amount), 0) FROM wallet_transactions WHERE user_id = auth.uid();
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+-- Debit the wallet atomically. Raises on insufficient funds; returns the new
+-- balance. Credits (deposits/payouts) arrive via the payment webhook only.
+CREATE OR REPLACE FUNCTION wallet_spend(
+  p_amount NUMERIC,
+  p_label TEXT DEFAULT NULL,
+  p_app TEXT DEFAULT 'vestden',
+  p_type TEXT DEFAULT 'stake',
+  p_ref TEXT DEFAULT NULL
+)
+RETURNS NUMERIC AS $$
+DECLARE
+  v_balance NUMERIC;
+  v_new NUMERIC;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  IF p_amount IS NULL OR p_amount <= 0 THEN RAISE EXCEPTION 'amount must be positive'; END IF;
+
+  SELECT wallet_balance() INTO v_balance;
+  IF v_balance < p_amount THEN
+    RAISE EXCEPTION 'insufficient wallet balance';
+  END IF;
+
+  INSERT INTO wallet_transactions (user_id, type, label, app, amount, ref)
+  VALUES (auth.uid(), p_type, p_label, p_app, -p_amount, p_ref)
+  ON CONFLICT (ref) DO NOTHING
+  RETURNING amount INTO v_new;
+
+  IF v_new IS NULL THEN
+    -- Idempotent replay (same ref already spent) — return current balance
+    RETURN wallet_balance();
+  END IF;
+
+  RETURN v_balance + v_new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

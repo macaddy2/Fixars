@@ -22,9 +22,16 @@ import {
 } from 'lucide-react'
 
 
-function TaskCard({ task }) {
+function TaskCard({ task, columnId }) {
     return (
-        <div className="p-3 bg-card rounded-lg border shadow-sm hover:shadow-md transition-all duration-200">
+        <div
+            className="p-3 bg-card rounded-lg border shadow-sm hover:shadow-md transition-all duration-200 cursor-grab active:cursor-grabbing"
+            draggable
+            onDragStart={(e) => {
+                e.dataTransfer.setData('application/x-fixars-task', JSON.stringify({ taskId: task.id, fromCol: columnId }))
+                e.dataTransfer.effectAllowed = 'move'
+            }}
+        >
             {task.labels?.length > 0 && (
                 <div className="flex items-start flex-wrap gap-1 mb-2">
                     {task.labels.map(label => (
@@ -56,7 +63,8 @@ function TaskCard({ task }) {
     )
 }
 
-function BoardColumn({ column, onAddTask }) {
+function BoardColumn({ column, onAddTask, onMoveTask }) {
+    const [dragOver, setDragOver] = useState(false)
     const columnStyles = {
         todo: { icon: Clock, color: 'text-muted' },
         progress: { icon: ArrowRight, color: 'text-collaboard' },
@@ -65,6 +73,17 @@ function BoardColumn({ column, onAddTask }) {
 
     const style = columnStyles[column.id] || columnStyles.todo
     const Icon = style.icon
+
+    const handleDrop = (e) => {
+        e.preventDefault()
+        setDragOver(false)
+        try {
+            const data = JSON.parse(e.dataTransfer.getData('application/x-fixars-task') || '{}')
+            if (data.taskId && data.fromCol && data.fromCol !== column.id) {
+                onMoveTask?.(data.taskId, data.fromCol, column.id)
+            }
+        } catch { /* malformed payload — ignore */ }
+    }
 
     return (
         <div className="flex-1 min-w-[280px]">
@@ -85,12 +104,19 @@ function BoardColumn({ column, onAddTask }) {
                 </Button>
             </div>
 
-            <div className="space-y-2 p-2 rounded-xl bg-muted/10 min-h-[200px]">
+            <div
+                className={`space-y-2 p-2 rounded-xl min-h-[200px] transition-colors ${dragOver ? 'bg-collaboard/15 ring-1 ring-collaboard' : 'bg-muted/10'}`}
+                onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                onDragLeave={() => setDragOver(false)}
+                onDrop={handleDrop}
+            >
                 {column.tasks.map(task => (
-                    <TaskCard key={task.id} task={task} />
+                    <TaskCard key={task.id} task={task} columnId={column.id} />
                 ))}
                 {column.tasks.length === 0 && (
-                    <p className="text-center text-sm text-muted py-8">No tasks</p>
+                    <p className="text-center text-sm text-muted py-8">
+                        {dragOver ? 'Drop here' : 'No tasks'}
+                    </p>
                 )}
             </div>
         </div>
@@ -147,7 +173,7 @@ function ProjectCard({ board, onOpen }) {
 }
 
 export default function Collaboard() {
-    const { boards, getRecommendedTalents } = useData()
+    const { boards, getRecommendedTalents, moveTask } = useData()
     const { isAuthenticated, user } = useAuth()
     // Board selection is fully derived: a ?boardId= deep link wins unless the
     // user has opened another board (override) — no state-sync effects needed.
@@ -211,6 +237,7 @@ export default function Collaboard() {
                                     key={column.id}
                                     column={column}
                                     onAddTask={(colId) => setAddTaskState({ open: true, column: colId })}
+                                    onMoveTask={(taskId, fromCol, toCol) => moveTask(board.id, taskId, fromCol, toCol)}
                                 />
                             ))}
                         </div>

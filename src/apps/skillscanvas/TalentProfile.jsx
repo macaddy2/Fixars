@@ -288,10 +288,14 @@ export default function TalentProfile() {
                                             )}
                                             <div>
                                                 <label className="text-sm font-medium text-foreground block mb-2">Rating</label>
-                                                <div className="flex gap-1">
+                                                <div className="flex gap-1" role="radiogroup" aria-label="Your rating">
                                                     {[1, 2, 3, 4, 5].map(rating => (
                                                         <button
                                                             key={rating}
+                                                            type="button"
+                                                            role="radio"
+                                                            aria-checked={rating === reviewRating}
+                                                            aria-label={`${rating} star${rating > 1 ? 's' : ''}`}
                                                             onClick={() => setReviewRating(rating)}
                                                             className="p-1 hover:scale-110 transition-transform"
                                                         >

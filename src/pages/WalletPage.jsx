@@ -1,9 +1,11 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { useWallet } from '@/contexts/WalletContext'
+import { initiateCheckout, verifyPayment } from '@/lib/payments'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { formatNumber } from '@/lib/utils'
 import {
     Wallet,
@@ -12,8 +14,8 @@ import {
     TrendingUp,
     Clock,
     Shield,
-    ChevronRight,
-    Filter,
+    Plus,
+    Loader2,
     Star
 } from 'lucide-react'
 
@@ -40,12 +42,69 @@ export default function WalletPage() {
     const { user } = useAuth()
     const { points } = usePoints()
     const { stakes } = useData()
-    const { balance: totalBalance, transactions } = useWallet()
+    const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams()
+    const { balance: totalBalance, transactions, deposit } = useWallet()
     const [activeTab, setActiveTab] = useState('All')
+    const [funding, setFunding] = useState(false)
+    const [verifying, setVerifying] = useState(Boolean(searchParams.get('payment')))
+    const [error, setError] = useState('')
 
-    const available = 142500
-    const inEscrow = 98000
-    const staked = 44000
+    // Returning from Paystack: ?payment=<reference> → verify & credit wallet
+    useEffect(() => {
+        const reference = searchParams.get('payment')
+        if (!reference) return
+        let cancelled = false
+
+        verifyPayment(reference)
+            .then((status) => {
+                if (!cancelled && status === 'succeeded') {
+                    // Reload so the wallet context re-fetches the ledger balance
+                    window.location.replace('/wallet?verified=1')
+                }
+            })
+            .catch(err => console.error('Payment verification failed:', err))
+            .finally(() => {
+                if (!cancelled) {
+                    setVerifying(false)
+                    searchParams.delete('payment')
+                    setSearchParams(searchParams, { replace: true })
+                }
+            })
+        return () => { cancelled = true }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    // Start a Paystack checkout (mock mode credits a demo top-up instead)
+    const handleFundWallet = async () => {
+        if (funding) return
+        setError('')
+        if (!isSupabaseConfigured()) {
+            deposit(50000, { label: 'Demo top-up', app: 'wallet', type: 'topup' })
+            return
+        }
+        setFunding(true)
+        try {
+            // stakeId null → standalone wallet top-up
+            const result = await initiateCheckout(null, 50000)
+            if (result.authorizationUrl) {
+                window.location.href = result.authorizationUrl
+            }
+        } catch (err) {
+            console.error('Checkout failed:', err)
+            setError(err.message || 'Could not start checkout. Please try again.')
+        } finally {
+            setFunding(false)
+        }
+    }
+
+    const available = totalBalance
+    // Derive escrow/staked from real campaign data for the signed-in user
+    const myStakes = stakes.flatMap(s =>
+        s.stakers.filter(st => st.userId === user?.id).map(st => ({ ...st, status: s.status }))
+    )
+    const staked = myStakes.filter(st => st.status === 'active').reduce((sum, st) => sum + Number(st.amount), 0)
+    const inEscrow = myStakes.filter(st => st.status === 'funded').reduce((sum, st) => sum + Number(st.amount), 0)
 
     // Live wallet ledger (real stakes/top-ups) ahead of the seeded history.
     const allTransactions = [...transactions, ...MOCK_TRANSACTIONS]
@@ -74,6 +133,17 @@ export default function WalletPage() {
                 </div>
             </div>
 
+            {verifying && (
+                <div className="flex items-center gap-2 p-3 mb-4 rounded-xl bg-info/10 text-sm">
+                    <Loader2 size={16} className="animate-spin" /> Verifying your payment…
+                </div>
+            )}
+            {error && (
+                <div className="p-3 mb-4 rounded-xl text-sm" style={{ background: 'var(--color-danger-bg)', color: 'var(--color-danger)' }}>
+                    {error}
+                </div>
+            )}
+
             {/* Balance Hero Card */}
             <div className="wallet-balance-hero">
                 <div className="wallet-balance-bg" />
@@ -95,14 +165,15 @@ export default function WalletPage() {
                         </div>
                     </div>
                     <div className="wallet-balance-actions">
-                        <button className="wallet-action-btn">
-                            <ArrowUpRight size={16} /> Send
+                        <button className="wallet-action-btn" onClick={handleFundWallet} disabled={funding}>
+                            {funding ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                            {funding ? 'Opening checkout…' : 'Fund'}
                         </button>
-                        <button className="wallet-action-btn">
-                            <ArrowDownLeft size={16} /> Receive
-                        </button>
-                        <button className="wallet-action-btn">
+                        <button className="wallet-action-btn" onClick={() => navigate('/apps/vestden')}>
                             <TrendingUp size={16} /> Stake
+                        </button>
+                        <button className="wallet-action-btn" onClick={() => navigate('/apps/vestden')}>
+                            <ArrowDownLeft size={16} /> Back a project
                         </button>
                     </div>
                 </div>
@@ -137,15 +208,15 @@ export default function WalletPage() {
                         <span className="wallet-stat-label">Active Stakes</span>
                     </div>
                 </div>
-                <div className="wallet-stat">
-                    <div className="wallet-stat-icon" style={{ background: 'var(--color-concept-bg)', color: 'var(--color-concept)' }}>
-                        <Clock size={18} />
+                    <div className="wallet-stat">
+                        <div className="wallet-stat-icon" style={{ background: 'var(--color-concept-bg)', color: 'var(--color-concept)' }}>
+                            <Clock size={18} />
+                        </div>
+                        <div>
+                            <span className="wallet-stat-value display">{formatNumber(allTransactions.length)}</span>
+                            <span className="wallet-stat-label">Transactions</span>
+                        </div>
                     </div>
-                    <div>
-                        <span className="wallet-stat-value display">12</span>
-                        <span className="wallet-stat-label">Transactions</span>
-                    </div>
-                </div>
             </div>
 
             {/* Transactions */}

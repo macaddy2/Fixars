@@ -79,10 +79,7 @@ export function PointsProvider({ children }) {
             return
         }
 
-        const newPoints = (user.points || 0) + action.points
-        const newLevel = getLevel(newPoints)
-
-        // Record history
+        // Record history optimistically
         const record = {
             id: Date.now(),
             action: actionKey,
@@ -100,19 +97,24 @@ export function PointsProvider({ children }) {
         })
         setTimeout(() => setShowReward(null), 2500)
 
-        // Persist to Supabase if configured
+        let newPoints = (user.points || 0) + action.points
+
         if (isConfigured && user.id) {
             try {
-                await awardPointsDB(user.id, actionKey, action.points, action.label, metadata)
+                // Server resolves the amount from the action key and returns
+                // the authoritative balance — never trust a client-computed one.
+                newPoints = await awardPointsDB(actionKey)
             } catch (err) {
                 console.error('Error persisting points:', err)
+                setHistory(prev => prev.filter(h => h.id !== record.id))
+                return record
             }
         }
 
-        // Update user state
+        // Update user state from the server balance
         updateUser({
             points: newPoints,
-            level: newLevel.name
+            level: getLevel(newPoints).name
         })
 
         return record
@@ -121,12 +123,13 @@ export function PointsProvider({ children }) {
     const spendPoints = useCallback(async (amount, reason) => {
         if (!user || user.points < amount) return false
 
-        const newPoints = user.points - amount
+        let newPoints = user.points - amount
 
         if (isConfigured && user.id) {
             try {
-                const result = await spendPointsDB(user.id, amount, reason)
+                const result = await spendPointsDB(amount)
                 if (result === false) return false
+                newPoints = result
             } catch (err) {
                 console.error('Error spending points:', err)
                 return false
@@ -145,6 +148,30 @@ export function PointsProvider({ children }) {
 
         return true
     }, [user, updateUser, isConfigured])
+
+    // The ecosystem engine can award points outside this context's call sites
+    // (e.g. concept validated). Listen and surface the reward + refresh balance.
+    useEffect(() => {
+        if (!isConfigured || !user?.id) return
+
+        const onEnginePoints = async (e) => {
+            const { action, points, label } = e.detail || {}
+            if (!action) return
+
+            setShowReward({ points, label })
+            setTimeout(() => setShowReward(null), 2500)
+            setHistory(prev => [{
+                id: Date.now(),
+                action,
+                points,
+                label,
+                timestamp: new Date().toISOString()
+            }, ...prev].slice(0, 50))
+        }
+
+        window.addEventListener('fixars:points-awarded', onEnginePoints)
+        return () => window.removeEventListener('fixars:points-awarded', onEnginePoints)
+    }, [isConfigured, user?.id])
 
     const awardBadge = useCallback((badgeKey) => {
         const badge = BADGES[badgeKey]

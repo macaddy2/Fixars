@@ -1,13 +1,19 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import { useAuth } from './AuthContext'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 /**
- * WalletContext — the shared, spendable wallet balance (v2 model).
+ * WalletContext — the shared, spendable ₦ wallet.
  *
- * Holds a single ₦ balance plus a running transaction ledger, persisted to
- * localStorage so a stake placed on one screen is reflected everywhere
- * (WalletPage balance, Home wallet stat, future analytics). `spend` is the
- * primitive the stake flow uses; it validates funds and records a signed
- * transaction. A lightweight navy toast surfaces every simulated action.
+ * Server mode (Supabase configured):
+ *   Balance is DERIVED from the wallet_transactions ledger via the
+ *   `wallet_balance()` RPC; debits go through `wallet_spend()` which validates
+ *   funds atomically server-side. Credits arrive only from the payment
+ *   webhook — the client can never mint balance.
+ *
+ * Mock mode (not configured):
+ *   Same shape, backed by localStorage with a seeded demo ledger so the UI is
+ *   fully explorable without a backend.
  */
 
 const WalletContext = createContext(null)
@@ -31,8 +37,12 @@ function load(key, fallback) {
 }
 
 export function WalletProvider({ children }) {
-    const [balance, setBalance] = useState(() => load('wallet_balance', DEFAULT_BALANCE))
-    const [transactions, setTransactions] = useState(() => load('wallet_txns', SEED_TRANSACTIONS))
+    const { user } = useAuth()
+    const isConfigured = isSupabaseConfigured()
+
+    const [balance, setBalance] = useState(() => (isConfigured ? 0 : load('wallet_balance', DEFAULT_BALANCE)))
+    const [transactions, setTransactions] = useState(() => (isConfigured ? [] : load('wallet_txns', SEED_TRANSACTIONS)))
+    const [loading, setLoading] = useState(isConfigured)
     const [toast, setToast] = useState(null)
 
     // Ref mirror of balance so synchronous validation never reads a stale
@@ -41,9 +51,47 @@ export function WalletProvider({ children }) {
 
     useEffect(() => {
         balanceRef.current = balance
-        localStorage.setItem('wallet_balance', JSON.stringify(balance))
-    }, [balance])
-    useEffect(() => { localStorage.setItem('wallet_txns', JSON.stringify(transactions)) }, [transactions])
+        if (!isConfigured) localStorage.setItem('wallet_balance', JSON.stringify(balance))
+    }, [balance, isConfigured])
+    useEffect(() => {
+        if (!isConfigured) localStorage.setItem('wallet_txns', JSON.stringify(transactions))
+    }, [transactions, isConfigured])
+
+    // ── Load server-derived balance + recent ledger ──
+    useEffect(() => {
+        if (!isConfigured || !user?.id) return
+
+        let cancelled = false
+        async function loadWallet() {
+            setLoading(true)
+            try {
+                const [balRes, txRes] = await Promise.all([
+                    supabase.rpc('wallet_balance'),
+                    supabase
+                        .from('wallet_transactions')
+                        .select('*')
+                        .order('created_at', { ascending: false })
+                        .limit(50)
+                ])
+                if (cancelled) return
+                if (!balRes.error) setBalance(Number(balRes.data) || 0)
+                if (!txRes.error) {
+                    setTransactions((txRes.data || []).map(t => ({
+                        id: t.id,
+                        type: t.type,
+                        label: t.label,
+                        amount: Number(t.amount),
+                        app: t.app,
+                        date: t.created_at?.slice(0, 10),
+                    })))
+                }
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        }
+        loadWallet()
+        return () => { cancelled = true }
+    }, [isConfigured, user?.id])
 
     const notify = useCallback((message) => {
         setToast({ message, at: Date.now() })
@@ -55,35 +103,68 @@ export function WalletProvider({ children }) {
         return () => clearTimeout(id)
     }, [toast])
 
-    const record = useCallback((amount, { label, app, type }) => {
+    const recordLocal = useCallback((amount, { label, app, type }) => {
         setTransactions(prev => [
             { id: `t${Date.now()}`, type, label, amount, app, date: new Date().toISOString().slice(0, 10) },
             ...prev,
         ])
     }, [])
 
-    // Spend from the wallet. Returns { ok, error } so callers can show errors.
-    const spend = useCallback((amount, meta = {}) => {
+    /**
+     * Spend from the wallet. Returns { ok, error } so callers can show errors.
+     * In server mode this hits the atomic `wallet_spend` RPC — an insufficient
+     * balance is rejected server-side, not just in the browser.
+     */
+    const spend = useCallback(async (amount, meta = {}) => {
         const value = Number(amount)
         if (!value || value <= 0) return { ok: false, error: 'Enter an amount greater than zero' }
+
+        if (isConfigured) {
+            try {
+                const { data, error } = await supabase.rpc('wallet_spend', {
+                    p_amount: value,
+                    p_label: meta.label || null,
+                    p_app: meta.app || 'wallet',
+                    p_type: meta.type || 'stake'
+                })
+                if (error) return { ok: false, error: error.message }
+                setBalance(Number(data) || 0)
+                recordLocal(-value, { label: meta.label || 'Wallet debit', app: meta.app || 'wallet', type: meta.type || 'stake' })
+                return { ok: true }
+            } catch (err) {
+                return { ok: false, error: err.message || 'Wallet debit failed' }
+            }
+        }
+
+        // Mock mode
         if (value > balanceRef.current) return { ok: false, error: 'Amount exceeds your wallet balance' }
         balanceRef.current -= value
         setBalance(b => b - value)
-        record(-value, { label: meta.label || 'Wallet debit', app: meta.app || 'wallet', type: meta.type || 'stake' })
+        recordLocal(-value, { label: meta.label || 'Wallet debit', app: meta.app || 'wallet', type: meta.type || 'stake' })
         return { ok: true }
-    }, [record])
+    }, [isConfigured, recordLocal])
 
+    /**
+     * Credit the wallet. Only meaningful in mock mode — in server mode deposits
+     * are created exclusively by the payment webhook (service role), so the
+     * client cannot fabricate credits.
+     */
     const deposit = useCallback((amount, meta = {}) => {
         const value = Number(amount)
         if (!value || value <= 0) return { ok: false, error: 'Enter a valid amount' }
+
+        if (isConfigured) {
+            return { ok: false, error: 'Deposits complete via checkout — use the Fund button.' }
+        }
+
         balanceRef.current += value
         setBalance(b => b + value)
-        record(value, { label: meta.label || 'Wallet credit', app: meta.app || 'wallet', type: meta.type || 'topup' })
+        recordLocal(value, { label: meta.label || 'Wallet credit', app: meta.app || 'wallet', type: meta.type || 'topup' })
         return { ok: true }
-    }, [record])
+    }, [isConfigured, recordLocal])
 
     return (
-        <WalletContext.Provider value={{ balance, transactions, spend, deposit, toast, notify }}>
+        <WalletContext.Provider value={{ balance, transactions, spend, deposit, toast, notify, loading }}>
             {children}
         </WalletContext.Provider>
     )

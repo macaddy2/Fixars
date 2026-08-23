@@ -908,3 +908,13 @@ body {
   .float-card.fc1,.float-card.fc3{right:-12px}
   .float-card.fc2{left:-12px}
 }
+/* ── ScreenShield print lockdown: printing captures nothing ── */
+@media print {
+  body * { display: none !important; }
+  body::after {
+    content: 'Printing is disabled for content protection.';
+    display: block;
+    padding: 2rem;
+    font-family: sans-serif;
+  }
+}

@@ -1,50 +1,34 @@
 /**
  * AI-powered recommendation engine for Fixars.
- * Uses Gemini API when VITE_GEMINI_API_KEY is available,
- * falls back to heuristic-based recommendations.
+ *
+ * Gemini is called through the `gemini-proxy` Edge Function so the API key
+ * NEVER ships in the browser bundle. When Supabase isn't configured (or the
+ * proxy errors), we fall back to heuristic recommendations.
  */
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const GEMINI_MODEL = 'gemini-2.0-flash'
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 /**
- * Check if Gemini is available
+ * Check if AI recommendations are available
  */
 export function isAIConfigured() {
-    return !!GEMINI_API_KEY && GEMINI_API_KEY !== 'placeholder'
+    return isSupabaseConfigured()
 }
 
 /**
- * Call the Gemini API  
+ * Call Gemini via the server-side proxy. Returns parsed JSON or null.
  */
 async function callGemini(prompt) {
     if (!isAIConfigured()) return null
 
     try {
-        const response = await fetch(GEMINI_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': GEMINI_API_KEY,
-            },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.7,
-                    maxOutputTokens: 1024,
-                    responseMimeType: 'application/json'
-                }
-            })
+        const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+            body: { prompt }
         })
-
-        if (!response.ok) return null
-
-        const data = await response.json()
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-        return text ? JSON.parse(text) : null
+        if (error || !data?.text) return null
+        return JSON.parse(data.text)
     } catch (err) {
-        console.warn('Gemini API error:', err)
+        console.warn('Gemini proxy error:', err)
         return null
     }
 }
@@ -82,9 +66,9 @@ Only return the JSON array, nothing else.`
         if (aiResult && Array.isArray(aiResult)) {
             return aiResult
                 .map(rec => ({
-                    idea: ideas.find(i => i.id === rec.ideaId),
-                    matchReason: rec.matchReason,
-                    score: rec.score
+                    idea: ideas.find(i => i.id === rec?.ideaId),
+                    matchReason: typeof rec?.matchReason === 'string' ? rec.matchReason : 'Recommended for you',
+                    score: Math.max(0, Math.min(1, Number(rec?.score) || 0))
                 }))
                 .filter(r => r.idea)
         }

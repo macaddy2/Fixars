@@ -1,0 +1,18 @@
+# Fixars crawl policy: ONLY the landing page is public/indexable (SEO).
+# Everything else is blocked to crawlers.
+User-agent: *
+Disallow: /*
+Allow: /$
+
+# No AI/scraper bots anywhere, including the landing page
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /

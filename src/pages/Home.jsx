@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
@@ -53,6 +54,15 @@ const FOOTER_COLS = [
 export default function Home() {
     const { isAuthenticated } = useAuth()
     const primaryTarget = isAuthenticated ? '/dashboard' : '/signup'
+
+    // The landing page is the ONLY indexable route (crawl policy): flip the
+    // robots meta while mounted, restore the noindex default on unmount.
+    useEffect(() => {
+        const meta = document.querySelector('meta[name="robots"]')
+        if (!meta) return
+        meta.setAttribute('content', 'index, follow')
+        return () => meta.setAttribute('content', 'noindex, nofollow')
+    }, [])
 
     return (
         <div className="splash">

@@ -19,6 +19,7 @@ import Footer from '@/components/Footer'
 import RewardToast from '@/components/RewardToast'
 import WalletToast from '@/components/WalletToast'
 import SearchOverlay from '@/components/SearchOverlay'
+import ScreenShield from '@/components/ScreenShield'
 
 // Pages
 import Home from '@/pages/Home'
@@ -225,6 +226,7 @@ export default function App() {
             <SocialProvider>
               <SearchProvider>
                 <AppLayout />
+                <ScreenShield />
               </SearchProvider>
             </SocialProvider>
           </PointsProvider>

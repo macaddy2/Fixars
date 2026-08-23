@@ -9,6 +9,7 @@ import { fetchIdeas, submitIdeaDB, voteIdeaDB, linkIdeaToBoardDB, linkIdeaToStak
 import { fetchBoards, createBoardDB, addTaskDB, moveTaskDB } from '@/lib/db/boards'
 import { fetchTalents, createTalentProfile as createTalentProfileDB, updateTalentProfile as updateTalentProfileDB } from '@/lib/db/talents'
 import { fetchActivities, createActivityDB } from '@/lib/db/activities'
+import { setRuntimeUser, conceptSubmitted, conceptVotesUpdated, campaignFunded } from '@/engine/runtime'
 
 const DataContext = createContext(null)
 
@@ -239,6 +240,9 @@ export function DataProvider({ children }) {
     const { user } = useAuth()
     const isConfigured = isSupabaseConfigured()
 
+    // Let engine effects self-scope to the signed-in user
+    useEffect(() => { setRuntimeUser(user?.id ?? null) }, [user?.id])
+
     const [stakes, setStakes] = useState(isConfigured ? [] : MOCK_DATA.stakes)
     const [ideas, setIdeas] = useState(isConfigured ? [] : MOCK_DATA.ideas)
     const [boards, setBoards] = useState(isConfigured ? [] : MOCK_DATA.boards)
@@ -397,28 +401,37 @@ export function DataProvider({ children }) {
 
     const makeStake = useCallback(async (stakeId, userId, amount) => {
         if (!isConfigured) {
+            let updated = null
             setStakes(prev => prev.map(s => {
                 if (s.id !== stakeId) return s
-                return {
+                const next = {
                     ...s,
                     stakers: [...s.stakers, { userId, amount, date: new Date().toISOString() }],
                     currentAmount: s.currentAmount + amount,
                     status: s.currentAmount + amount >= s.targetAmount ? 'funded' : 'active'
                 }
+                updated = next
+                return next
             }))
+            // Engine cascade when the mock campaign hits its target
+            if (updated?.status === 'funded') campaignFunded(updated)
             return
         }
 
         await makeStakeDB(stakeId, userId, amount)
         // Re-fetch to get trigger-updated values
-        const updated = await fetchStakes()
-        setStakes(updated)
+        const refreshed = await fetchStakes()
+        setStakes(refreshed)
+        // Engine cascade when a real campaign just got funded
+        const funded = refreshed.find(s => s.id === stakeId)
+        if (funded?.status === 'funded') campaignFunded(funded)
     }, [isConfigured])
 
     // ── ConceptNexus actions ──
     const submitIdea = useCallback(async (idea) => {
-        if (!isConfigured) {
-            const newIdea = {
+        const newIdea = isConfigured
+            ? await submitIdeaDB(idea)
+            : {
                 id: 'idea-' + Date.now(),
                 ...idea,
                 validationScore: 0,
@@ -429,17 +442,16 @@ export function DataProvider({ children }) {
                 linkedBoardId: null,
                 createdAt: new Date().toISOString()
             }
-            setIdeas(prev => [newIdea, ...prev])
-            return newIdea
-        }
 
-        const newIdea = await submitIdeaDB(idea)
         setIdeas(prev => [newIdea, ...prev])
+        // Engine cascade: concept enters its lifecycle (SUBMIT)
+        conceptSubmitted(newIdea)
         return newIdea
     }, [isConfigured])
 
     const voteIdea = useCallback(async (ideaId, userId, vote, comment = null, badge = null) => {
         if (!isConfigured) {
+            let updatedIdea = null
             setIdeas(prev => prev.map(i => {
                 if (i.id !== ideaId) return i
                 const votes = { ...i.votes }
@@ -449,20 +461,24 @@ export function DataProvider({ children }) {
                 const validators = comment
                     ? [...(i.validators || []), { userId, badge: badge || '', vote, comment }]
                     : i.validators
-                return {
+                updatedIdea = {
                     ...i,
                     votes,
                     validationScore,
                     validators,
                     status: validationScore >= 75 && total >= 10 ? 'validated' : i.status
                 }
+                return updatedIdea
             }))
+            if (updatedIdea) conceptVotesUpdated(updatedIdea)
             return
         }
 
         await voteIdeaDB(ideaId, userId, vote, comment, badge)
         const updated = await fetchIdeas()
         setIdeas(updated)
+        const votedIdea = updated.find(i => i.id === ideaId)
+        if (votedIdea) conceptVotesUpdated(votedIdea)
     }, [isConfigured])
 
     // ── Collaboard actions ──

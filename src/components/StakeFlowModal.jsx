@@ -36,6 +36,7 @@ export default function StakeFlowModal({ campaign, onClose, onConfirm }) {
     const { balance, spend, notify } = useWallet()
     const [amount, setAmount] = useState(25000)
     const [error, setError] = useState('')
+    const [submitting, setSubmitting] = useState(false)
 
     const mult = useMemo(() => parseMultiple(campaign?.expectedReturns), [campaign])
     const pct = campaign ? Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100)) : 0
@@ -46,14 +47,31 @@ export default function StakeFlowModal({ campaign, onClose, onConfirm }) {
     const numeric = Number(amount) || 0
     const overBalance = numeric > balance
 
-    const handleConfirm = () => {
+    // Order matters: persist the stake FIRST, debit the wallet only after the
+    // stake write succeeded — a failed write must never consume funds.
+    const handleConfirm = async () => {
         setError('')
         if (numeric <= 0) { setError('Enter an amount greater than zero'); return }
-        const res = spend(numeric, { label: `Stake · ${campaign.title}`, app: 'vestden', type: 'stake' })
-        if (!res.ok) { setError(res.error); return }
-        onConfirm?.(numeric)
-        notify(`Staked ${naira(numeric)} in ${campaign.title}`)
-        onClose?.()
+
+        setSubmitting(true)
+        try {
+            const persisted = await onConfirm?.(numeric)
+            if (persisted === false) {
+                setError('Could not record your stake — it may have closed or been fully funded. Your wallet was not charged.')
+                return
+            }
+
+            const res = await spend(numeric, { label: `Stake · ${campaign.title}`, app: 'vestden', type: 'stake' })
+            if (!res.ok) { setError(res.error); return }
+
+            notify(`Staked ${naira(numeric)} in ${campaign.title}`)
+            onClose?.()
+        } catch (err) {
+            console.error('Stake flow error:', err)
+            setError('Something went wrong. Your wallet was not charged.')
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     return (
@@ -171,11 +189,11 @@ export default function StakeFlowModal({ campaign, onClose, onConfirm }) {
                     </button>
                     <button
                         onClick={handleConfirm}
-                        disabled={overBalance || numeric <= 0}
+                        disabled={overBalance || numeric <= 0 || submitting}
                         className="px-4 py-2 rounded-[10px] text-sm font-semibold text-white disabled:opacity-50"
                         style={{ background: INVEST }}
                     >
-                        Stake {naira(numeric)}
+                        {submitting ? 'Processing…' : `Stake ${naira(numeric)}`}
                     </button>
                 </div>
             </div>
