@@ -128,14 +128,14 @@ function getRuntime() {
 }
 
 /** Ensure user/concept entities exist before sending commands. */
-function ensureConcept({ id, ownerId, title, score = 0 }) {
+function ensureConcept({ id, ownerId, title, score = 0, kycTier = 1 }) {
     const { store } = getRuntime()
     if (!store.get('user', ownerId)) {
         store.put('user', { id: ownerId, name: ownerId, kycTier: 1 })
     }
     let concept = store.get('concept', id)
     if (!concept) {
-        concept = store.put('concept', { id, ownerId, title, ownerKyc: 1, score })
+        concept = store.put('concept', { id, ownerId, title, ownerKyc: kycTier, score })
     }
     return concept
 }
@@ -143,12 +143,13 @@ function ensureConcept({ id, ownerId, title, score = 0 }) {
 /**
  * An idea was submitted (DB write already succeeded).
  */
-export function conceptSubmitted(idea) {
+export function conceptSubmitted(idea, { kycTier = 1 } = {}) {
     try {
         const concept = ensureConcept({
             id: idea.id,
             ownerId: idea.creatorId,
             title: idea.title,
+            kycTier,
         })
         getRuntime().engine.send('concept', concept.id, 'SUBMIT')
     } catch (err) {

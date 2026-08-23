@@ -1614,3 +1614,151 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 DROP TRIGGER IF EXISTS on_engagement_lifecycle ON engagements;
 CREATE TRIGGER on_engagement_lifecycle AFTER UPDATE ON engagements
   FOR EACH ROW EXECUTE FUNCTION notify_engagement_lifecycle();
+
+-- ============================================================
+-- M4: KYC TIERS, BOARD AGREEMENTS, DATA SOVEREIGNTY
+-- ============================================================
+
+-- KYC tier on the public profile (mirrors engine KYC ladder: 0 none, 1 phone,
+-- 2 NIN/BVN, 3 full). Tier 1 is self-asserted; tier 2 requires a reference
+-- issued by the compliance port (server-side); tier 3 is ops-only.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS kyc_tier INTEGER NOT NULL DEFAULT 0
+  CHECK (kyc_tier BETWEEN 0 AND 3);
+
+CREATE OR REPLACE FUNCTION set_kyc_tier(p_level INTEGER, p_ref TEXT DEFAULT NULL)
+RETURNS INTEGER AS $$
+DECLARE v_current INTEGER;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT kyc_tier INTO v_current FROM profiles WHERE id = auth.uid();
+
+  IF p_level = 1 THEN
+    -- Self-asserted phone ownership (device OTP handled client-side today)
+    UPDATE profiles SET kyc_tier = GREATEST(kyc_tier,1) WHERE id=auth.uid();
+  ELSIF p_level = 2 THEN
+    IF v_current < 1 THEN RAISE EXCEPTION 'complete tier-1 first'; END IF;
+    IF p_ref IS NULL OR p_ref !~ '^kyc-' THEN RAISE EXCEPTION 'a valid kyc-… reference from the compliance port is required'; END IF;
+    UPDATE profiles SET kyc_tier = GREATEST(kyc_tier,2) WHERE id=auth.uid();
+  ELSE
+    RAISE EXCEPTION 'tier % requires an operator', p_level;
+  END IF;
+
+  RETURN (SELECT kyc_tier FROM profiles WHERE id=auth.uid());
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ── Board agreements: explicit team commitments with signatures ──
+CREATE TABLE IF NOT EXISTS board_agreements (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  board_id UUID REFERENCES boards(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL CHECK (char_length(title) <= 200),
+  body TEXT NOT NULL CHECK (char_length(body) <= 4000),
+  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS board_agreement_signatures (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  agreement_id UUID REFERENCES board_agreements(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  signed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(agreement_id, user_id)
+);
+
+ALTER TABLE board_agreements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE board_agreement_signatures ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "agreements_select" ON board_agreements;
+CREATE POLICY "agreements_select" ON board_agreements
+  FOR SELECT USING (board_id IN (SELECT get_my_board_ids()));
+DROP POLICY IF EXISTS "signatures_select" ON board_agreement_signatures;
+CREATE POLICY "signatures_select" ON board_agreement_signatures
+  FOR SELECT USING (agreement_id IN (
+    SELECT a.id FROM board_agreements a WHERE a.board_id IN (SELECT get_my_board_ids())
+  ));
+
+CREATE INDEX IF NOT EXISTS idx_agreements_board ON board_agreements(board_id);
+
+CREATE OR REPLACE FUNCTION create_board_agreement(
+  p_board_id UUID, p_title TEXT, p_body TEXT
+)
+RETURNS UUID AS $$
+DECLARE v_id UUID;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM boards WHERE id=p_board_id AND creator_id=auth.uid()
+  ) AND NOT EXISTS (
+    SELECT 1 FROM board_members WHERE board_id=p_board_id AND user_id=auth.uid() AND role IN ('owner','admin')
+  ) THEN
+    RAISE EXCEPTION 'only board owners/admins can draft agreements';
+  END IF;
+
+  INSERT INTO board_agreements (board_id, title, body, created_by)
+  VALUES (p_board_id, p_title, p_body, auth.uid())
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION sign_board_agreement(p_agreement_id UUID, p_name TEXT)
+RETURNS VOID AS $$
+DECLARE v_board UUID; v_signed BOOLEAN;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT board_id INTO v_board FROM board_agreements WHERE id=p_agreement_id;
+  IF v_board IS NULL THEN RAISE EXCEPTION 'agreement not found'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM board_members WHERE board_id=v_board AND user_id=auth.uid()) THEN
+    RAISE EXCEPTION 'only board members can sign';
+  END IF;
+
+  INSERT INTO board_agreement_signatures (agreement_id, user_id, name)
+  VALUES (p_agreement_id, auth.uid(), COALESCE(NULLIF(p_name,''),'Member'))
+  ON CONFLICT (agreement_id, user_id) DO NOTHING;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ── Data sovereignty: export & content delete (FCL §sovereignty) ──
+CREATE OR REPLACE FUNCTION export_my_data()
+RETURNS JSONB AS $$
+DECLARE out JSONB;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+
+  SELECT jsonb_build_object(
+    'exported_at', NOW(),
+    'profile', (SELECT to_jsonb(p) FROM profiles p WHERE id=auth.uid()),
+    'ideas', COALESCE((SELECT jsonb_agg(to_jsonb(i)) FROM ideas i WHERE creator_id=auth.uid()), '[]'::jsonb),
+    'campaigns_owned', COALESCE((SELECT jsonb_agg(to_jsonb(s)) FROM stakes s WHERE creator_id=auth.uid()), '[]'::jsonb),
+    'backed', COALESCE((SELECT jsonb_agg(to_jsonb(st)) FROM stakers st WHERE user_id=auth.uid()), '[]'::jsonb),
+    'posts', COALESCE((SELECT jsonb_agg(to_jsonb(po)) FROM posts po WHERE author_id=auth.uid()), '[]'::jsonb),
+    'comments', COALESCE((SELECT jsonb_agg(to_jsonb(c)) FROM post_comments c WHERE author_id=auth.uid()), '[]'::jsonb),
+    'engagements', COALESCE((SELECT jsonb_agg(to_jsonb(e)) FROM engagements e WHERE hirer_id=auth.uid() OR talent_user_id=auth.uid()), '[]'::jsonb),
+    'points_history', COALESCE((SELECT jsonb_agg(to_jsonb(ph)) FROM points_history ph WHERE user_id=auth.uid()), '[]'::jsonb),
+    'wallet_entries', COALESCE((SELECT jsonb_agg(to_jsonb(w)) FROM wallet_transactions w WHERE user_id=auth.uid()), '[]'::jsonb)
+  ) INTO out;
+  RETURN out;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Deletes user-authored SOCIAL content only. Money/legal records (stakes,
+-- engagements, wallet ledger, escrow events) are intentionally retained.
+CREATE OR REPLACE FUNCTION delete_my_content()
+RETURNS TABLE (posts_deleted INTEGER, comments_deleted INTEGER, votes_deleted INTEGER, notifications_deleted INTEGER) AS $$
+DECLARE vp INTEGER; vc INTEGER; vv INTEGER; vn INTEGER;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+
+  DELETE FROM posts WHERE author_id=auth.uid();
+  GET DIAGNOSTICS vp = ROW_COUNT;
+  DELETE FROM post_comments WHERE author_id=auth.uid();
+  GET DIAGNOSTICS vc = ROW_COUNT;
+  DELETE FROM idea_votes WHERE user_id=auth.uid();
+  GET DIAGNOSTICS vv = ROW_COUNT;
+  DELETE FROM notifications WHERE user_id=auth.uid();
+  GET DIAGNOSTICS vn = ROW_COUNT;
+
+  RETURN QUERY SELECT vp, vc, vv, vn;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

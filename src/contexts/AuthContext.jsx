@@ -98,6 +98,7 @@ export function AuthProvider({ children }) {
                     points: data.points || 0,
                     level: data.level || 'Newcomer',
                     bio: data.bio,
+                    kycTier: data.kyc_tier ?? 0,
                     joinedAt: data.created_at
                 })
             } else {
