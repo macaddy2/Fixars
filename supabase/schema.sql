@@ -1352,3 +1352,161 @@ RETURNS TABLE (raised NUMERIC, held NUMERIC, released NUMERIC, status TEXT, is_b
          (e.founder_id = auth.uid())
   FROM escrow_accounts e WHERE e.campaign_id = p_campaign_id;
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+-- ============================================================
+-- M2: ENGAGEMENTS & REPUTATION (SkillsCanvas ⇄ CollaBoard loop)
+-- A booking accepted becomes an engagement; delivering it earns the talent
+-- proof points / delivery score and flips their verified badge. Hirers rate
+-- delivered engagements, which moves reputation. All writes via RPCs.
+-- ============================================================
+
+ALTER TABLE talents
+  ADD COLUMN IF NOT EXISTS proof_points INTEGER NOT NULL DEFAULT 0 CHECK (proof_points >= 0),
+  ADD COLUMN IF NOT EXISTS delivery_score NUMERIC(4,3) NOT NULL DEFAULT 0 CHECK (delivery_score >= 0 AND delivery_score <= 1),
+  ADD COLUMN IF NOT EXISTS verified BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS reputation INTEGER NOT NULL DEFAULT 500 CHECK (reputation >= 0 AND reputation <= 1000);
+
+CREATE TABLE IF NOT EXISTS engagements (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  request_id UUID UNIQUE REFERENCES skill_requests(id) ON DELETE SET NULL,
+  board_id UUID REFERENCES boards(id) ON DELETE SET NULL,
+  campaign_id UUID REFERENCES stakes(id) ON DELETE SET NULL,
+  hirer_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  talent_user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  role_title TEXT NOT NULL DEFAULT 'Project engagement',
+  rate NUMERIC(10,2),
+  due_date DATE,
+  status TEXT NOT NULL DEFAULT 'offered'
+    CHECK (status IN ('offered','accepted','active','delivered','rated','declined')),
+  delivered_at TIMESTAMP WITH TIME ZONE,
+  on_time BOOLEAN,
+  rating INTEGER CHECK (rating IS NULL OR rating BETWEEN 1 AND 5),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CHECK (hirer_id <> talent_user_id)
+);
+
+ALTER TABLE engagements ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "engagements_select" ON engagements;
+CREATE POLICY "engagements_select" ON engagements
+  FOR SELECT USING (auth.uid() = hirer_id OR auth.uid() = talent_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_engagements_talent ON engagements(talent_user_id);
+CREATE INDEX IF NOT EXISTS idx_engagements_hirer ON engagements(hirer_id);
+
+-- Accept a pending booking as the talent: flips the request and opens the
+-- engagement in one atomic, permission-checked step.
+CREATE OR REPLACE FUNCTION accept_booking(p_request_id UUID)
+RETURNS UUID AS $$
+DECLARE v_request RECORD; v_talent_user UUID; v_engagement UUID;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT * INTO v_request FROM skill_requests WHERE id = p_request_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'request not found'; END IF;
+  IF v_request.status <> 'pending' THEN RAISE EXCEPTION 'request already handled'; END IF;
+
+  SELECT user_id INTO v_talent_user FROM talents WHERE id = v_request.talent_id;
+  IF v_talent_user <> auth.uid() THEN RAISE EXCEPTION 'only the requested talent can accept'; END IF;
+
+  UPDATE skill_requests SET status='accepted', updated_at=NOW() WHERE id=p_request_id;
+
+  INSERT INTO engagements (request_id, hirer_id, talent_user_id, status, role_title)
+  VALUES (p_request_id, v_request.requester_id, auth.uid(), 'accepted',
+          'Project engagement')
+  RETURNING id INTO v_engagement;
+
+  -- GET_HIRED points for the talent (self-award is safe: they performed the action)
+  BEGIN
+    PERFORM award_points('GET_HIRED');
+  EXCEPTION WHEN OTHERS THEN NULL; -- never block acceptance on points
+  END;
+
+  RETURN v_engagement;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION decline_booking(p_request_id UUID) RETURNS VOID AS $$
+DECLARE v_talent_user UUID;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT t.user_id INTO v_talent_user FROM skill_requests r JOIN talents t ON t.id=r.talent_id WHERE r.id=p_request_id;
+  IF v_talent_user <> auth.uid() THEN RAISE EXCEPTION 'only the requested talent can decline'; END IF;
+  UPDATE skill_requests SET status='rejected', updated_at=NOW() WHERE id=p_request_id AND status='pending';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Talent marks the work delivered. On-time feeds the delivery score; every
+-- delivery earns a proof point and lights the verified badge.
+CREATE OR REPLACE FUNCTION deliver_engagement(p_engagement_id UUID) RETURNS VOID AS $$
+DECLARE
+  v_talent UUID; v_status TEXT; v_due DATE; v_on_time BOOLEAN;
+  v_deliveries INTEGER; v_ontime_count INTEGER; v_score NUMERIC;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT talent_user_id, status, due_date INTO v_talent, v_status, v_due FROM engagements WHERE id=p_engagement_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'engagement not found'; END IF;
+  IF v_talent <> auth.uid() THEN RAISE EXCEPTION 'only the talent can deliver'; END IF;
+  IF v_status NOT IN ('accepted','active') THEN RAISE EXCEPTION 'engagement is not deliverable'; END IF;
+
+  v_on_time := (v_due IS NULL) OR (CURRENT_DATE <= v_due);
+
+  UPDATE engagements
+  SET status='delivered', delivered_at=NOW(), on_time=v_on_time, updated_at=NOW()
+  WHERE id=p_engagement_id;
+
+  INSERT INTO talents (user_id, proof_points, delivery_score, verified, is_active)
+  SELECT auth.uid(), 1, CASE WHEN v_on_time THEN 1 ELSE 0 END, true, true
+  WHERE NOT EXISTS (SELECT 1 FROM talents WHERE user_id=auth.uid())
+  ON CONFLICT (user_id) DO NOTHING;
+
+  UPDATE talents t
+  SET proof_points = t.proof_points + 1,
+      delivery_score = ROUND((((t.delivery_score * t.proof_points) + (CASE WHEN v_on_time THEN 1 ELSE 0 END)) / (t.proof_points + 1))::numeric, 3),
+      verified = true,
+      updated_at = NOW()
+  WHERE user_id = auth.uid();
+
+  BEGIN
+    PERFORM award_points('ENGAGEMENT_COMPLETED');
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Hirer rates a delivered engagement → reputation move on the talent.
+CREATE OR REPLACE FUNCTION rate_engagement(p_engagement_id UUID, p_rating INTEGER) RETURNS VOID AS $$
+DECLARE v_hirer UUID; v_talent UUID; v_status TEXT; v_delta INTEGER;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  IF p_rating BETWEEN 1 AND 5 IS NOT TRUE THEN RAISE EXCEPTION 'rating must be 1..5'; END IF;
+  SELECT hirer_id, talent_user_id, status INTO v_hirer, v_talent, v_status FROM engagements WHERE id=p_engagement_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'engagement not found'; END IF;
+  IF v_hirer <> auth.uid() THEN RAISE EXCEPTION 'only the hirer can rate'; END IF;
+  IF v_status <> 'delivered' THEN RAISE EXCEPTION 'rate after delivery'; END IF;
+
+  v_delta := CASE WHEN p_rating >= 4 THEN 5 WHEN p_rating = 3 THEN 0 ELSE -8 END;
+
+  UPDATE engagements SET status='rated', rating=p_rating, updated_at=NOW() WHERE id=p_engagement_id;
+  UPDATE talents
+  SET reputation = GREATEST(0, LEAST(1000, reputation + v_delta)),
+      updated_at = NOW()
+  WHERE user_id = v_talent;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Read model: my engagements (both sides) with counterpart names.
+CREATE OR REPLACE FUNCTION fetch_my_engagements()
+RETURNS TABLE (
+  id UUID, role TEXT, status TEXT, role_title TEXT, rate NUMERIC, due_date DATE,
+  on_time BOOLEAN, rating INTEGER, created_at TIMESTAMP WITH TIME ZONE,
+  counterpart_name TEXT
+) AS $$
+  SELECT e.id,
+         CASE WHEN e.hirer_id = auth.uid() THEN 'hirer' ELSE 'talent' END,
+         e.status, e.role_title, e.rate, e.due_date, e.on_time, e.rating, e.created_at,
+         p.display_name
+  FROM engagements e
+  JOIN profiles p ON p.id = CASE WHEN e.hirer_id = auth.uid() THEN e.talent_user_id ELSE e.hirer_id END
+  WHERE e.hirer_id = auth.uid() OR e.talent_user_id = auth.uid()
+  ORDER BY e.created_at DESC;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;

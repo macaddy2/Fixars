@@ -16,7 +16,7 @@ const FILTERS = [
 ]
 
 function TalentCard({ talent, onContact }) {
-    const verified = talent.skills?.some(s => s.verified)
+    const verified = talent.verifiedBadge || talent.skills?.some(s => s.verified)
     return (
         <div className="list-card" style={{ cursor: 'default' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>

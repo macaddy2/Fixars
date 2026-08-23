@@ -17,6 +17,10 @@ function mapTalent(t, reviews = null) {
         completedProjects: t.completed_projects || 0,
         rating: parseFloat(t.rating) || 0,
         reviewCount: t.review_count || 0,
+        proofPoints: t.proof_points ?? 0,
+        deliveryScore: t.delivery_score == null ? null : Number(t.delivery_score),
+        reputation: t.reputation ?? 500,
+        verifiedBadge: Boolean(t.verified),
         skills: (t.talent_skills || t.skills || []).map(s => ({
             id: s.id,
             name: s.name,
