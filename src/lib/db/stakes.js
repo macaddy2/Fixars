@@ -6,6 +6,7 @@ export async function fetchStakes() {
         .from(TABLES.STAKES)
         .select('*')
         .order('created_at', { ascending: false })
+        .limit(100)
 
     if (error) throw error
 
@@ -87,17 +88,17 @@ export async function createStakeDB(stake) {
 }
 
 // ── Make a stake (invest) ──
+// Server-side RPC validates the campaign state and refuses to over-fund past
+// the target. The client never sends a trusted total.
 export async function makeStakeDB(stakeId, userId, amount) {
-    const { error } = await supabase
-        .from(TABLES.STAKERS)
-        .insert({
-            stake_id: stakeId,
-            user_id: userId,
-            amount
-        })
+    const { data, error } = await supabase.rpc('make_stake', {
+        p_stake_id: stakeId,
+        p_amount: amount
+    })
 
     if (error) throw error
-    // The DB trigger auto-updates the stake's current_amount and status
+    // data = the campaign's new current_amount (server-computed)
+    return Number(data)
 }
 
 // ── Link stake to idea ──

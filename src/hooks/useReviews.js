@@ -47,7 +47,21 @@ const MOCK_REVIEWS = {
     ]
 }
 
-export function useReviews(talentId) {
+// Shared camelCase mapper — matches DataContext talent shapes.
+function mapReview(r) {
+    return {
+        id: r.id,
+        talentId: r.talent_id,
+        reviewerName: r.reviewer_name || r.reviewer?.display_name || 'Anonymous',
+        reviewerAvatar: r.reviewer_avatar ?? r.reviewer?.avatar_url,
+        rating: r.rating,
+        content: r.content,
+        projectTitle: r.project_title,
+        createdAt: r.created_at
+    }
+}
+
+export function useReviews(talentId, { reviewerName } = {}) {
     const [reviews, setReviews] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -64,7 +78,8 @@ export function useReviews(talentId) {
 
         try {
             if (!isSupabaseConfigured()) {
-                const mockData = MOCK_REVIEWS[talentId] || []
+                // Mock mode only has data for seeded demo talents
+                const mockData = (MOCK_REVIEWS[talentId] || []).map(mapReview)
                 setReviews(mockData)
                 calculateStats(mockData)
                 setLoading(false)
@@ -75,33 +90,22 @@ export function useReviews(talentId) {
                 .from(TABLES.REVIEWS)
                 .select(`
           *,
-          reviewer:profiles!reviewer_id (display_name, avatar_url)
+          reviewer:profiles!reviews_reviewer_id_fkey(display_name, avatar_url)
         `)
                 .eq('talent_id', talentId)
                 .order('created_at', { ascending: false })
 
             if (fetchError) throw fetchError
 
-            const transformed = data.map(r => ({
-                id: r.id,
-                talent_id: r.talent_id,
-                reviewer_name: r.reviewer?.display_name || 'Anonymous',
-                reviewer_avatar: r.reviewer?.avatar_url,
-                rating: r.rating,
-                content: r.content,
-                project_title: r.project_title,
-                created_at: r.created_at
-            }))
+            const transformed = (data || []).map(mapReview)
 
             setReviews(transformed)
             calculateStats(transformed)
         } catch (err) {
             console.error('Error fetching reviews:', err)
             setError(err.message)
-            // Fallback to mock data
-            const mockData = MOCK_REVIEWS[talentId] || []
-            setReviews(mockData)
-            calculateStats(mockData)
+            setReviews([])
+            calculateStats([])
         } finally {
             setLoading(false)
         }
@@ -131,45 +135,38 @@ export function useReviews(talentId) {
 
     const submitReview = async (reviewData) => {
         if (!isSupabaseConfigured()) {
-            const newReview = {
+            const newReview = mapReview({
                 id: 'rev-' + Date.now(),
                 talent_id: talentId,
-                reviewer_name: 'You',
+                reviewer_name: reviewerName || 'You',
                 ...reviewData,
                 created_at: new Date().toISOString()
-            }
+            })
             setReviews(prev => [newReview, ...prev])
             calculateStats([newReview, ...reviews])
             return { data: newReview, error: null }
         }
 
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return { error: 'Not authenticated' }
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (!authUser) return { error: 'Not authenticated' }
 
         const { data, error } = await supabase
             .from(TABLES.REVIEWS)
             .insert({
                 talent_id: talentId,
-                reviewer_id: user.id,
-                ...reviewData
+                reviewer_id: authUser.id,
+                rating: reviewData.rating,
+                content: reviewData.content,
+                project_title: reviewData.project_title
             })
             .select(`
         *,
-        reviewer:profiles!reviewer_id (display_name, avatar_url)
+        reviewer:profiles!reviews_reviewer_id_fkey(display_name, avatar_url)
       `)
             .single()
 
         if (!error) {
-            const transformed = {
-                id: data.id,
-                talent_id: data.talent_id,
-                reviewer_name: data.reviewer?.display_name || 'Anonymous',
-                reviewer_avatar: data.reviewer?.avatar_url,
-                rating: data.rating,
-                content: data.content,
-                project_title: data.project_title,
-                created_at: data.created_at
-            }
+            const transformed = mapReview(data)
             setReviews(prev => [transformed, ...prev])
             calculateStats([transformed, ...reviews])
         }

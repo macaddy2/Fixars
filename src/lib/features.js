@@ -6,12 +6,15 @@
  * Staking is disclosed as a product, out of that test, intended SEC parallel.
  * If admitted, the staking UI stays gated.
  *
- * Hard-off for the build we would show. Do not flip this to solicit staking.
- * Do not treat dummy wallet balances as a live-money path.
- * Do not unhibernate Supabase or invent a payment rail to "test" staking.
+ * DEFAULT OFF: the staking surface stays hidden unless an operator explicitly
+ * sets VITE_VESTDEN_STAKING=1 on a named internal preview. Never set it on the
+ * public demo / GitHub Pages build. Do not treat dummy wallet balances as a
+ * live-money path. Enabling this flag does NOT create custody or rails — the
+ * underlying ledger tier is still whatever VITE_REAL_SESSION selects.
  */
 export function isVestDenStakingEnabled() {
-    return false
+    const value = import.meta.env.VITE_VESTDEN_STAKING
+    return value === '1' || value === 'true'
 }
 
 /**

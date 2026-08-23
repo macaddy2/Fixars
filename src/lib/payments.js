@@ -1,108 +1,80 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 /**
- * Create a payment intent for staking.
- * In live mode, calls a Supabase Edge Function that creates a Stripe PaymentIntent.
- * In mock mode, simulates the flow with a 2-second delay.
+ * Payments (Paystack, NGN).
+ *
+ * Flow: initiateCheckout → Paystack hosted page → user returns to
+ * /wallet?payment=<ref> → verifyPayment credits the wallet ledger.
+ *
+ * SECURITY: no card data ever touches this app — checkout happens on
+ * Paystack's PCI-scoped page. Errors are ALWAYS surfaced; there are no silent
+ * mock-success fallbacks in live mode.
  */
-export async function createPaymentIntent(stakeId, amount, metadata = {}) {
+
+/**
+ * Start a checkout for a campaign stake.
+ * @returns {Promise<{authorizationUrl: string, reference: string}|{mock:true}>}
+ */
+export async function initiateCheckout(stakeId, amount) {
     if (!isSupabaseConfigured()) {
-        // Mock mode — return a fake intent
-        return {
-            id: `pi_mock_${Date.now()}`,
-            amount,
-            status: 'requires_confirmation',
-            stakeId,
-            createdAt: new Date().toISOString()
-        }
+        // Mock mode — pretend to redirect
+        await new Promise(r => setTimeout(r, 800))
+        return { mock: true, reference: `demo-${Date.now()}` }
     }
 
-    try {
-        const { data, error } = await supabase.functions.invoke('create-payment-intent', {
-            body: { stakeId, amount, ...metadata }
-        })
-
-        if (error) throw error
-        return data
-    } catch (err) {
-        console.error('Payment intent error:', err)
-        // Graceful fallback to mock
-        return {
-            id: `pi_fallback_${Date.now()}`,
-            amount,
-            status: 'requires_confirmation',
-            stakeId,
-            createdAt: new Date().toISOString()
-        }
-    }
+    const { data, error } = await supabase.functions.invoke('create-payment', {
+        body: { stakeId, amount, origin: window.location.origin }
+    })
+    if (error) throw new Error(error.message || 'Could not start payment')
+    if (!data?.authorizationUrl) throw new Error(data?.error || 'Payment provider unavailable')
+    return data
 }
 
 /**
- * Confirm a payment intent.
- * Simulates a 2-second processing delay in mock mode.
+ * Verify a completed checkout and credit the wallet on success.
+ * @returns {Promise<'succeeded'|'pending'|'failed'|string>}
  */
-export async function confirmPayment(intentId, cardDetails = {}) {
-    if (!isSupabaseConfigured() || intentId.startsWith('pi_mock') || intentId.startsWith('pi_fallback')) {
-        // Mock: simulate processing time
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        return {
-            id: intentId,
-            status: 'succeeded',
-            confirmedAt: new Date().toISOString(),
-            receipt: {
-                last4: cardDetails.number?.slice(-4) || '4242',
-                brand: 'visa',
-                amount: cardDetails.amount || 0
-            }
-        }
-    }
+export async function verifyPayment(reference) {
+    if (!isSupabaseConfigured()) return 'succeeded'
 
-    try {
-        const { data, error } = await supabase.functions.invoke('confirm-payment', {
-            body: { intentId, cardDetails }
-        })
-
-        if (error) throw error
-        return data
-    } catch (err) {
-        console.error('Payment confirmation error:', err)
-        throw new Error('Payment failed. Please try again.')
-    }
+    const { data, error } = await supabase.functions.invoke('verify-payment', {
+        body: { reference }
+    })
+    if (error) throw new Error(error.message || 'Could not verify payment')
+    return data?.status ?? 'unknown'
 }
 
 /**
- * Fetch payment history for a user.
+ * Payment history for the current user (from the server-side payments table,
+ * written exclusively by the payment functions / webhook).
  */
 export async function fetchPaymentHistory(userId) {
     if (!isSupabaseConfigured()) {
-        // Mock payment history
         return [
             {
                 id: 'txn-001',
-                amount: 2500,
+                amount: 25000,
                 stakeName: 'AI-Powered Recipe Generator',
                 status: 'succeeded',
-                last4: '4242',
-                brand: 'visa',
                 createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
             },
             {
                 id: 'txn-002',
-                amount: 1000,
+                amount: 10000,
                 stakeName: 'Sustainable Fashion Marketplace',
                 status: 'succeeded',
-                last4: '8888',
-                brand: 'mastercard',
                 createdAt: new Date(Date.now() - 86400000 * 5).toISOString()
             }
         ]
     }
 
-    // In a live setup, this would query a payments table or Stripe API
     try {
         const { data, error } = await supabase
             .from('payments')
-            .select('*')
+            .select(`
+                id, amount, status, created_at,
+                stake:stakes(title)
+            `)
             .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(20)
@@ -111,11 +83,9 @@ export async function fetchPaymentHistory(userId) {
 
         return (data || []).map(p => ({
             id: p.id,
-            amount: p.amount,
-            stakeName: p.stake_name,
+            amount: Number(p.amount),
+            stakeName: p.stake?.title || 'Wallet top-up',
             status: p.status,
-            last4: p.card_last4,
-            brand: p.card_brand,
             createdAt: p.created_at
         }))
     } catch {
@@ -124,12 +94,12 @@ export async function fetchPaymentHistory(userId) {
 }
 
 /**
- * Format amount as currency string.
+ * Format amount as Naira currency string.
  */
 export function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-NG', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'NGN',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
     }).format(amount)

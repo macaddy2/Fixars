@@ -2,6 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+const dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // Set base path: GitHub Pages deploys under /Fixars/, whereas Railway, Vercel, and local dev use /
 const isGitHubPages = process.env.GITHUB_ACTIONS === 'true' || process.env.GH_PAGES === 'true'
@@ -9,9 +12,14 @@ const isGitHubPages = process.env.GITHUB_ACTIONS === 'true' || process.env.GH_PA
 export default defineConfig({
   base: isGitHubPages ? '/Fixars/' : '/',
   plugins: [react(), tailwindcss()],
+  // Client-only unit tests; server/landing-page suites run via node:test
+  test: {
+    include: ['src/**/*.test.{js,jsx}'],
+    environment: 'node',
+  },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(dirname, './src'),
     },
   },
   server: {
@@ -45,4 +53,3 @@ export default defineConfig({
     },
   },
 })
-

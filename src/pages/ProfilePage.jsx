@@ -60,8 +60,8 @@ function FCSGauge({ score }) {
 export default function ProfilePage() {
     const { user, isAuthenticated, isLoading } = useAuth()
     const [showFcsBreakdown, setShowFcsBreakdown] = useState(false)
-    const { points, level, getNextLevel, LEVELS } = usePoints()
-    const { stakes, ideas, boards, talents } = useData()
+    const { points, level, LEVELS } = usePoints()
+    const { stakes, ideas, boards } = useData()
     const location = useLocation()
 
     if (isLoading) {

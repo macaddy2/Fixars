@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { useSocial } from '@/contexts/SocialContext'
@@ -14,11 +14,17 @@ function formatTimeAgo(dateStr) {
 }
 
 export default function CommentSection({ postId }) {
-    const { getComments, addComment } = useSocial()
+    const { getComments, addComment, loadComments } = useSocial()
     const { user, isAuthenticated } = useAuth()
     const [isOpen, setIsOpen] = useState(false)
     const [newComment, setNewComment] = useState('')
     const comments = getComments(postId)
+
+    // Fetch persisted comments the first time the section is expanded
+    useEffect(() => {
+        if (isOpen) loadComments?.(postId)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, postId])
 
     const handleSubmit = () => {
         if (!newComment.trim()) return

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/contexts/AuthContext'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { PointsProvider } from '@/contexts/PointsContext'
@@ -143,23 +143,23 @@ function AppLayout() {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            {/* Authenticated routes also available here as fallback */}
-            <Route path="/apps" element={<Apps />} />
+            {/* Authenticated routes also available here as fallback — gated */}
+            <Route path="/apps" element={<RequireSession><Apps /></RequireSession>} />
             <Route path="/feed" element={<Feed />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/apps/vestden" element={<VestDen />} />
-            <Route path="/apps/conceptnexus" element={<ConceptNexus />} />
-            <Route path="/apps/collaboard" element={<Collaboard />} />
-            <Route path="/apps/skillscanvas" element={<SkillsCanvas />} />
-            <Route path="/apps/skillscanvas/talent/:id" element={<TalentProfile />} />
-            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/dashboard" element={<RequireSession><Dashboard /></RequireSession>} />
+            <Route path="/apps/vestden" element={<RequireSession><VestDen /></RequireSession>} />
+            <Route path="/apps/conceptnexus" element={<RequireSession><ConceptNexus /></RequireSession>} />
+            <Route path="/apps/collaboard" element={<RequireSession><Collaboard /></RequireSession>} />
+            <Route path="/apps/skillscanvas" element={<RequireSession><SkillsCanvas /></RequireSession>} />
+            <Route path="/apps/skillscanvas/talent/:id" element={<RequireSession><TalentProfile /></RequireSession>} />
+            <Route path="/profile" element={<RequireSession><ProfilePage /></RequireSession>} />
             <Route path="/wallet" element={<RequireSession><WalletPage /></RequireSession>} />
             <Route path="/receipts" element={<RequireSession><ReceiptsPage /></RequireSession>} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/notifications" element={<RequireSession><NotificationsPage /></RequireSession>} />
+            <Route path="/analytics" element={<RequireSession><Analytics /></RequireSession>} />
             <Route path="/developers" element={<ApiDocs />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/messages" element={<Feed />} />
+            <Route path="/settings" element={<RequireSession><SettingsPage /></RequireSession>} />
+            <Route path="/messages" element={<RequireSession><Feed /></RequireSession>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
@@ -185,8 +185,9 @@ function AppLayout() {
               <Route path="/apps" element={<Apps />} />
               <Route path="/feed" element={<Feed />} />
               <Route path="/wallet" element={<RequireSession><WalletPage /></RequireSession>} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+              {/* Signed-in users don't need the auth pages */}
+              <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/signup" element={<Navigate to="/dashboard" replace />} />
               <Route path="/about" element={<About />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />

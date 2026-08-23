@@ -1,9 +1,13 @@
 import { supabase } from '@/lib/supabase'
 
 /**
- * Create a booking (skill request) for a talent
+ * Create a booking (skill request) for a talent.
+ * `projectTitle` is kept for API compatibility but is not stored — the
+ * skill_requests table has no such column (only reviews.project_title).
  */
-export async function createBookingRequest(requesterId, talentId, message, projectTitle) {
+export async function createBookingRequest(requesterId, talentId, message) {
+    if (!requesterId || !talentId) throw new Error('createBookingRequest requires requesterId and talentId')
+
     const { data, error } = await supabase
         .from('skill_requests')
         .insert({
@@ -60,14 +64,16 @@ export async function fetchMyBookings(userId) {
 }
 
 /**
- * Fetch incoming booking requests for a talent
+ * Fetch incoming booking requests for a talent.
+ * Note: requester contact happens via in-app messaging; emails are never
+ * exposed through this endpoint (profiles.email is not publicly readable).
  */
 export async function fetchIncomingBookings(talentId) {
     const { data, error } = await supabase
         .from('skill_requests')
         .select(`
             *,
-            requester:profiles!skill_requests_requester_id_fkey(display_name, avatar_url, email)
+            requester:profiles!skill_requests_requester_id_fkey(display_name, avatar_url)
         `)
         .eq('talent_id', talentId)
         .order('created_at', { ascending: false })
@@ -82,7 +88,6 @@ export async function fetchIncomingBookings(talentId) {
         requesterId: r.requester_id,
         requesterName: r.requester?.display_name || 'Unknown',
         requesterAvatar: r.requester?.avatar_url,
-        requesterEmail: r.requester?.email,
         message: r.message,
         status: r.status,
         createdAt: r.created_at,

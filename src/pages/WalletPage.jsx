@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { useWallet } from '@/contexts/WalletContext'
 import { isRealSessionEnabled } from '@/lib/flags'
+import { initiateCheckout, verifyPayment } from '@/lib/payments'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import { formatNumber } from '@/lib/utils'
 import { isVestDenStakingEnabled, isVestDenStakingLedgerRow } from '@/lib/features'
 import {
@@ -13,13 +16,16 @@ import {
     Clock,
     Shield,
     Star,
-    Loader2
+    Loader2,
+    Plus
 } from 'lucide-react'
 
 /* ====================================================================
    Wallet Page — Phase 2
    Flag-off: dummy public-demo chrome. Not a live-money path.
    Flag-on: figures from the server mock ledger. Still not live rails.
+   Supabase tier (flag-on + Supabase envs): ledger-backed wallet with
+   checkout-funded deposits. Withdrawals stay disabled.
    Staking / VestDen returns stay gated regardless of session flag.
    ==================================================================== */
 
@@ -41,6 +47,8 @@ const TABS = isVestDenStakingEnabled()
 export default function WalletPage() {
     const { user } = useAuth()
     const { points } = usePoints()
+    const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams()
     const { stakes } = useData()
     const {
         balance: totalBalance,
@@ -56,6 +64,50 @@ export default function WalletPage() {
     const [payoutDest, setPayoutDest] = useState('')
     const [payoutError, setPayoutError] = useState('')
     const [payoutBusy, setPayoutBusy] = useState(false)
+    const [funding, setFunding] = useState(false)
+
+    // Supabase ledger tier: flag-on AND Supabase envs configured
+    const supabaseLedger = Boolean(realSession && isSupabaseConfigured())
+
+    // Returning from Paystack checkout: ?payment=<reference> → verify → reload
+    useEffect(() => {
+        if (!supabaseLedger) return
+        const reference = searchParams.get('payment')
+        if (!reference) return
+        let cancelled = false
+
+        verifyPayment(reference)
+            .then((status) => {
+                if (!cancelled && status === 'succeeded') {
+                    window.location.replace('/wallet?verified=1')
+                }
+            })
+            .catch(err => console.error('Payment verification failed:', err))
+            .finally(() => {
+                if (!cancelled) {
+                    searchParams.delete('payment')
+                    setSearchParams(searchParams, { replace: true })
+                }
+            })
+        return () => { cancelled = true }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [supabaseLedger])
+
+    // Start a Paystack checkout (hosted page — no card data touches this app)
+    const handleFundWallet = async () => {
+        if (funding) return
+        setFunding(true)
+        try {
+            const result = await initiateCheckout(null, 50000)
+            if (result.authorizationUrl) {
+                window.location.href = result.authorizationUrl
+            }
+        } catch (err) {
+            console.error('Checkout failed:', err)
+        } finally {
+            setFunding(false)
+        }
+    }
 
     const flagOn = isRealSessionEnabled() || realSession
 
@@ -114,9 +166,11 @@ export default function WalletPage() {
                     <span className="page-header-eyebrow">Wallet</span>
                     <h1 className="page-header-title display">Your wallet</h1>
                     <p className="page-header-sub">
-                        {flagOn
-                            ? 'Figures from the server mock ledger. Not live rails. Not client funds.'
-                            : 'Dummy naira wallet for the public demo. Not a live-money path.'}
+                        {supabaseLedger
+                            ? 'Figures from your wallet ledger. Deposits complete via checkout; withdrawals are not enabled yet.'
+                            : flagOn
+                                ? 'Figures from the server mock ledger. Not live rails. Not client funds.'
+                                : 'Dummy naira wallet for the public demo. Not a live-money path.'}
                     </p>
                 </div>
             </div>
@@ -149,7 +203,9 @@ export default function WalletPage() {
                         </p>
                     )}
                     <p style={{ marginTop: 8, opacity: 0.75, fontSize: 12 }}>
-                        No Paystack, Flutterwave, NIP, or NIMC call.
+                        {supabaseLedger
+                            ? 'Deposits via hosted Paystack checkout. No card details are stored or sent to this app.'
+                            : 'No Paystack, Flutterwave, NIP, or NIMC call.'}
                         {user?.email ? ` Signed in as ${user.email}.` : ''}
                     </p>
                     {!flagOn && (
@@ -162,10 +218,26 @@ export default function WalletPage() {
                             </button>
                         </div>
                     )}
+                    {supabaseLedger && (
+                        <div className="wallet-balance-actions">
+                            <button type="button" className="wallet-action-btn" onClick={handleFundWallet} disabled={funding}>
+                                {funding ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
+                                {funding ? 'Opening checkout…' : 'Fund wallet'}
+                            </button>
+                            <button
+                                type="button"
+                                className="wallet-action-btn"
+                                onClick={() => navigate('/apps/vestden')}
+                                disabled={!isVestDenStakingEnabled()}
+                            >
+                                <ArrowUpRight size={16} /> Stake (gated)
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {flagOn && (
+            {flagOn && !supabaseLedger && (
                 <form className="wallet-txn-section" onSubmit={handlePayout} style={{ padding: 20 }}>
                     <h2 className="wallet-txn-title display">Mock ledger debit</h2>
                     <p className="page-header-sub" style={{ marginBottom: 12 }}>

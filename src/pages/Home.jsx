@@ -1,7 +1,9 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check, Lock, Layers, BookOpen, RefreshCw } from 'lucide-react'
 import fixarsMark from '@/assets/fixars-mark.png'
 import { isVestDenStakingEnabled } from '@/lib/features'
+import { useAuth } from '@/contexts/AuthContext'
 
 const SUBAPPS = [
     { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Peer-reviewed' },
@@ -40,6 +42,19 @@ const FOOTER_COLS = [
 ]
 
 export default function Home() {
+    const { isAuthenticated } = useAuth()
+    // Auth-aware CTAs: anonymous visitors go to auth, signed-in users to the app
+    const primaryTarget = isAuthenticated ? '/dashboard' : '/signup'
+
+    // The landing page is the ONLY indexable route (crawl policy): flip the
+    // robots meta while mounted, restore the noindex default on unmount.
+    useEffect(() => {
+        const meta = document.querySelector('meta[name="robots"]')
+        if (!meta) return
+        meta.setAttribute('content', 'index, follow')
+        return () => meta.setAttribute('content', 'noindex, nofollow')
+    }, [])
+
     return (
         <div className="splash">
             <nav className="splash-nav">
@@ -53,8 +68,8 @@ export default function Home() {
                     <a href="#about">About</a>
                 </div>
                 <div className="splash-nav-cta">
-                    <Link to="/dashboard" className="btn" style={{ background: 'transparent', color: 'var(--color-ink-700)', border: '1px solid transparent' }}>Sign in</Link>
-                    <Link to="/dashboard" className="btn btn-primary">Dashboard</Link>
+                    <Link to="/login" className="btn" style={{ background: 'transparent', color: 'var(--color-ink-700)', border: '1px solid transparent' }}>Sign in</Link>
+                    <Link to={primaryTarget} className="btn btn-primary">{isAuthenticated ? 'Dashboard' : 'Get started'}</Link>
                 </div>
             </nav>
 
@@ -64,7 +79,7 @@ export default function Home() {
                     <p className="splash-sub">Validate ideas and ship with verified teams. Identity, wallet, and reputation—built for the builders of tomorrow, and owned by them.</p>
                     
                     <div className="splash-cta">
-                        <Link to="/dashboard" className="btn btn-primary">Start building</Link>
+                        <Link to={primaryTarget} className="btn btn-primary">{isAuthenticated ? 'Open dashboard' : 'Start building'}</Link>
                         <a href="#howitworks" className="btn" style={{ background: 'var(--color-paper)', border: '1px solid var(--color-ink-200)', color: 'var(--color-navy-900)' }}>
                             See how it works
                         </a>

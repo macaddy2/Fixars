@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -23,7 +23,7 @@ export default function AIRecommendations({ compact = false }) {
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
 
-    const loadRecommendations = async () => {
+    const loadRecommendations = useCallback(async () => {
         setLoading(true)
         try {
             const recs = await getIdeaRecommendations(ideas, {
@@ -37,13 +37,13 @@ export default function AIRecommendations({ compact = false }) {
             setLoading(false)
             setRefreshing(false)
         }
-    }
+    }, [ideas, user])
 
     useEffect(() => {
         if (ideas.length > 0) {
             loadRecommendations()
         }
-    }, [ideas])
+    }, [ideas, loadRecommendations])
 
     const handleRefresh = () => {
         setRefreshing(true)

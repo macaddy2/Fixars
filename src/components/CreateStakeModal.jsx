@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Modal, { Field } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,8 +31,13 @@ export default function CreateStakeModal({ open, onClose, initialData = null }) 
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
 
-    // Reset or initialize state when modal opens with new initialData
-    useEffect(() => {
+    // Reset or initialize state when the modal opens with new initialData.
+    // Render-phase adjustment (React's sanctioned alternative to a
+    // setState-in-effect) — compares against the last rendered open/initialData.
+    const [renderedKey, setRenderedKey] = useState(null)
+    const openKey = open ? `${open}:${initialData?.id ?? 'blank'}` : null
+    if (openKey !== renderedKey) {
+        setRenderedKey(openKey)
         if (open) {
             setTitle(initialData?.title || '')
             setDescription(initialData?.description || '')
@@ -44,7 +49,7 @@ export default function CreateStakeModal({ open, onClose, initialData = null }) 
             setError('')
             setSubmitting(false)
         }
-    }, [open, initialData])
+    }
 
     const close = () => {
         setTitle(''); setDescription(''); setCategory('tech')

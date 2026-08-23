@@ -17,39 +17,23 @@ export function createModelProvider({ name, isConfigured, generateJSON }) {
 }
 
 // ── Gemini — the first provider ──────────────────────────────────────────
+// SECURITY: the Gemini key lives ONLY on the server (GEMINI_API_KEY secret of
+// the `gemini-proxy` Edge Function). The browser never holds or sends a key.
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
-const GEMINI_MODEL = 'gemini-2.0-flash'
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 
 export const geminiProvider = createModelProvider({
     name: 'gemini',
-    isConfigured: () => !!GEMINI_API_KEY && GEMINI_API_KEY !== 'placeholder',
+    isConfigured: () => isSupabaseConfigured(),
     async generateJSON(prompt) {
         if (!geminiProvider.isConfigured()) return null
 
         try {
-            const response = await fetch(GEMINI_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': GEMINI_API_KEY,
-                },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 1024,
-                        responseMimeType: 'application/json'
-                    }
-                })
+            const { data, error } = await supabase.functions.invoke('gemini-proxy', {
+                body: { prompt }
             })
-
-            if (!response.ok) return null
-
-            const data = await response.json()
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text
-            return text ? JSON.parse(text) : null
+            if (error || !data?.text) return null
+            return JSON.parse(data.text)
         } catch (err) {
             console.warn(`${geminiProvider.name} provider error:`, err)
             return null

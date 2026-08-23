@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { useTalent } from '@/hooks/useTalents'
 import { useReviews } from '@/hooks/useReviews'
 import { useAuth } from '@/contexts/AuthContext'
-import { getInitials, formatNumber, getRelativeTime } from '@/lib/utils'
+import { getInitials, getRelativeTime } from '@/lib/utils'
 import {
     Palette,
     Star,
@@ -40,12 +40,12 @@ function ReviewCard({ review }) {
             <CardContent className="p-4">
                 <div className="flex items-start gap-3 mb-3">
                     <Avatar className="w-10 h-10">
-                        <AvatarImage src={review.reviewer_avatar} />
-                        <AvatarFallback>{getInitials(review.reviewer_name)}</AvatarFallback>
+                        <AvatarImage src={review.reviewerAvatar} />
+                        <AvatarFallback>{getInitials(review.reviewerName)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                         <div className="flex items-center justify-between">
-                            <p className="font-medium text-foreground">{review.reviewer_name}</p>
+                            <p className="font-medium text-foreground">{review.reviewerName}</p>
                             <div className="flex items-center gap-1 text-warning">
                                 {[...Array(5)].map((_, i) => (
                                     <Star
@@ -55,12 +55,12 @@ function ReviewCard({ review }) {
                                 ))}
                             </div>
                         </div>
-                        <p className="text-sm text-muted">{getRelativeTime(review.created_at)}</p>
+                        <p className="text-sm text-muted">{getRelativeTime(review.createdAt)}</p>
                     </div>
                 </div>
 
-                {review.project_title && (
-                    <Badge variant="secondary" className="mb-2">{review.project_title}</Badge>
+                {review.projectTitle && (
+                    <Badge variant="secondary" className="mb-2">{review.projectTitle}</Badge>
                 )}
 
                 <p className="text-foreground">{review.content}</p>
@@ -91,26 +91,34 @@ function RatingDistribution({ stats }) {
 
 export default function TalentProfile() {
     const { id: talentId } = useParams()
-    const { user, isAuthenticated } = useAuth()
+    const { isAuthenticated } = useAuth()
     const { talent, loading: talentLoading, error: talentError } = useTalent(talentId)
-    const { reviews, stats, loading: reviewsLoading, submitReview } = useReviews(talentId)
+    const { reviews, stats, loading: reviewsLoading, submitReview } = useReviews(talentId, { reviewerName: 'You' })
 
     const [showReviewForm, setShowReviewForm] = useState(false)
     const [showBooking, setShowBooking] = useState(false)
     const [reviewRating, setReviewRating] = useState(5)
     const [reviewContent, setReviewContent] = useState('')
     const [reviewProject, setReviewProject] = useState('')
+    const [reviewError, setReviewError] = useState('')
     const [submitting, setSubmitting] = useState(false)
 
     const handleSubmitReview = async () => {
         if (!reviewContent.trim()) return
 
         setSubmitting(true)
-        await submitReview({
+        setReviewError('')
+        const { error } = await submitReview({
             rating: reviewRating,
             content: reviewContent,
             project_title: reviewProject || null
         })
+        if (error) {
+            console.error('Error submitting review:', error)
+            setReviewError(typeof error === 'string' ? error : error.message || 'Could not submit review')
+            setSubmitting(false)
+            return
+        }
         setSubmitting(false)
         setShowReviewForm(false)
         setReviewContent('')
@@ -161,12 +169,12 @@ export default function TalentProfile() {
                             <CardContent className="p-6">
                                 <div className="flex flex-col sm:flex-row gap-6">
                                     <Avatar className="w-24 h-24 mx-auto sm:mx-0">
-                                        <AvatarImage src={talent.avatar_url} />
-                                        <AvatarFallback className="text-2xl">{getInitials(talent.display_name)}</AvatarFallback>
+                                        <AvatarImage src={talent.avatar} />
+                                        <AvatarFallback className="text-2xl">{getInitials(talent.displayName)}</AvatarFallback>
                                     </Avatar>
 
                                     <div className="flex-1 text-center sm:text-left">
-                                        <h1 className="text-2xl font-bold text-foreground mb-1">{talent.display_name}</h1>
+                                        <h1 className="text-2xl font-bold text-foreground mb-1">{talent.displayName}</h1>
 
                                         <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-sm text-muted mb-4">
                                             <div className="flex items-center gap-1">
@@ -176,7 +184,7 @@ export default function TalentProfile() {
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <Briefcase className="w-4 h-4" />
-                                                {talent.completed_projects || 0} projects
+                                                {talent.completedProjects || 0} projects
                                             </div>
                                             <Badge
                                                 variant={
@@ -211,8 +219,7 @@ export default function TalentProfile() {
                             <CardContent>
                                 <div className="space-y-4">
                                     {talent.skills?.map(skill => (
-                                        <div key={skill.id || skill.name} className="flex items-center gap-4">
-                                            <div className="flex-1">
+                                        <div key={skill.id || skill.name} className="flex items-center gap-4">                                            <div className="flex-1">
                                                 <div className="flex items-center justify-between mb-1">
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-medium text-foreground">{skill.name}</span>
@@ -274,12 +281,21 @@ export default function TalentProfile() {
                                 {showReviewForm && (
                                     <Card className="mb-6 bg-muted/5">
                                         <CardContent className="p-4 space-y-4">
+                                            {reviewError && (
+                                                <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                                                    {reviewError}
+                                                </div>
+                                            )}
                                             <div>
                                                 <label className="text-sm font-medium text-foreground block mb-2">Rating</label>
-                                                <div className="flex gap-1">
+                                                <div className="flex gap-1" role="radiogroup" aria-label="Your rating">
                                                     {[1, 2, 3, 4, 5].map(rating => (
                                                         <button
                                                             key={rating}
+                                                            type="button"
+                                                            role="radio"
+                                                            aria-checked={rating === reviewRating}
+                                                            aria-label={`${rating} star${rating > 1 ? 's' : ''}`}
                                                             onClick={() => setReviewRating(rating)}
                                                             className="p-1 hover:scale-110 transition-transform"
                                                         >
@@ -351,7 +367,7 @@ export default function TalentProfile() {
                             <CardContent className="p-6 text-center">
                                 <DollarSign className="w-10 h-10 text-skillscanvas mx-auto mb-2" />
                                 <p className="text-3xl font-bold text-foreground mb-1">
-                                    ${talent.hourly_rate || 0}
+                                    ₦{(talent.hourlyRate || 0).toLocaleString()}
                                 </p>
                                 <p className="text-muted">per hour</p>
                             </CardContent>
@@ -391,7 +407,7 @@ export default function TalentProfile() {
                                         <Briefcase className="w-4 h-4 text-primary" />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-foreground">{talent.completed_projects || 0}</p>
+                                        <p className="font-medium text-foreground">{talent.completedProjects || 0}</p>
                                         <p className="text-xs text-muted">Completed Projects</p>
                                     </div>
                                 </div>

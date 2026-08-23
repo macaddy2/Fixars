@@ -7,12 +7,11 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { usePoints } from '@/contexts/PointsContext'
-import { useSocial } from '@/contexts/SocialContext'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import StatCard from '@/components/charts/StatCard'
 import MiniChart from '@/components/charts/MiniChart'
 import ActivityHeatmap from '@/components/charts/ActivityHeatmap'
 import { formatNumber } from '@/lib/utils'
-import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     BarChart3,
     TrendingUp,
@@ -28,12 +27,31 @@ import {
 } from 'lucide-react'
 
 export default function Analytics() {
-    const { user, isAuthenticated, isLoading } = useAuth()
+    const { isAuthenticated, isLoading } = useAuth()
     const { stakes, ideas, boards, talents, activities } = useData()
-    const { points, history } = usePoints()
-    const { posts, notifications } = useSocial()
+    const { points } = usePoints()
     const [timeRange, setTimeRange] = useState('30d')
     const location = useLocation()
+
+    const totalStaked = stakes.reduce((sum, s) => sum + s.currentAmount, 0)
+    const totalTasks = boards.reduce((sum, b) =>
+        sum + b.columns.reduce((cs, c) => cs + c.tasks.length, 0), 0
+    )
+
+    // Mock sparkline data — memoized so charts don't regenerate on every render.
+    // Hooks must run unconditionally, before any early returns below.
+    const sparklines = useMemo(() => {
+        const gen = (base, variance, len = 7) =>
+            Array.from({ length: len }, () => base + Math.floor(Math.random() * variance))
+        return {
+            staked: gen(totalStaked * 0.8, totalStaked * 0.2),
+            ideas: gen(1, 3),
+            tasks: gen(3, 5),
+            pointsEarned: gen(50, 100),
+            engagement: gen(10, 30, 12),
+            progression: gen(points * 0.3, points * 0.7, 12)
+        }
+    }, [totalStaked, points])
 
     if (isLoading) {
         return (
@@ -46,16 +64,6 @@ export default function Analytics() {
     if (!isAuthenticated) {
         return <Navigate to="/login" replace state={{ from: location.pathname }} />
     }
-
-    // Mock sparkline data generators
-    const genSparkline = (base, variance, len = 7) =>
-        Array.from({ length: len }, () => base + Math.floor(Math.random() * variance))
-
-    const totalStaked = stakes.reduce((sum, s) => sum + s.currentAmount, 0)
-    const totalVotes = ideas.reduce((sum, i) => (i.votes?.up || 0) + (i.votes?.down || 0) + sum, 0)
-    const totalTasks = boards.reduce((sum, b) =>
-        sum + b.columns.reduce((cs, c) => cs + c.tasks.length, 0), 0
-    )
 
     // Per-app breakdown data
     const appBreakdown = [
@@ -107,7 +115,7 @@ export default function Analytics() {
                         trendLabel="vs last period"
                         icon={TrendingUp}
                         color="vestden"
-                        sparkData={genSparkline(totalStaked * 0.8, totalStaked * 0.2)}
+                        sparkData={sparklines.staked}
                     />
                     )}
                     <StatCard
@@ -117,7 +125,7 @@ export default function Analytics() {
                         trendLabel="vs last period"
                         icon={Lightbulb}
                         color="conceptnexus"
-                        sparkData={genSparkline(1, 3)}
+                        sparkData={sparklines.ideas}
                     />
                     <StatCard
                         label="Active Tasks"
@@ -126,7 +134,7 @@ export default function Analytics() {
                         trendLabel="vs last period"
                         icon={Users}
                         color="collaboard"
-                        sparkData={genSparkline(3, 5)}
+                        sparkData={sparklines.tasks}
                     />
                     <StatCard
                         label="FixPoints Earned"
@@ -135,7 +143,7 @@ export default function Analytics() {
                         trendLabel="this month"
                         icon={Star}
                         color="warning"
-                        sparkData={genSparkline(50, 100)}
+                        sparkData={sparklines.pointsEarned}
                     />
                 </div>
 
@@ -191,7 +199,7 @@ export default function Analytics() {
                         </CardHeader>
                         <CardContent>
                             <MiniChart
-                                data={genSparkline(10, 30, 12)}
+                                data={sparklines.engagement}
                                 type="area"
                                 color="primary"
                                 width={480}
@@ -221,7 +229,7 @@ export default function Analytics() {
                         </CardHeader>
                         <CardContent>
                             <MiniChart
-                                data={genSparkline(points * 0.3, points * 0.7, 12)}
+                                data={sparklines.progression}
                                 type="line"
                                 color="warning"
                                 width={480}

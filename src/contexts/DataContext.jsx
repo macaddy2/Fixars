@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { isVestDenStakingEnabled } from '@/lib/features'
 import { useAuth } from './AuthContext'
@@ -8,7 +8,9 @@ import { subscribeToTable, TABLES } from '@/lib/realtime'
 import { fetchStakes, createStakeDB, makeStakeDB } from '@/lib/db/stakes'
 import { fetchIdeas, submitIdeaDB, voteIdeaDB, linkIdeaToBoardDB, linkIdeaToStakeDB } from '@/lib/db/ideas'
 import { fetchBoards, createBoardDB, addTaskDB, moveTaskDB } from '@/lib/db/boards'
-import { fetchTalents, createTalentProfile as createTalentProfileDB } from '@/lib/db/talents'
+import { fetchTalents, createTalentProfile as createTalentProfileDB, updateTalentProfile as updateTalentProfileDB } from '@/lib/db/talents'
+import { fetchActivities, createActivityDB } from '@/lib/db/activities'
+import { setRuntimeUser, conceptSubmitted, conceptVotesUpdated, campaignFunded } from '@/engine/runtime'
 
 const DataContext = createContext(null)
 
@@ -239,6 +241,9 @@ export function DataProvider({ children }) {
     const { user } = useAuth()
     const isConfigured = isSupabaseConfigured()
 
+    // Let engine effects self-scope to the signed-in user
+    useEffect(() => { setRuntimeUser(user?.id ?? null) }, [user?.id])
+
     const [stakes, setStakes] = useState(isConfigured ? [] : MOCK_DATA.stakes)
     const [ideas, setIdeas] = useState(isConfigured ? [] : MOCK_DATA.ideas)
     const [boards, setBoards] = useState(isConfigured ? [] : MOCK_DATA.boards)
@@ -279,14 +284,16 @@ export function DataProvider({ children }) {
         async function loadData() {
             try {
                 setLoading(true)
-                const [stakesData, ideasData, talentsData] = await Promise.all([
+                const [stakesData, ideasData, talentsData, activitiesData] = await Promise.all([
                     fetchStakes(),
                     fetchIdeas(),
-                    fetchTalents()
+                    fetchTalents(),
+                    fetchActivities().catch(() => [])
                 ])
                 setStakes(stakesData)
                 setIdeas(ideasData)
                 setTalents(talentsData)
+                setActivities(activitiesData)
 
                 // Boards require user context
                 if (user?.id) {
@@ -305,23 +312,34 @@ export function DataProvider({ children }) {
     }, [isConfigured, user?.id])
 
     // ── Realtime subscriptions ──
+    // Refetches are debounced so a burst of row events (e.g. a busy board)
+    // triggers one reconciliation fetch instead of one per event.
     useEffect(() => {
         if (!isConfigured) return
 
+        const timers = {}
+        const debounced = (key, fn, delay = 800) => {
+            clearTimeout(timers[key])
+            timers[key] = setTimeout(() => fn().catch(console.error), delay)
+        }
+
         const unsubs = [
             subscribeToTable(TABLES.STAKES, {
-                onInsert: (row) => fetchStakes().then(setStakes).catch(console.error),
-                onUpdate: () => fetchStakes().then(setStakes).catch(console.error),
-                onDelete: () => fetchStakes().then(setStakes).catch(console.error)
+                onInsert: () => debounced('stakes', async () => setStakes(await fetchStakes())),
+                onUpdate: () => debounced('stakes', async () => setStakes(await fetchStakes())),
+                onDelete: () => debounced('stakes', async () => setStakes(await fetchStakes()))
             }),
             subscribeToTable(TABLES.IDEAS, {
-                onInsert: () => fetchIdeas().then(setIdeas).catch(console.error),
-                onUpdate: () => fetchIdeas().then(setIdeas).catch(console.error),
-                onDelete: () => fetchIdeas().then(setIdeas).catch(console.error)
+                onInsert: () => debounced('ideas', async () => setIdeas(await fetchIdeas())),
+                onUpdate: () => debounced('ideas', async () => setIdeas(await fetchIdeas())),
+                onDelete: () => debounced('ideas', async () => setIdeas(await fetchIdeas()))
             }),
             subscribeToTable(TABLES.TALENTS, {
-                onInsert: () => fetchTalents().then(setTalents).catch(console.error),
-                onUpdate: () => fetchTalents().then(setTalents).catch(console.error)
+                onInsert: () => debounced('talents', async () => setTalents(await fetchTalents())),
+                onUpdate: () => debounced('talents', async () => setTalents(await fetchTalents()))
+            }),
+            subscribeToTable(TABLES.ACTIVITIES, {
+                onInsert: () => debounced('activities', async () => setActivities(await fetchActivities()))
             })
         ]
 
@@ -329,29 +347,38 @@ export function DataProvider({ children }) {
         if (user?.id) {
             unsubs.push(
                 subscribeToTable(TABLES.BOARDS, {
-                    onInsert: () => fetchBoards(user.id).then(setBoards).catch(console.error),
-                    onUpdate: () => fetchBoards(user.id).then(setBoards).catch(console.error),
-                    onDelete: () => fetchBoards(user.id).then(setBoards).catch(console.error)
+                    onInsert: () => debounced('boards', async () => setBoards(await fetchBoards(user.id))),
+                    onUpdate: () => debounced('boards', async () => setBoards(await fetchBoards(user.id))),
+                    onDelete: () => debounced('boards', async () => setBoards(await fetchBoards(user.id)))
                 })
             )
         }
 
-        return () => unsubs.forEach(fn => fn())
+        return () => {
+            Object.values(timers).forEach(clearTimeout)
+            unsubs.forEach(fn => fn())
+        }
     }, [isConfigured, user?.id])
 
-    const logActivity = useCallback((type, userName, message, app) => {
-        setActivities(prev => [
-            {
-                id: `act-${Date.now()}`,
-                type,
-                user: userName,
-                message,
-                timestamp: new Date().toISOString(),
-                app
-            },
-            ...prev
-        ].slice(0, 10))
-    }, [])
+    const logActivity = useCallback(async (type, userName, message, app) => {
+        const entry = {
+            id: `act-${Date.now()}`,
+            type,
+            user: userName,
+            message,
+            timestamp: new Date().toISOString(),
+            app
+        }
+        setActivities(prev => [entry, ...prev].slice(0, 20))
+
+        if (isConfigured) {
+            try {
+                await createActivityDB({ type, userName, message, app })
+            } catch (err) {
+                console.error('Error persisting activity:', err)
+            }
+        }
+    }, [isConfigured])
 
     // ── VestDen actions ──
     const createStake = useCallback(async (stake) => {
@@ -381,28 +408,37 @@ export function DataProvider({ children }) {
             throw new Error('Staking is not available in this build')
         }
         if (!isConfigured) {
+            let updated = null
             setStakes(prev => prev.map(s => {
                 if (s.id !== stakeId) return s
-                return {
+                const next = {
                     ...s,
                     stakers: [...s.stakers, { userId, amount, date: new Date().toISOString() }],
                     currentAmount: s.currentAmount + amount,
                     status: s.currentAmount + amount >= s.targetAmount ? 'funded' : 'active'
                 }
+                updated = next
+                return next
             }))
+            // Engine cascade when the mock campaign hits its target
+            if (updated?.status === 'funded') campaignFunded(updated)
             return
         }
 
         await makeStakeDB(stakeId, userId, amount)
         // Re-fetch to get trigger-updated values
-        const updated = await fetchStakes()
-        setStakes(updated)
+        const refreshed = await fetchStakes()
+        setStakes(refreshed)
+        // Engine cascade when a real campaign just got funded
+        const funded = refreshed.find(s => s.id === stakeId)
+        if (funded?.status === 'funded') campaignFunded(funded)
     }, [isConfigured])
 
     // ── ConceptNexus actions ──
     const submitIdea = useCallback(async (idea) => {
-        if (!isConfigured) {
-            const newIdea = {
+        const newIdea = isConfigured
+            ? await submitIdeaDB(idea)
+            : {
                 id: 'idea-' + Date.now(),
                 ...idea,
                 validationScore: 0,
@@ -413,36 +449,43 @@ export function DataProvider({ children }) {
                 linkedBoardId: null,
                 createdAt: new Date().toISOString()
             }
-            setIdeas(prev => [newIdea, ...prev])
-            return newIdea
-        }
 
-        const newIdea = await submitIdeaDB(idea)
         setIdeas(prev => [newIdea, ...prev])
+        // Engine cascade: concept enters its lifecycle (SUBMIT)
+        conceptSubmitted(newIdea)
         return newIdea
     }, [isConfigured])
 
-    const voteIdea = useCallback(async (ideaId, userId, vote) => {
+    const voteIdea = useCallback(async (ideaId, userId, vote, comment = null, badge = null) => {
         if (!isConfigured) {
+            let updatedIdea = null
             setIdeas(prev => prev.map(i => {
                 if (i.id !== ideaId) return i
                 const votes = { ...i.votes }
                 votes[vote] = (votes[vote] || 0) + 1
                 const total = votes.up + votes.down
                 const validationScore = total > 0 ? Math.round((votes.up / total) * 100) : 0
-                return {
+                const validators = comment
+                    ? [...(i.validators || []), { userId, badge: badge || '', vote, comment }]
+                    : i.validators
+                updatedIdea = {
                     ...i,
                     votes,
                     validationScore,
+                    validators,
                     status: validationScore >= 75 && total >= 10 ? 'validated' : i.status
                 }
+                return updatedIdea
             }))
+            if (updatedIdea) conceptVotesUpdated(updatedIdea)
             return
         }
 
-        await voteIdeaDB(ideaId, userId, vote)
+        await voteIdeaDB(ideaId, userId, vote, comment, badge)
         const updated = await fetchIdeas()
         setIdeas(updated)
+        const votedIdea = updated.find(i => i.id === ideaId)
+        if (votedIdea) conceptVotesUpdated(votedIdea)
     }, [isConfigured])
 
     // ── Collaboard actions ──
@@ -519,11 +562,13 @@ export function DataProvider({ children }) {
             return
         }
 
-        // Find the target column's UUID
+        // Find the target column's UUID; a move into the "Done" column marks
+        // the task complete (comparing UUIDs to 'done' never matches real boards).
         const board = boards.find(b => b.id === boardId)
         const targetColumn = board?.columns.find(c => c.id === toCol)
         if (targetColumn) {
-            await moveTaskDB(taskId, targetColumn.id, toCol === 'done')
+            const isComplete = (targetColumn.title || '').trim().toLowerCase() === 'done'
+            await moveTaskDB(taskId, targetColumn.id, isComplete)
         }
 
         // Optimistic update locally
@@ -559,16 +604,29 @@ export function DataProvider({ children }) {
             return newTalent
         }
 
-        const newTalent = await createTalentProfileDB(profile)
+        if (!profile.userId) throw new Error('You must be signed in to list your skills')
+        // DB layer returns the same camelCase shape as fetchTalents()
+        const newTalent = await createTalentProfileDB(profile.userId, profile)
         setTalents(prev => [newTalent, ...prev])
         return newTalent
     }, [isConfigured])
 
-    const updateTalentProfile = useCallback((talentId, updates) => {
-        setTalents(prev => prev.map(t =>
-            t.id === talentId ? { ...t, ...updates } : t
-        ))
-    }, [])
+    const updateTalentProfile = useCallback(async (talentId, updates) => {
+        if (isConfigured) {
+            // Persist first so local state only ever reflects saved data
+            const updated = await updateTalentProfileDB(talentId, updates)
+            setTalents(prev => prev.map(t => (t.id === talentId ? { ...t, ...updated } : t)))
+            return updated
+        }
+
+        let updatedLocal = null
+        setTalents(prev => prev.map(t => {
+            if (t.id !== talentId) return t
+            updatedLocal = { ...t, ...updates }
+            return updatedLocal
+        }))
+        return updatedLocal
+    }, [isConfigured])
 
     // ── Cross-app linking ──
     const linkIdeaToStake = useCallback(async (ideaId, stakeId) => {

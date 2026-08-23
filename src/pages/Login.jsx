@@ -10,10 +10,11 @@ import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
 export default function Login() {
     const navigate = useNavigate()
     const location = useLocation()
-    const { login, isAuthenticated } = useAuth()
+    const { login, resetPassword, isAuthenticated } = useAuth()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [info, setInfo] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const flagOn = isRealSessionEnabled()
 
@@ -25,6 +26,23 @@ export default function Login() {
             navigate(redirectTo, { replace: true })
         }
     }, [isAuthenticated, navigate, redirectTo])
+
+    // Password reset only exists on the real-session path
+    const handleForgotPassword = async () => {
+        if (!flagOn) return
+        setError('')
+        setInfo('')
+        if (!email) {
+            setError('Enter your email above first, then click "Forgot password?"')
+            return
+        }
+        const result = await resetPassword(email)
+        if (result.error) {
+            setError(result.error.message || 'Could not send reset email')
+        } else {
+            setInfo(`Password reset link sent to ${email}. Check your inbox.`)
+        }
+    }
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -80,6 +98,11 @@ export default function Login() {
                                     {error}
                                 </div>
                             )}
+                            {info && (
+                                <div className="p-3 rounded-lg bg-success/10 text-success text-sm">
+                                    {info}
+                                </div>
+                            )}
 
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-foreground">Email</label>
@@ -97,7 +120,18 @@ export default function Login() {
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground">Password</label>
+                                <div className="flex justify-between">
+                                    <label className="text-sm font-medium text-foreground">Password</label>
+                                    {flagOn && (
+                                        <button
+                                            type="button"
+                                            onClick={handleForgotPassword}
+                                            className="text-sm text-primary hover:underline"
+                                        >
+                                            Forgot password?
+                                        </button>
+                                    )}
+                                </div>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
                                     <Input

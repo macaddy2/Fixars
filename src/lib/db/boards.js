@@ -10,11 +10,18 @@ export async function fetchBoards(userId) {
 
     const memberBoardIds = (memberRows || []).map(r => r.board_id)
 
-    const { data: boards, error } = await supabase
+    // A brand-new user has no memberships — `id.in.()` is an invalid
+    // PostgREST expression, so only filter by creator in that case.
+    let query = supabase
         .from(TABLES.BOARDS)
         .select('*')
-        .or(`creator_id.eq.${userId},id.in.(${memberBoardIds.join(',')})`)
         .order('created_at', { ascending: false })
+
+    query = memberBoardIds.length > 0
+        ? query.or(`creator_id.eq.${userId},id.in.(${memberBoardIds.join(',')})`)
+        : query.eq('creator_id', userId)
+
+    const { data: boards, error } = await query
 
     if (error) throw error
     if (!boards?.length) return []
@@ -78,12 +85,13 @@ export async function createBoardDB(board) {
     if (error) throw error
 
     // Add creator as owner member
-    await supabase.from(TABLES.BOARD_MEMBERS).insert({
+    const { error: ownerMemberError } = await supabase.from(TABLES.BOARD_MEMBERS).insert({
         board_id: data.id,
         user_id: board.creatorId,
         role: 'owner',
         name: board.members?.[0]?.name || 'Owner'
     })
+    if (ownerMemberError) throw ownerMemberError
 
     // Create default columns
     const defaultColumns = [
@@ -91,20 +99,29 @@ export async function createBoardDB(board) {
         { board_id: data.id, title: 'In Progress', position: 1 },
         { board_id: data.id, title: 'Done', position: 2 }
     ]
-    const { data: cols } = await supabase
+    const { data: cols, error: colsError } = await supabase
         .from(TABLES.BOARD_COLUMNS)
         .insert(defaultColumns)
         .select()
+    if (colsError) throw colsError
 
     // Add additional members if provided
     if (board.members?.length > 1) {
-        const additionalMembers = board.members.slice(1).map(m => ({
-            board_id: data.id,
-            user_id: m.userId,
-            role: m.role || 'member',
-            name: m.name
-        }))
-        await supabase.from(TABLES.BOARD_MEMBERS).insert(additionalMembers)
+        const additionalMembers = board.members.slice(1)
+            // Members without a real user id (invite placeholders) can't be inserted
+            .filter(m => m.userId)
+            .map(m => ({
+                board_id: data.id,
+                user_id: m.userId,
+                role: m.role || 'member',
+                name: m.name
+            }))
+        if (additionalMembers.length > 0) {
+            const { error: membersError } = await supabase
+                .from(TABLES.BOARD_MEMBERS)
+                .insert(additionalMembers)
+            if (membersError) throw membersError
+        }
     }
 
     return {

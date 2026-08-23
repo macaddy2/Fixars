@@ -129,15 +129,22 @@ function VestDenLive() {
     }, [createBoard, isAuthenticated, user, navigate, logActivity])
 
     const handleStakeClick = useCallback((stake) => {
-        if (!isAuthenticated) return
+        if (!isAuthenticated || !isVestDenStakingEnabled()) return
         setStakeModal({ open: true, stake })
     }, [isAuthenticated])
 
+    // Returns true when the stake was persisted, false otherwise — the wallet
+    // is only debited when this resolves truthy (see StakeFlowModal).
     const handleStakeConfirm = useCallback(async (amount) => {
-        if (stakeModal.stake && user?.id) {
+        if (!stakeModal.stake || !user?.id) return false
+        try {
             await makeStake(stakeModal.stake.id, user.id, amount)
-            awardPoints('MAKE_STAKE')
+        } catch (err) {
+            console.error('Stake failed:', err)
+            return false
         }
+        awardPoints('MAKE_STAKE')
+        return true
     }, [stakeModal, user, makeStake, awardPoints])
 
     const userStakes = stakes.filter(s => s.stakers.some(st => st.userId === user?.id))
