@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import { useData } from './DataContext'
+import { useSocial } from './SocialContext'
 import { isVestDenStakingEnabled } from '@/lib/features'
 
 const SearchContext = createContext(null)
@@ -54,6 +55,7 @@ function highlightMatch(text, query) {
 
 export function SearchProvider({ children }) {
     const { stakes, ideas, boards, talents } = useData()
+    const { posts } = useSocial()
     const [isOpen, setIsOpen] = useState(false)
     const [query, setQuery] = useState('')
 
@@ -65,7 +67,7 @@ export function SearchProvider({ children }) {
         // Empty / short query → offer the "Go to" pages so the palette is
         // useful as a navigator even before typing.
         if (!query || query.length < 2) {
-            return { pages, stakes: [], ideas: [], boards: [], talents: [], total: pages.length }
+            return { pages, stakes: [], ideas: [], boards: [], talents: [], posts: [], total: pages.length }
         }
 
         const searchPages = pages
@@ -124,15 +126,27 @@ export function SearchProvider({ children }) {
             .sort((a, b) => b._score - a._score)
             .slice(0, 5)
 
+        const searchPosts = posts
+            .map(p => {
+                const contentMatch = fuzzyMatch(p.content, query)
+                const authorMatch = fuzzyMatch(p.authorName, query)
+                const bestScore = Math.max(contentMatch.score * 0.9, authorMatch.score * 0.6)
+                return { ...p, title: `${p.authorName}: ${p.content.slice(0, 60)}`, _score: bestScore, _matched: contentMatch.match || authorMatch.match }
+            })
+            .filter(p => p._matched)
+            .sort((a, b) => b._score - a._score)
+            .slice(0, 5)
+
         return {
             pages: searchPages,
             stakes: searchStakes,
             ideas: searchIdeas,
             boards: searchBoards,
             talents: searchTalents,
-            total: searchPages.length + searchStakes.length + searchIdeas.length + searchBoards.length + searchTalents.length
+            posts: searchPosts,
+            total: searchPages.length + searchStakes.length + searchIdeas.length + searchBoards.length + searchTalents.length + searchPosts.length
         }
-    }, [query, stakes, ideas, boards, talents])
+    }, [query, stakes, ideas, boards, talents, posts])
 
     const open = useCallback(() => setIsOpen(true), [])
     const close = useCallback(() => { setIsOpen(false); setQuery('') }, [])

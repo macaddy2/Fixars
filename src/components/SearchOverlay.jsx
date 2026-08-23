@@ -4,10 +4,11 @@ import { useSearch } from '@/contexts/SearchContext'
 import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     Search, X, TrendingUp, Lightbulb,
-    LayoutGrid, Palette, ArrowRight, CornerDownLeft, ArrowUp, ArrowDown, Compass
+    LayoutGrid, Palette, MessageSquare, ArrowRight, CornerDownLeft, ArrowUp, ArrowDown, Compass
 } from 'lucide-react'
 
 const APP_CONFIG = {
+    posts: { label: 'Feed', icon: MessageSquare, color: 'var(--color-blue-600)', path: '/feed' },
     pages: { label: 'Go to', icon: Compass, color: 'var(--color-blue-600)' },
     ideas: { label: 'Ideas', icon: Lightbulb, color: 'var(--color-conceptnexus)', path: '/apps/conceptnexus' },
     stakes: { label: 'Campaigns', icon: TrendingUp, color: 'var(--color-vestden)', path: '/apps/vestden' },
@@ -16,9 +17,8 @@ const APP_CONFIG = {
 }
 
 // Render order of the result groups inside the palette.
-const GROUP_ORDER = isVestDenStakingEnabled()
-    ? ['pages', 'ideas', 'stakes', 'boards', 'talents']
-    : ['pages', 'ideas', 'boards', 'talents']
+const GROUP_ORDER = ['posts', ...(isVestDenStakingEnabled() ? ['stakes'] : []), 'pages', 'ideas', 'boards', 'talents']
+    .filter((v, i, a) => a.indexOf(v) === i)
 
 function HighlightedText({ text, query }) {
     if (!text || !query) return <span>{text}</span>

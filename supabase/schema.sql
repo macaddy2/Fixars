@@ -1510,3 +1510,107 @@ RETURNS TABLE (
   WHERE e.hirer_id = auth.uid() OR e.talent_user_id = auth.uid()
   ORDER BY e.created_at DESC;
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+-- ============================================================
+-- M3: CROSS-USER NOTIFICATION FAN-OUT
+-- SECURITY DEFINER triggers so one user''s action can notify another user
+-- (client RLS deliberately forbids this). Actor never notifies themselves.
+-- ============================================================
+
+CREATE OR REPLACE FUNCTION notify_idea_owner_on_vote()
+RETURNS TRIGGER AS $$
+DECLARE v_creator UUID; v_title TEXT;
+BEGIN
+  SELECT creator_id, title INTO v_creator, v_title FROM ideas WHERE id = NEW.idea_id;
+  IF v_creator IS NOT NULL AND v_creator <> NEW.user_id THEN
+    INSERT INTO notifications (user_id, type, title, message, source_app, linked_entity_type, linked_entity_id)
+    VALUES (v_creator, 'idea_voted',
+            CASE WHEN NEW.vote='up' THEN '👍 Your idea got an upvote' ELSE 'Downvote on your idea' END,
+            COALESCE(NEW.comment, v_title), 'conceptnexus', 'idea', NEW.idea_id::TEXT);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_idea_vote_notify ON idea_votes;
+CREATE TRIGGER on_idea_vote_notify AFTER INSERT ON idea_votes
+  FOR EACH ROW EXECUTE FUNCTION notify_idea_owner_on_vote();
+
+CREATE OR REPLACE FUNCTION notify_stake_owner_on_backing()
+RETURNS TRIGGER AS $$
+DECLARE v_creator UUID; v_title TEXT; v_amt NUMERIC;
+BEGIN
+  SELECT creator_id, title INTO v_creator, v_title FROM stakes WHERE id = NEW.stake_id;
+  SELECT amount INTO v_amt FROM stakes WHERE id = NEW.stake_id;
+  IF v_creator IS NOT NULL AND v_creator <> NEW.user_id THEN
+    INSERT INTO notifications (user_id, type, title, message, source_app, linked_entity_type, linked_entity_id)
+    VALUES (v_creator, 'stake_received', '₦' || to_char(NEW.amount, 'FM999999999') || ' backed your campaign',
+            v_title, 'vestden', 'stake', NEW.stake_id::TEXT);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_staker_notify ON stakers;
+CREATE TRIGGER on_staker_notify AFTER INSERT ON stakers
+  FOR EACH ROW EXECUTE FUNCTION notify_stake_owner_on_backing();
+
+CREATE OR REPLACE FUNCTION notify_talent_on_request()
+RETURNS TRIGGER AS $$
+DECLARE v_talent_user UUID; v_requester TEXT;
+BEGIN
+  SELECT t.user_id INTO v_talent_user FROM talents t WHERE t.id = NEW.talent_id;
+  SELECT display_name INTO v_requester FROM profiles WHERE id = NEW.requester_id;
+  IF v_talent_user IS NOT NULL AND v_talent_user <> NEW.requester_id THEN
+    INSERT INTO notifications (user_id, type, title, message, source_app, linked_entity_type, linked_entity_id)
+    VALUES (v_talent_user, 'talent_request', 'New booking request from ' || COALESCE(v_requester,'a client'),
+            LEFT(COALESCE(NEW.message,''), 140), 'skillscanvas', 'skill_request', NEW.id::TEXT);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_skill_request_notify ON skill_requests;
+CREATE TRIGGER on_skill_request_notify AFTER INSERT ON skill_requests
+  FOR EACH ROW EXECUTE FUNCTION notify_talent_on_request();
+
+CREATE OR REPLACE FUNCTION notify_post_author_on_reaction()
+RETURNS TRIGGER AS $$
+DECLARE v_author UUID;
+BEGIN
+  SELECT author_id INTO v_author FROM posts WHERE id = NEW.post_id;
+  IF v_author IS NOT NULL AND v_author <> NEW.user_id THEN
+    INSERT INTO notifications (user_id, type, title, message, source_app, linked_entity_type, linked_entity_id)
+    VALUES (v_author, 'reaction_received', NEW.emoji || ' Reaction on your post',
+            NULL, 'fixars', 'post', NEW.post_id::TEXT);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_reaction_notify ON post_reactions;
+CREATE TRIGGER on_reaction_notify AFTER INSERT ON post_reactions
+  FOR EACH ROW EXECUTE FUNCTION notify_post_author_on_reaction();
+
+CREATE OR REPLACE FUNCTION notify_engagement_lifecycle()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.status = 'delivered' AND OLD.status IS DISTINCT FROM 'delivered' THEN
+    INSERT INTO notifications (user_id, type, title, message, source_app)
+    VALUES (NEW.hirer_id, 'engagement_delivered',
+            '📦 Work delivered — ready to rate',
+            COALESCE(NEW.role_title,'Engagement'), 'skillscanvas');
+  END IF;
+  IF NEW.status = 'rated' AND OLD.status IS DISTINCT FROM 'rated' THEN
+    INSERT INTO notifications (user_id, type, title, message, source_app)
+    VALUES (NEW.talent_user_id, 'engagement_rated',
+            '⭐ You were rated ' || NEW.rating || '/5',
+            'Reputation updated.', 'skillscanvas');
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_engagement_lifecycle ON engagements;
+CREATE TRIGGER on_engagement_lifecycle AFTER UPDATE ON engagements
+  FOR EACH ROW EXECUTE FUNCTION notify_engagement_lifecycle();

@@ -24,6 +24,7 @@ import SearchOverlay from '@/components/SearchOverlay'
 import Home from '@/pages/Home'
 import Apps from '@/pages/Apps'
 import Feed from '@/pages/Feed'
+import MessagesPage from '@/pages/MessagesPage'
 import Login from '@/pages/Login'
 import Signup from '@/pages/Signup'
 import Dashboard from '@/pages/Dashboard'
@@ -159,7 +160,7 @@ function AppLayout() {
             <Route path="/analytics" element={<RequireSession><Analytics /></RequireSession>} />
             <Route path="/developers" element={<ApiDocs />} />
             <Route path="/settings" element={<RequireSession><SettingsPage /></RequireSession>} />
-            <Route path="/messages" element={<RequireSession><Feed /></RequireSession>} />
+            <Route path="/messages" element={<RequireSession><MessagesPage /></RequireSession>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
@@ -206,7 +207,7 @@ function AppLayout() {
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/developers" element={<ApiDocs />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/messages" element={<Feed />} />
+              <Route path="/messages" element={<MessagesPage />} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
