@@ -1,13 +1,16 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSocial } from '@/contexts/SocialContext'
+import { isVestDenStakingEnabled } from '@/lib/features'
+import fixarsMark from '@/assets/fixars-mark.png'
 import {
   Home, LayoutGrid, AlignLeft, Wallet,
   Lightbulb, TrendingUp, Users, Shield,
-  User, Settings
+  User, Settings, ReceiptText
 } from 'lucide-react'
 
 const mainNav = [
-  { to: '/dashboard', icon: Home, label: 'Home', badge: '3' },
+  { to: '/dashboard', icon: Home, label: 'Home' },
   { to: '/apps', icon: LayoutGrid, label: 'Apps' },
   { to: '/feed', icon: AlignLeft, label: 'Feed' },
   { to: '/wallet', icon: Wallet, label: 'Wallet' },
@@ -22,11 +25,13 @@ const subApps = [
 
 const accountNav = [
   { to: '/profile', icon: User, label: 'Profile' },
+  { to: '/receipts', icon: ReceiptText, label: 'Receipts' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 
 export default function Sidebar() {
   const { user } = useAuth()
+  const { unreadCount } = useSocial()
   const location = useLocation()
 
   const isActive = (path) => {
@@ -41,7 +46,7 @@ export default function Sidebar() {
   return (
     <aside className="fx-sidebar">
       <div className="sidebar-brand">
-        <img src="/fixars-mark.png" alt="Fixars" />
+        <img src={fixarsMark} alt="Fixars" />
         <span className="sidebar-brand-name">Fixars</span>
       </div>
 
@@ -53,12 +58,14 @@ export default function Sidebar() {
         >
           <item.icon className="nav-icon" />
           <span className="nav-label">{item.label}</span>
-          {item.badge && <span className="nav-badge">{item.badge}</span>}
+          {item.to === '/dashboard' && unreadCount > 0 && (
+            <span className="nav-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+          )}
         </NavLink>
       ))}
 
       <div className="nav-section">Sub-apps</div>
-      {subApps.map(item => (
+      {subApps.filter(item => isVestDenStakingEnabled() || item.to !== '/apps/vestden').map(item => (
         <NavLink
           key={item.to}
           to={item.to}

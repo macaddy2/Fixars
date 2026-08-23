@@ -1,11 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
+import { isRealSessionEnabled } from '@/lib/flags'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
+// SANDBOX POLICY: the app only connects to a backend when an operator has
+// deliberately set VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY **and** turned on
+// VITE_REAL_SESSION. Public demo/Pages builds set neither, so they stay fully
+// mock — no auth calls, no DB, no realtime.
+if ((!supabaseUrl || !supabaseAnonKey) && isRealSessionEnabled()) {
     console.warn(
-        'Supabase credentials not configured. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local'
+        'VITE_REAL_SESSION is on but Supabase credentials are missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.'
     )
 }
 
@@ -42,7 +47,8 @@ export const supabase = new Proxy({}, {
     }
 })
 
-export const isSupabaseConfigured = () => Boolean(supabaseUrl && supabaseAnonKey)
+export const isSupabaseConfigured = () =>
+    Boolean(supabaseUrl && supabaseAnonKey) && isRealSessionEnabled()
 
 // Database table names
 export const TABLES = {

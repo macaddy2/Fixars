@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { getInitials, formatNumber } from '@/lib/utils'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     Star, Shield, Award, TrendingUp,
     Lightbulb, Users, Palette, CheckCircle2,
@@ -57,6 +59,7 @@ function FCSGauge({ score }) {
 
 export default function ProfilePage() {
     const { user, isAuthenticated, isLoading } = useAuth()
+    const [showFcsBreakdown, setShowFcsBreakdown] = useState(false)
     const { points, level, LEVELS } = usePoints()
     const { stakes, ideas, boards } = useData()
     const location = useLocation()
@@ -79,7 +82,7 @@ export default function ProfilePage() {
     const fcsTier = fcsBand(fcsScore).label
 
     const profileStats = [
-        { label: 'Active Stakes', value: stakes.filter(s => s.status === 'active').length, icon: TrendingUp, color: 'var(--color-invest)' },
+        ...(isVestDenStakingEnabled() ? [{ label: 'Gated items', value: stakes.filter(s => s.status === 'active').length, icon: TrendingUp, color: 'var(--color-invest)' }] : []),
         { label: 'Ideas Created', value: ideas.filter(i => i.creatorId === user.id).length, icon: Lightbulb, color: 'var(--color-concept)' },
         { label: 'Board Member', value: boards.filter(b => b.members.some(m => m.userId === user.id)).length, icon: Users, color: 'var(--color-collab)' },
         { label: 'Skills Listed', value: user.skills?.length || 0, icon: Palette, color: 'var(--color-skills)' },
@@ -94,7 +97,7 @@ export default function ProfilePage() {
     ]
 
     const recentActivity = [
-        { label: 'Staked on AI Recipe Generator', type: 'stake', time: '2 days ago' },
+        ...(isVestDenStakingEnabled() ? [{ label: 'Staked on AI Recipe Generator', type: 'stake', time: '2 days ago' }] : []),
         { label: 'Idea "Solar Grid Network" validated', type: 'idea', time: '4 days ago' },
         { label: 'Joined board "Mobile Wellness"', type: 'board', time: '1 week ago' },
         { label: 'Skill "React" verified by peer', type: 'skill', time: '1 week ago' },
@@ -128,12 +131,42 @@ export default function ProfilePage() {
             {/* Stats + FCS Row */}
             <div className="profile-top-row">
                 <div className="profile-fcs-card">
-                    <FCSGauge score={fcsScore} />
+                    <button
+                        className="fcs-gauge-btn"
+                        onClick={() => setShowFcsBreakdown(v => !v)}
+                        aria-expanded={showFcsBreakdown}
+                        aria-label={`FCS score ${fcsScore}. Tap to see why.`}
+                    >
+                        <FCSGauge score={fcsScore} />
+                    </button>
                     <div className="fcs-details">
                         <span className="fcs-tier display">{fcsTier}</span>
                         <span className="fcs-range mono">300 — 850</span>
-                        <p className="fcs-desc">Your Fixars Credit Score reflects your engagement, reliability, and contributions across the ecosystem.</p>
+                        <p className="fcs-desc">Your Fixars Credit Score reflects your engagement, reliability, and contributions across the ecosystem. Tap the gauge to see why.</p>
                     </div>
+                    {showFcsBreakdown && (
+                        <div className="fcs-breakdown">
+                            <h4 className="fcs-breakdown-title">Why is my score {fcsScore}?</h4>
+                            <div className="fcs-breakdown-row">
+                                <span>Base score — everyone starts here</span>
+                                <span className="mono">300</span>
+                            </div>
+                            <div className="fcs-breakdown-row">
+                                <span>Engagement — {formatNumber(points)} FixPoints × 0.35</span>
+                                <span className="mono">+{fcsScore - 300}</span>
+                            </div>
+                            <div className="fcs-breakdown-row total">
+                                <span>Your FCS</span>
+                                <span className="mono">{fcsScore}</span>
+                            </div>
+                            <div className="fcs-breakdown-row">
+                                <span>Context signals — level ({level}), verified skills and completed milestones shape future revisions</span>
+                            </div>
+                            <p className="fcs-breakdown-note">
+                                Every score change is on the record in your <Link to="/receipts">Receipts</Link>.
+                            </p>
+                        </div>
+                    )}
                 </div>
                 <div className="profile-stats-grid">
                     {profileStats.map(s => {
@@ -154,7 +187,16 @@ export default function ProfilePage() {
             {/* Skills + Activity */}
             <div className="profile-bottom-row">
                 <div className="profile-skills-card">
-                    <h3 className="profile-section-title display">Verified Skills</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                        <h3 className="profile-section-title display" style={{ margin: 0 }}>Verified Skills</h3>
+                        <Link
+                            to="/apps/skillscanvas"
+                            className="fx-btn-outline"
+                            style={{ fontSize: 12, padding: '6px 12px', gap: 6 }}
+                        >
+                            <ArrowRight size={13} /> List a skill
+                        </Link>
+                    </div>
                     <div className="profile-skills-list">
                         {skills.map((skill, i) => (
                             <div key={i} className="profile-skill-tag" style={skill.verified ? { borderColor: 'var(--color-success)' } : {}}>

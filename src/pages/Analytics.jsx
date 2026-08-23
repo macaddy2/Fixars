@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { usePoints } from '@/contexts/PointsContext'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import StatCard from '@/components/charts/StatCard'
 import MiniChart from '@/components/charts/MiniChart'
 import ActivityHeatmap from '@/components/charts/ActivityHeatmap'
@@ -66,9 +67,9 @@ export default function Analytics() {
 
     // Per-app breakdown data
     const appBreakdown = [
-        { name: 'InvestDen', color: 'vestden', value: stakes.length, icon: TrendingUp },
+        ...(isVestDenStakingEnabled() ? [{ name: 'vestDen', color: 'vestden', value: stakes.length, icon: TrendingUp }] : []),
         { name: 'ConceptNexus', color: 'conceptnexus', value: ideas.length, icon: Lightbulb },
-        { name: 'Collaboard', color: 'collaboard', value: boards.length, icon: Users },
+        { name: 'CollaBoard', color: 'collaboard', value: boards.length, icon: Users },
         { name: 'SkillsCanvas', color: 'skillscanvas', value: talents.length, icon: Palette }
     ]
     const maxAppValue = Math.max(...appBreakdown.map(a => a.value), 1)
@@ -106,8 +107,9 @@ export default function Analytics() {
 
                 {/* Stat Cards Grid */}
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    {isVestDenStakingEnabled() && (
                     <StatCard
-                        label="Total Staked"
+                        label="Prototype tally"
                         value={`₦${formatNumber(totalStaked)}`}
                         trend={12}
                         trendLabel="vs last period"
@@ -115,6 +117,7 @@ export default function Analytics() {
                         color="vestden"
                         sparkData={sparklines.staked}
                     />
+                    )}
                     <StatCard
                         label="Ideas Submitted"
                         value={ideas.length}

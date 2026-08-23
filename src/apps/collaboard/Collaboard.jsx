@@ -346,9 +346,9 @@ export default function Collaboard() {
                 <PageHead
                     app="collab"
                     glyph="B"
-                    tag="Execution · Escrowed sprints"
+                    tag="Execution · Team sprints"
                     title="CollaBoard"
-                    sub="Where validated ideas become shipped products. Milestone-based escrow keeps money safe and teams paid."
+                    sub="Where validated ideas become shipped products. Boards and milestones — not a live-money path."
                     actions={isAuthenticated && (
                         <Button variant="collaboard" size="lg" onClick={() => setCreateOpen(true)}>
                             <Plus className="w-4 h-4 mr-2" /> Create Board

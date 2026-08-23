@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import { useAuth } from './AuthContext'
 import { subscribeToTable, TABLES } from '@/lib/realtime'
 
@@ -381,6 +382,9 @@ export function DataProvider({ children }) {
 
     // ── VestDen actions ──
     const createStake = useCallback(async (stake) => {
+        if (!isVestDenStakingEnabled()) {
+            throw new Error('Staking is not available in this build')
+        }
         if (!isConfigured) {
             const newStake = {
                 id: 'stake-' + Date.now(),
@@ -400,6 +404,9 @@ export function DataProvider({ children }) {
     }, [isConfigured])
 
     const makeStake = useCallback(async (stakeId, userId, amount) => {
+        if (!isVestDenStakingEnabled()) {
+            throw new Error('Staking is not available in this build')
+        }
         if (!isConfigured) {
             let updated = null
             setStakes(prev => prev.map(s => {

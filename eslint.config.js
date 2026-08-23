@@ -8,7 +8,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores(['dist', 'design-handoff', 'supabase/functions']),
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['src/**/*.{js,jsx}'],
     extends: [
       js.configs.recommended,
       reactHooks.configs.flat.recommended,
@@ -34,6 +34,17 @@ export default defineConfig([
       // Contexts intentionally export Provider + useX hook from one file;
       // fast-refresh warnings are an acceptable trade-off for this pattern.
       'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    files: ['server/**/*.js', 'vite.config.js', 'eslint.config.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: globals.node,
+      sourceType: 'module',
+    },
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
 ])

@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getInitials, formatNumber } from '@/lib/utils'
 import PageHead from '@/components/PageHead'
 import { StatRow, Toolbar, ListGrid, EmptyState } from '@/components/SubAppKit'
-import { MessageSquare, Plus } from 'lucide-react'
+import { MessageSquare, Plus, Download } from 'lucide-react'
 
 const FILTERS = [
     { value: 'all', label: 'All' },
@@ -60,11 +60,89 @@ function TalentCard({ talent, onContact }) {
     )
 }
 
+function TalentTable({ talents, onContact }) {
+    const STATUS_META = {
+        available: ['Available', 'var(--color-success)'],
+        busy: ['On project', 'var(--color-warning)'],
+        off: ['Unavailable', 'var(--color-ink-400)']
+    }
+
+    return (
+        <div className="table-wrap">
+            <div className="table-scroll">
+                <table className="data-table">
+                    <thead>
+                        <tr>
+                            <th>Talent profile</th>
+                            <th>Verification tier</th>
+                            <th>Status</th>
+                            <th>Rate</th>
+                            <th>Rating</th>
+                            <th>Done</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {talents.map(t => {
+                            const verified = t.skills?.some(s => s.verified)
+                            const statusKey = t.availability === 'full-time' ? 'available' : t.availability === 'part-time' ? 'busy' : 'available'
+                            const [statusLbl, statusColor] = STATUS_META[statusKey] || STATUS_META.available
+
+                            return (
+                                <tr key={t.id}>
+                                    <td>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <div className="av" style={{ width: 36, height: 36, fontSize: 12, background: 'linear-gradient(135deg, var(--color-skills), var(--color-blue-500))' }}>
+                                                {getInitials(t.displayName)}
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 600 }}>{t.displayName}</div>
+                                                <div style={{ fontSize: 11, color: 'var(--color-ink-400)', marginTop: 1 }}>
+                                                    {t.skills?.[0]?.name || 'Specialist'}{t.location ? ` · ${t.location}` : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className={`tag ${verified ? 'tag-success' : 'tag-ink'}`}>
+                                            {verified && <span className="tag-dot" />}{verified ? 'Ecosystem-proven' : 'Self-reported'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span className="status-cell" style={{ color: statusColor }}>
+                                            <span className="sd" />{statusLbl}
+                                        </span>
+                                    </td>
+                                    <td className="mono" style={{ fontWeight: 600 }}>₦{formatNumber(t.hourlyRate || 0)}/hr</td>
+                                    <td className="mono">★{t.rating?.toFixed(1) || '0.0'}</td>
+                                    <td className="mono" style={{ color: 'var(--color-ink-500)' }}>{t.completedProjects || 0}</td>
+                                    <td>
+                                        <button className="btn-ghost" style={{ fontSize: 11, padding: '4px 10px' }} onClick={() => onContact?.(t)}>
+                                            Contact
+                                        </button>
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
+            </div>
+            <div className="table-foot">
+                <span>Showing <b className="mono" style={{ color: 'var(--color-ink-900)' }}>1–{talents.length}</b> of <b className="mono" style={{ color: 'var(--color-ink-900)' }}>{talents.length}</b> talents</span>
+                <span className="pg">
+                    <button className="cur">1</button>
+                </span>
+            </div>
+        </div>
+    )
+}
+
 export default function SkillsCanvas() {
     const { talents } = useData()
     const { isAuthenticated } = useAuth()
     const [search, setSearch] = useState('')
     const [availability, setAvailability] = useState('all')
+    const [viewMode, setViewMode] = useState('cards') // 'cards' | 'table'
     const [bookingTalent, setBookingTalent] = useState(null)
     const [listOpen, setListOpen] = useState(false)
 
@@ -89,6 +167,10 @@ export default function SkillsCanvas() {
         { k: 'Verified skills', v: verifiedSkills, t: 'proven by work', tColor: 'var(--color-success)' },
         { k: 'Projects done', v: formatNumber(totalProjects), t: 'across the network' },
     ]
+
+    const handleExport = () => {
+        alert('Talent directory exported as CSV')
+    }
 
     return (
         <main className="py-8">
@@ -115,21 +197,50 @@ export default function SkillsCanvas() {
                     filters={FILTERS}
                     active={availability}
                     onFilter={setAvailability}
+                    extra={(
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 'auto' }}>
+                            <div className="segment" role="tablist">
+                                <button
+                                    role="tab"
+                                    aria-selected={viewMode === 'cards'}
+                                    className={viewMode === 'cards' ? 'active' : ''}
+                                    onClick={() => setViewMode('cards')}
+                                >
+                                    Cards
+                                </button>
+                                <button
+                                    role="tab"
+                                    aria-selected={viewMode === 'table'}
+                                    className={viewMode === 'table' ? 'active' : ''}
+                                    onClick={() => setViewMode('table')}
+                                >
+                                    Table
+                                </button>
+                            </div>
+                            <button className="btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }} onClick={handleExport}>
+                                <Download size={13} /> Export
+                            </button>
+                        </div>
+                    )}
                 />
 
-                <ListGrid>
-                    {filteredTalents.length > 0 ? (
-                        filteredTalents.map(talent => (
-                            <TalentCard key={talent.id} talent={talent} onContact={setBookingTalent} />
-                        ))
+                {filteredTalents.length > 0 ? (
+                    viewMode === 'cards' ? (
+                        <ListGrid>
+                            {filteredTalents.map(talent => (
+                                <TalentCard key={talent.id} talent={talent} onContact={setBookingTalent} />
+                            ))}
+                        </ListGrid>
                     ) : (
-                        <EmptyState
-                            title="No talent matches"
-                            sub="Try a different search or filter — or list your own skills."
-                            onClear={() => { setSearch(''); setAvailability('all') }}
-                        />
-                    )}
-                </ListGrid>
+                        <TalentTable talents={filteredTalents} onContact={setBookingTalent} />
+                    )
+                ) : (
+                    <EmptyState
+                        title="No talent matches"
+                        sub="Try a different search or filter — or list your own skills."
+                        onClear={() => { setSearch(''); setAvailability('all') }}
+                    />
+                )}
             </div>
 
             {bookingTalent && (
@@ -139,3 +250,4 @@ export default function SkillsCanvas() {
         </main>
     )
 }
+

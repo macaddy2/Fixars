@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import fixarsMark from '@/assets/fixars-mark.png'
 import { useNavigate } from 'react-router-dom'
 import { useSearch } from '@/contexts/SearchContext'
 import { useSocial } from '@/contexts/SocialContext'
@@ -12,7 +13,7 @@ export default function MobileHeader() {
 
   return (
     <header className="fx-mobile-header">
-      <img src="/fixars-mark.png" alt="Fixars" />
+      <img src={fixarsMark} alt="Fixars" />
       <span className="mobile-brand-name display">Fixars</span>
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
         <button className="icon-btn" onClick={() => setIsSearchOpen(true)} aria-label="Search">

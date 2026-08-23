@@ -1,8 +1,9 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-display: 'Space Grotesk', var(--font-sans);
+  --font-sans: 'DM Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Manrope', var(--font-sans);
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
   /* ===== Fixars Design System — Brand Core ===== */
@@ -12,13 +13,13 @@
   --color-navy-600: #2A3C56;
   --color-navy-500: #3E5271;
 
-  --color-primary: #2F45E0;
+  --color-primary: #2457E6;
   --color-primary-foreground: #ffffff;
-  --color-blue-600: #2F45E0;
-  --color-blue-500: #4C63E6;
-  --color-blue-400: #7C8FF2;
-  --color-blue-100: #DCE1FA;
-  --color-blue-50: #EEF1FD;
+  --color-blue-600: #2457E6;
+  --color-blue-500: #376BF1;
+  --color-blue-400: #7EA0FF;
+  --color-blue-100: #DCE6FF;
+  --color-blue-50: #EEF4FF;
 
   /* ===== Neutrals (ink) ===== */
   --color-ink-900: #0A1628;
@@ -30,13 +31,13 @@
   --color-ink-100: #EBEFF5;
   --color-ink-50: #F5F7FB;
 
-  --color-background: #F9FAFC;
+  --color-background: #F7F9FF;
   --color-foreground: #0A1628;
   --color-paper: #FFFFFF;
-  --color-canvas: #F9FAFC;
+  --color-canvas: #F7F9FF;
   --color-muted: #5A6B85;
   --color-muted-foreground: #8695AE;
-  --color-border: #EBEFF5;
+  --color-border: #DDE6F7;
   --color-input: #D7DDE8;
   --color-ring: #2F45E0;
 
@@ -92,11 +93,17 @@
   /* ===== Radius ===== */
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-2xl: 28px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-2xl: 32px;
   --radius-full: 999px;
+
+  /* ===== Shadows & Elevation ===== */
+  --shadow-sm: 0 10px 28px rgba(21, 50, 120, 0.05), 0 1px 3px rgba(10, 22, 40, 0.03);
+  --shadow-md: 0 18px 46px rgba(21, 50, 120, 0.08), 0 3px 10px rgba(10, 22, 40, 0.04);
+  --shadow-lg: 0 28px 70px rgba(21, 50, 120, 0.14), 0 8px 24px rgba(10, 22, 40, 0.05);
+  --shadow-blue: 0 22px 55px rgba(36, 87, 230, 0.16);
 }
 
 /* Dark mode */
@@ -130,6 +137,11 @@
   --color-invest-bg: rgba(16, 185, 129, 0.16);
   --color-collab-bg: rgba(232, 125, 74, 0.16);
   --color-skills-bg: rgba(6, 182, 212, 0.16);
+
+  /* Elevated dark mode shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 14px 36px rgba(0, 0, 0, 0.45);
 }
 
 /* Sepia / "Dim" theme — warm paper, warmed accent (v2 data-theme="dim") */
@@ -868,6 +880,13 @@ body {
 .howit-step p{margin:0;font-size:13px;color:var(--color-ink-500);line-height:1.5}
 .splash-section.dark .howit-step p{color:rgba(255,255,255,.6)}
 
+/* Splash Sovereignty section */
+.sov-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.sov-card{background:var(--color-paper);border:1px solid var(--color-ink-100);border-radius:18px;padding:24px}
+.sov-card .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:var(--color-navy-900);color:white;margin-bottom:18px}
+.sov-card h4{margin:0 0 6px;font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:500;letter-spacing:-0.015em;color:var(--color-navy-900);line-height:1.3}
+.sov-card p{margin:0;font-size:13px;color:var(--color-ink-500);line-height:1.5}
+
 /* Splash Footer */
 .splash-footer{background:var(--color-navy-900);color:white;padding:64px 48px 32px}
 .footer-inner{max-width:1320px;margin:0 auto}
@@ -895,6 +914,7 @@ body {
   .splash-section.dark{padding:64px 24px}
   .splash-section.dark .inner{padding:0}
   .howit-grid{grid-template-columns:repeat(2,1fr)}
+  .sov-grid{grid-template-columns:1fr}
   .splash-footer{padding:48px 24px 24px}
   .footer-grid{grid-template-columns:1fr 1fr;gap:32px}
 }
@@ -907,14 +927,4 @@ body {
   .splash-stats .v{font-size:26px}
   .float-card.fc1,.float-card.fc3{right:-12px}
   .float-card.fc2{left:-12px}
-}
-/* ── ScreenShield print lockdown: printing captures nothing ── */
-@media print {
-  body * { display: none !important; }
-  body::after {
-    content: 'Printing is disabled for content protection.';
-    display: block;
-    padding: 2rem;
-    font-family: sans-serif;
-  }
 }

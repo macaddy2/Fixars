@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import { TrendingUp, Loader2 } from 'lucide-react'
 
 const CATEGORIES = ['tech', 'marketplace', 'health', 'fintech', 'sustainability', 'media', 'other']
@@ -16,19 +17,39 @@ function todayPlus(days) {
     return d.toISOString().slice(0, 10)
 }
 
-export default function CreateStakeModal({ open, onClose }) {
-    const { createStake, logActivity } = useData()
+export default function CreateStakeModal({ open, onClose, initialData = null }) {
+    const { createStake, linkIdeaToStake, logActivity } = useData()
     const { user } = useAuth()
 
-    const [title, setTitle] = useState('')
-    const [description, setDescription] = useState('')
-    const [category, setCategory] = useState('tech')
-    const [targetAmount, setTargetAmount] = useState(10000)
+    const [title, setTitle] = useState(initialData?.title || '')
+    const [description, setDescription] = useState(initialData?.description || '')
+    const [category, setCategory] = useState(initialData?.category || 'tech')
+    const [targetAmount, setTargetAmount] = useState(initialData?.targetAmount || 10000)
     const [riskLevel, setRiskLevel] = useState('medium')
     const [expectedReturns, setExpectedReturns] = useState('2-4x')
     const [deadline, setDeadline] = useState(todayPlus(60))
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
+
+    // Reset or initialize state when the modal opens with new initialData.
+    // Render-phase adjustment (React's sanctioned alternative to a
+    // setState-in-effect) — compares against the last rendered open/initialData.
+    const [renderedKey, setRenderedKey] = useState(null)
+    const openKey = open ? `${open}:${initialData?.id ?? 'blank'}` : null
+    if (openKey !== renderedKey) {
+        setRenderedKey(openKey)
+        if (open) {
+            setTitle(initialData?.title || '')
+            setDescription(initialData?.description || '')
+            setCategory(initialData?.category || 'tech')
+            setTargetAmount(initialData?.targetAmount || 10000)
+            setRiskLevel('medium')
+            setExpectedReturns('2-4x')
+            setDeadline(todayPlus(60))
+            setError('')
+            setSubmitting(false)
+        }
+    }
 
     const close = () => {
         setTitle(''); setDescription(''); setCategory('tech')
@@ -40,6 +61,7 @@ export default function CreateStakeModal({ open, onClose }) {
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
+        if (!isVestDenStakingEnabled()) return setError('Staking is not available in this build')
         if (title.trim().length < 5) return setError('Title must be at least 5 characters')
         if (description.trim().length < 20) return setError('Describe the stake in at least 20 characters')
         if (targetAmount < 100) return setError('Target amount must be at least ₦100')
@@ -47,7 +69,7 @@ export default function CreateStakeModal({ open, onClose }) {
 
         setSubmitting(true)
         try {
-            await createStake({
+            const newStake = await createStake({
                 title: title.trim(),
                 description: description.trim(),
                 creatorId: user.id,
@@ -56,8 +78,12 @@ export default function CreateStakeModal({ open, onClose }) {
                 riskLevel,
                 targetAmount: Number(targetAmount),
                 expectedReturns,
-                deadline
+                deadline,
+                linkedIdeaId: initialData?.ideaId || null
             })
+            if (initialData?.ideaId && newStake?.id) {
+                await linkIdeaToStake(initialData.ideaId, newStake.id)
+            }
             logActivity('stake', user.name, `created a stake: ${title.trim()}`, 'vestden')
             close()
         } catch (err) {
@@ -66,12 +92,14 @@ export default function CreateStakeModal({ open, onClose }) {
         }
     }
 
+    if (!isVestDenStakingEnabled()) return null
+
     return (
         <Modal
             open={open}
             onClose={close}
-            title="Create a stake"
-            subtitle="Raise capital from the community for your venture"
+            title="New campaign"
+            subtitle="Prototype form. Not a live-money path and not a client-funds path."
             gradient="gradient-vestden"
         >
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -126,7 +154,7 @@ export default function CreateStakeModal({ open, onClose }) {
                 <div className="flex gap-3 pt-2">
                     <Button type="button" variant="ghost" onClick={close} className="flex-1" disabled={submitting}>Cancel</Button>
                     <Button type="submit" variant="vestden" className="flex-1" disabled={submitting}>
-                        {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</> : <><TrendingUp className="w-4 h-4 mr-2" /> Create stake</>}
+                        {submitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</> : <><TrendingUp className="w-4 h-4 mr-2" /> Save draft</>}
                     </Button>
                 </div>
             </form>

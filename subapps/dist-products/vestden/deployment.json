@@ -1,0 +1,7 @@
+{
+  "key": "vestden",
+  "name": "VestDen",
+  "canonical": "https://vestden.co/",
+  "connector": "https://vest.fixars.ai/",
+  "path": "https://fixars.ai/vest"
+}

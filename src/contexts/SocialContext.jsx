@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { useAuth } from './AuthContext'
 import { isSupabaseConfigured } from '@/lib/supabase'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import { subscribeToTable, TABLES } from '@/lib/realtime'
 import {
     fetchPosts, createPostDB, reactToPostDB,
@@ -385,13 +386,19 @@ export function SocialProvider({ children }) {
         return followedUsers.has(userId)
     }, [followedUsers])
 
-    const unreadCount = notifications.filter(n => !n.read).length
+    const visibleNotifications = isVestDenStakingEnabled()
+        ? notifications
+        : notifications.filter(n => n.type !== 'stake_received' && n.type !== 'stake_funded')
+    const visiblePosts = isVestDenStakingEnabled()
+        ? posts
+        : posts.filter(p => p.sourceApp !== 'vestden' && p.linkedEntity?.type !== 'stake')
+    const unreadCount = visibleNotifications.filter(n => !n.read).length
 
     return (
         <SocialContext.Provider value={{
-            posts,
+            posts: visiblePosts,
             conversations,
-            notifications,
+            notifications: visibleNotifications,
             unreadCount,
             followedUsers,
             createPost,

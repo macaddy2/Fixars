@@ -1,58 +1,49 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check } from 'lucide-react'
+import { Users, Shield, TrendingUp, Lightbulb, ArrowUpRight, Check, Lock, Layers, BookOpen, RefreshCw } from 'lucide-react'
+import fixarsMark from '@/assets/fixars-mark.png'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import { useAuth } from '@/contexts/AuthContext'
 
 const SUBAPPS = [
-    { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Ready for vestDen', to: '/apps/conceptnexus' },
-    { key: 'invest', glyph: 'V', name: 'vestDen', tagline: 'Fund campaigns', stat: '14.2%', statLabel: 'Avg Target IRR', to: '/apps/vestden' },
-    { key: 'collab', glyph: 'B', name: 'CollaBoard', tagline: 'Execute sprints', stat: '₦68M', statLabel: 'In Escrow', to: '/apps/collaboard' },
-    { key: 'skills', glyph: 'S', name: 'SkillsCanvas', tagline: 'Provable talent', stat: '76%', statLabel: 'Verified Profiles', to: '/apps/skillscanvas' },
+    { key: 'concept', glyph: 'C', name: 'ConceptNexus', tagline: 'Validate ideas', stat: '89', statLabel: 'Peer-reviewed' },
+    ...(isVestDenStakingEnabled() ? [{ key: 'invest', glyph: 'V', name: 'vestDen', tagline: 'Hibernated prototype', stat: '—', statLabel: 'Not live money' }] : []),
+    { key: 'collab', glyph: 'B', name: 'CollaBoard', tagline: 'Execute sprints', stat: '12', statLabel: 'Active sprints' },
+    { key: 'skills', glyph: 'S', name: 'SkillsCanvas', tagline: 'Provable talent', stat: '76%', statLabel: 'Verified Profiles' },
 ]
 
 const FLOAT_CARDS = [
-    { cls: 'fc1', icon: TrendingUp, title: '₦25k Stake Added', meta: 'SolarShare Lagos' },
+    ...(isVestDenStakingEnabled() ? [{ cls: 'fc1', icon: TrendingUp, title: 'Prototype note', meta: 'Not a live-money path' }] : []),
     { cls: 'fc2', icon: Lightbulb, title: 'Idea Validated', meta: 'Score: 84/100' },
-    { cls: 'fc3', icon: Check, title: 'Milestone Done', meta: '₦340k Released' },
+    { cls: 'fc3', icon: Check, title: 'Milestone Done', meta: 'On CollaBoard' },
 ]
 
 const HOW_IT_WORKS = [
-    { num: '01', key: 'concept', glyph: 'C', title: 'Validate', desc: "Submit ideas to ConceptNexus. Peer reviewers and AI agents stress-test it until it's ready for funding." },
-    { num: '02', key: 'invest', glyph: 'V', title: 'Fund', desc: 'Graduated ideas move to vestDen. Backers stake capital from ₦5,000, locked in milestone-based escrow.' },
-    { num: '03', key: 'collab', glyph: 'B', title: 'Build', desc: 'Project leads use CollaBoard to run sprints. Escrowed funds release automatically as milestones ship.' },
-    { num: '04', key: 'skills', glyph: 'S', title: 'Earn', desc: 'Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.' },
+    { num: '01', key: 'concept', glyph: 'C', title: 'Validate', desc: "Submit ideas to ConceptNexus. Peer reviewers and AI agents stress-test it until it's ready to ship." },
+    ...(isVestDenStakingEnabled() ? [{ num: '02', key: 'invest', glyph: 'V', title: 'Review', desc: 'VestDen stays a prototype surface. This build does not hold client money and does not solicit stakes.' }] : []),
+    { num: '03', key: 'collab', glyph: 'B', title: 'Build', desc: 'Project leads use CollaBoard to run sprints as milestones ship. Not a live-money path.' },
+    { num: '04', key: 'skills', glyph: 'S', title: isVestDenStakingEnabled() ? 'Earn' : 'Staff', desc: isVestDenStakingEnabled()
+        ? 'Talents earn verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.'
+        : 'Talents collect verified badges on SkillsCanvas for every completed milestone. Identity, wallet, and reputation grow.' },
 ]
 
-// Only link to pages that actually exist — dead anchors confuse users.
+const SOVEREIGNTY = [
+    { icon: Layers, title: 'Models commoditise; your context compounds', desc: 'Every idea validated and milestone shipped is written into a context layer you own. AI models come and go — your operating manual only gets more valuable.' },
+    { icon: BookOpen, title: 'The manual, not the consultant', desc: 'A trader’s real edge lives in an invisible notebook — who supplies, who owes, who delivers. Fixars writes your notebook down once, so it can finally be delegated, financed and protected.' },
+    { icon: RefreshCw, title: 'Model-agnostic by design', desc: 'Your rules and records never depend on one AI vendor. Point today’s best rented intelligence at your business — under your rules — and swap it tomorrow without losing a thing.' },
+]
+
 const FOOTER_COLS = [
-    {
-        heading: 'Ecosystem',
-        links: [
-            { label: 'ConceptNexus', to: '/apps/conceptnexus' },
-            { label: 'vestDen', to: '/apps/vestden' },
-            { label: 'CollaBoard', to: '/apps/collaboard' },
-            { label: 'SkillsCanvas', to: '/apps/skillscanvas' }
-        ]
-    },
-    {
-        heading: 'Resources',
-        links: [
-            { label: 'Developers / API', to: '/developers' },
-            { label: 'Activity Feed', to: '/feed' }
-        ]
-    },
-    {
-        heading: 'Company',
-        links: [
-            { label: 'About Us', to: '/about' },
-            { label: 'Terms of Service', to: '/terms' },
-            { label: 'Privacy Policy', to: '/privacy' }
-        ]
-    },
+    { heading: 'Ecosystem', links: isVestDenStakingEnabled()
+        ? ['ConceptNexus', 'vestDen', 'CollaBoard', 'SkillsCanvas']
+        : ['ConceptNexus', 'CollaBoard', 'SkillsCanvas'] },
+    { heading: 'Resources', links: ['Documentation', 'Whitepaper', 'FCS Scoring', 'Sovereignty Pledge', 'Help Center'] },
+    { heading: 'Company', links: ['About Us', 'Careers', 'Terms of Service', 'Privacy Policy'] },
 ]
 
 export default function Home() {
     const { isAuthenticated } = useAuth()
+    // Auth-aware CTAs: anonymous visitors go to auth, signed-in users to the app
     const primaryTarget = isAuthenticated ? '/dashboard' : '/signup'
 
     // The landing page is the ONLY indexable route (crawl policy): flip the
@@ -68,7 +59,7 @@ export default function Home() {
         <div className="splash">
             <nav className="splash-nav">
                 <Link to="/" className="brand">
-                    <img src="/fixars-mark.png" alt="Fixars" />
+                    <img src={fixarsMark} alt="Fixars" />
                     <div className="brand-name">Fixars</div>
                 </Link>
                 <div className="splash-nav-links">
@@ -85,8 +76,8 @@ export default function Home() {
             <header className="splash-hero">
                 <div>
                     <h1 className="splash-h1">Your operating system<br />for African <em>innovation</em>.</h1>
-                    <p className="splash-sub">Validate ideas, fund what matters, ship with verified teams. Identity, wallet, and reputation—built for the builders of tomorrow.</p>
-
+                    <p className="splash-sub">Validate ideas and ship with verified teams. Identity, wallet, and reputation—built for the builders of tomorrow, and owned by them.</p>
+                    
                     <div className="splash-cta">
                         <Link to={primaryTarget} className="btn btn-primary">{isAuthenticated ? 'Open dashboard' : 'Start building'}</Link>
                         <a href="#howitworks" className="btn" style={{ background: 'var(--color-paper)', border: '1px solid var(--color-ink-200)', color: 'var(--color-navy-900)' }}>
@@ -97,19 +88,19 @@ export default function Home() {
                     <div className="trust-strip">
                         <span>
                             <div className="ic"><Users className="w-4 h-4" /></div>
-                            50K+ Active Users
+                            Public prototype
                         </span>
                         <span>
                             <div className="ic"><Shield className="w-4 h-4" /></div>
-                            Bank-grade Escrow
+                            Prototype only
+                        </span>
+                        <span>
+                            <div className="ic"><Lock className="w-4 h-4" /></div>
+                            Your Data Stays Yours
                         </span>
                     </div>
                     
                     <div className="splash-stats">
-                        <div>
-                            <div className="v">₦142M</div>
-                            <div className="k">Capital Deployed</div>
-                        </div>
                         <div>
                             <div className="v">1,240</div>
                             <div className="k">Ideas in Motion</div>
@@ -124,7 +115,7 @@ export default function Home() {
                 <div className="splash-visual">
                     <div className="subapp-2x2">
                         {SUBAPPS.map((app) => (
-                            <Link key={app.key} to={app.to} className={`sa-card ${app.key}`}>
+                            <Link key={app.key} to="/dashboard" className={`sa-card ${app.key}`}>
                                 <div className="glyph">{app.glyph}</div>
                                 <div>
                                     <div className="nm">{app.name}</div>
@@ -153,7 +144,9 @@ export default function Home() {
             <section id="howitworks" className="splash-section dark">
                 <div className="inner">
                     <h2>How Fixars works.</h2>
-                    <p className="lede">One identity. Four districts. The entire lifecycle of innovation—from whiteboard to payout—happens securely across one interconnected ecosystem.</p>
+                    <p className="lede">{isVestDenStakingEnabled()
+                        ? 'One identity. Four districts. A public demo of the lifecycle—from whiteboard to shipped work. Not a licensed custody product.'
+                        : 'One identity. Three districts. A public demo of the lifecycle—from whiteboard to shipped work. Not a licensed custody product.'}</p>
                     
                     <div className="howit-grid">
                         {HOW_IT_WORKS.map((step) => (
@@ -168,15 +161,29 @@ export default function Home() {
                 </div>
             </section>
 
+            <section id="sovereignty" className="splash-section">
+                <h2>Operational sovereignty<br />for African SMEs.</h2>
+                <p className="lede">You own your operating system; the model is just a rented worker. Everything Fixars records for you is exportable, deletable, and never used to train anyone else&apos;s models.</p>
+                <div className="sov-grid">
+                    {SOVEREIGNTY.map((item) => (
+                        <div key={item.title} className="sov-card">
+                            <div className="ic"><item.icon className="w-5 h-5" /></div>
+                            <h4>{item.title}</h4>
+                            <p>{item.desc}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
             <footer className="splash-footer">
                 <div className="footer-inner">
                     <div className="footer-grid">
                         <div>
                             <Link to="/" className="footer-brand">
-                                <img src="/fixars-mark.png" alt="Fixars" />
+                                <img src={fixarsMark} alt="Fixars" />
                                 <div className="nm">Fixars</div>
                             </Link>
-                            <p className="footer-blurb">The operating system for African innovation. We connect ideas, capital, and talent to build the future.</p>
+                            <p className="footer-blurb">The operating system for African innovation. We connect ideas, teams, and talent to build the future. Your context compounds; it belongs to you.</p>
                             <div className="footer-socials">
                                 <a aria-label="Twitter"><ArrowUpRight className="w-4 h-4" /></a>
                                 <a aria-label="LinkedIn"><ArrowUpRight className="w-4 h-4" /></a>
@@ -188,9 +195,7 @@ export default function Home() {
                                 <h5>{col.heading}</h5>
                                 <ul>
                                     {col.links.map((link) => (
-                                        <li key={link.label}>
-                                            <Link to={link.to}>{link.label}</Link>
-                                        </li>
+                                        <li key={link}><a>{link}</a></li>
                                     ))}
                                 </ul>
                             </div>

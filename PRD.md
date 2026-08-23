@@ -4,6 +4,10 @@
 
 **Fixars** is a unified productivity superapp that brings together investing, idea validation, project collaboration, and talent sourcing under one seamless ecosystem. The platform enables ideas to flow freely between four interconnected sub-apps, creating a complete lifecycle from concept to execution.
 
+### Strategic Thesis
+
+While AI models commoditise, Fixars' context layer compounds. The durable asset is not any model but the **Fixars Context Layer (FCL)** — the machine-readable map of every entity, rule, permitted action and recorded decision in the ecosystem (see `docs/fcl-spec.md`). Every event, decision and rule a user captures in Fixars makes their business more valuable, whichever model runs on top: **operational sovereignty for African SMEs** — the moat is legibility, not intelligence. The FCL is model-agnostic by design, and a user's operational data belongs to the user: exportable, deletable, never used to train competitors (see `docs/strategy-sovereignty.md`).
+
 ## Vision Statement
 
 > Create an interconnected world where ideas flow freely between apps—where a validated concept in ConceptNexus can instantly become a funded stake in InvestDen, be executed on Collaboard, and staffed from SkillsCanvas—all with a single login and a unified points system that rewards every action.
@@ -24,7 +28,7 @@
 
 ### Technology Stack
 
-- **Frontend**: React 18 + Vite
+- **Frontend**: React 19 + Vite
 - **Routing**: React Router DOM
 - **Styling**: Vanilla CSS with custom design system
 - **Backend**: Supabase (Auth, Database, Realtime)

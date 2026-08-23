@@ -1,12 +1,14 @@
 import { useState, useCallback } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { formatNumber } from '@/lib/utils'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import PageHead from '@/components/PageHead'
 import { StatRow, Toolbar, ListGrid, EmptyState } from '@/components/SubAppKit'
-import { Plus } from 'lucide-react'
+import { Plus, Sparkles, ExternalLink } from 'lucide-react'
 import StakeFlowModal from '@/components/StakeFlowModal'
 import CreateStakeModal from '@/components/CreateStakeModal'
 
@@ -24,17 +26,15 @@ function daysLeft(deadline) {
     return d > 0 ? d : 0
 }
 
-function CampaignCard({ stake, onStake }) {
+function CampaignCard({ stake, onStake, onCreateBoard }) {
     const pct = Math.min(100, Math.round((stake.currentAmount / stake.targetAmount) * 100))
     const funded = pct >= 100 || stake.status === 'funded'
     const days = daysLeft(stake.deadline)
 
     return (
-        <button
+        <div
             className="list-card"
-            onClick={() => !funded && onStake?.(stake)}
-            disabled={funded}
-            style={{ opacity: funded ? 0.94 : 1 }}
+            style={{ opacity: funded ? 0.96 : 1, cursor: 'default' }}
         >
             <div className="lc-head">
                 <span className={`tag ${funded ? 'tag-success' : 'tag-invest'}`}>
@@ -55,21 +55,81 @@ function CampaignCard({ stake, onStake }) {
                 <span><b style={{ color: 'var(--color-invest)' }}>{stake.expectedReturns}</b> target return</span>
                 <span>{stake.stakers.length} backers</span>
             </div>
-        </button>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 pt-2 border-t mt-1">
+                {!funded ? (
+                    <button
+                        className="btn-app btn-app-invest text-xs px-3 py-1.5 w-full justify-center"
+                        onClick={() => onStake?.(stake)}
+                    >
+                        View campaign
+                    </button>
+                ) : (
+                    <div className="flex items-center justify-between w-full">
+                        {stake.linkedBoardId ? (
+                            <Link to={`/apps/collaboard?boardId=${stake.linkedBoardId}`} className="btn-ghost text-xs w-full text-center">
+                                <ExternalLink className="w-3.5 h-3.5 mr-1 inline" /> View CollaBoard Room
+                            </Link>
+                        ) : (
+                            <button
+                                className="btn-app btn-app-collab text-xs px-3 py-1.5 w-full justify-center"
+                                onClick={() => onCreateBoard?.(stake)}
+                            >
+                                <Sparkles className="w-3.5 h-3.5 mr-1 inline" /> Create Execution Board
+                            </button>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
     )
 }
 
-export default function VestDen() {
-    const { stakes, makeStake } = useData()
+function VestDenHibernated() {
+    return (
+        <main className="py-8">
+            <div className="subapp-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <PageHead
+                    app="invest"
+                    glyph="V"
+                    tag="Not available"
+                    title="vestDen"
+                    sub="Hibernated prototype. Not a live-money path and not a stake or invest surface."
+                />
+                <EmptyState
+                    title="Staking is not available"
+                    sub="This build does not accept stakes or solicit investment. The naira wallet stays a dummy balance and is not a live-money path."
+                />
+            </div>
+        </main>
+    )
+}
+
+function VestDenLive() {
+    const { stakes, makeStake, createBoard, logActivity } = useData()
     const { isAuthenticated, user } = useAuth()
     const { awardPoints } = usePoints()
+    const navigate = useNavigate()
     const [search, setSearch] = useState('')
     const [filter, setFilter] = useState('all')
     const [stakeModal, setStakeModal] = useState({ open: false, stake: null })
     const [createOpen, setCreateOpen] = useState(false)
 
+    const handleCreateBoard = useCallback(async (stake) => {
+        if (!isAuthenticated || !user) return
+        const newBoard = await createBoard({
+            title: stake.title,
+            description: `Execution board for funded campaign: ${stake.description}`,
+            creatorId: user.id,
+            members: [{ userId: user.id, role: 'owner', name: user.name }]
+        })
+        logActivity('launch', user.name, `created execution board for ${stake.title}`, 'collaboard')
+        navigate(`/apps/collaboard?boardId=${newBoard.id}`)
+    }, [createBoard, isAuthenticated, user, navigate, logActivity])
+
     const handleStakeClick = useCallback((stake) => {
-        if (!isAuthenticated) return
+        if (!isAuthenticated || !isVestDenStakingEnabled()) return
         setStakeModal({ open: true, stake })
     }, [isAuthenticated])
 
@@ -113,14 +173,14 @@ export default function VestDen() {
         ? [
             { k: 'Managed capital', v: `₦${formatNumber(portfolioTotal)}`, mono: true, t: 'across your stakes', tColor: 'var(--color-invest)' },
             { k: 'Staked projects', v: userStakes.length, t: 'in your portfolio' },
-            { k: 'Active stakes', v: userStakes.filter(s => s.status === 'active').length, t: 'still running' },
+            { k: 'Open items', v: userStakes.filter(s => s.status === 'active').length, t: 'still running' },
             { k: 'Awaiting returns', v: `₦${formatNumber(userStakes.filter(s => s.status === 'funded').reduce((sum, s) => sum + (s.stakers.find(st => st.userId === user?.id)?.amount || 0), 0))}`, mono: true, t: 'in funded deals', tColor: 'var(--color-success)' },
         ]
         : [
-            { k: 'Total staked', v: `₦${formatNumber(totalStaked)}`, mono: true, t: 'deployed to founders' },
-            { k: 'Active opportunities', v: activeStakes, t: 'open for backing' },
-            { k: 'Avg target return', v: '3.2x', t: 'across live campaigns', tColor: 'var(--color-invest)' },
-            { k: 'Backers', v: totalBackers, t: 'community investors' },
+            { k: 'Prototype tally', v: `₦${formatNumber(totalStaked)}`, mono: true, t: 'dummy figures only' },
+            { k: 'Open items', v: activeStakes, t: 'gated prototype surface' },
+            { k: 'Prototype note', v: '—', t: 'not a live-money path', tColor: 'var(--color-invest)' },
+            { k: 'Participants', v: totalBackers, t: 'dummy figures only' },
         ]
 
     return (
@@ -129,12 +189,12 @@ export default function VestDen() {
                 <PageHead
                     app="invest"
                     glyph="V"
-                    tag="Capital · Den of investors"
+                    tag="Prototype · gated"
                     title="vestDen"
-                    sub="Fund the validated future. From ₦5,000 to ₦5M, every stake is tracked, escrowed, and milestone-paid."
+                    sub="Gated prototype surface. Not a live-money path. This build does not solicit stakes or investment."
                     actions={isAuthenticated && (
                         <Button variant="vestden" size="lg" onClick={() => setCreateOpen(true)}>
-                            <Plus className="w-4 h-4 mr-2" /> Create Stake
+                            <Plus className="w-4 h-4 mr-2" /> New campaign
                         </Button>
                     )}
                 />
@@ -153,7 +213,7 @@ export default function VestDen() {
                 <ListGrid>
                     {visible.length > 0 ? (
                         visible.map(stake => (
-                            <CampaignCard key={stake.id} stake={stake} onStake={handleStakeClick} />
+                            <CampaignCard key={stake.id} stake={stake} onStake={handleStakeClick} onCreateBoard={handleCreateBoard} />
                         ))
                     ) : (
                         <EmptyState
@@ -174,8 +234,12 @@ export default function VestDen() {
                 />
             )}
 
-            {/* Create Stake Modal */}
+            {/* Gated campaign modal */}
             <CreateStakeModal open={createOpen} onClose={() => setCreateOpen(false)} />
         </main>
     )
+}
+
+export default function VestDen() {
+    return isVestDenStakingEnabled() ? <VestDenLive /> : <VestDenHibernated />
 }

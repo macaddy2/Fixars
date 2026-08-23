@@ -1,5 +1,10 @@
 # Fixars Ecosystem — Visual Webbing (pre‑AI)
 
+> **This webbing is the ontology/application layer** — the layer of the splitting AI stack
+> where value holds while models commoditise. The spine drawn here (entities, events,
+> guarded transitions) survives any model churn on top of it. See
+> [`fcl-spec.md`](./fcl-spec.md) and [`strategy-sovereignty.md`](./strategy-sovereignty.md).
+
 Three views of one model. The **journey** shows the happy path; the **event webbing**
 shows what fires what; the **state machines** show the guarded steps inside each app.
 Guards in `[brackets]` are the deterministic conditions (pre‑AI).

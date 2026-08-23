@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase, isSupabaseConfigured, TABLES } from '@/lib/supabase'
+import { isRealSessionEnabled } from '@/lib/flags'
+import { fetchMe, createServerSession, destroyServerSession } from '@/lib/sessionApi'
 
 const AuthContext = createContext(null)
 
@@ -25,8 +27,17 @@ export function AuthProvider({ children }) {
 
     // Initialize auth state
     useEffect(() => {
+        if (isRealSessionEnabled()) {
+            // Server session is the source of truth. localStorage is not auth.
+            fetchMe()
+                .then((serverUser) => setUser(serverUser))
+                .catch(() => setUser(null))
+                .finally(() => setIsLoading(false))
+            return
+        }
+
         if (!isSupabaseConfigured()) {
-            // Use localStorage mock for development
+            // Public-demo path only. Not the architecture.
             const savedUser = localStorage.getItem('fixars_user')
             if (savedUser) {
                 try {
@@ -111,6 +122,24 @@ export function AuthProvider({ children }) {
     }
 
     const login = async (email, password) => {
+        if (isRealSessionEnabled()) {
+            setIsLoading(true)
+            try {
+                const result = await createServerSession({ email, password })
+                if (result.error) {
+                    setIsLoading(false)
+                    return result
+                }
+                const serverUser = await fetchMe()
+                setUser(serverUser)
+                setIsLoading(false)
+                return { user: serverUser, error: serverUser ? null : { message: 'Session was not issued' } }
+            } catch (err) {
+                setIsLoading(false)
+                return { user: null, error: { message: err.message || 'Login failed' } }
+            }
+        }
+
         if (!isSupabaseConfigured()) {
             // Mock login
             setIsLoading(true)
@@ -160,6 +189,10 @@ export function AuthProvider({ children }) {
     }
 
     const loginWithMagicLink = async (email) => {
+        if (isRealSessionEnabled()) {
+            return { error: { message: 'Magic link is not part of the server-session stack' } }
+        }
+
         if (!isSupabaseConfigured()) {
             return { error: { message: 'Magic link not available in development mode' } }
         }
@@ -178,6 +211,24 @@ export function AuthProvider({ children }) {
     }
 
     const signup = async (name, email, password) => {
+        if (isRealSessionEnabled()) {
+            setIsLoading(true)
+            try {
+                const result = await createServerSession({ email, password, name })
+                if (result.error) {
+                    setIsLoading(false)
+                    return result
+                }
+                const serverUser = await fetchMe()
+                setUser(serverUser)
+                setIsLoading(false)
+                return { user: serverUser, error: serverUser ? null : { message: 'Session was not issued' } }
+            } catch (err) {
+                setIsLoading(false)
+                return { user: null, error: { message: err.message || 'Signup failed' } }
+            }
+        }
+
         if (!isSupabaseConfigured()) {
             // Mock signup
             setIsLoading(true)
@@ -232,6 +283,10 @@ export function AuthProvider({ children }) {
     }
 
     const loginWithOAuth = async (provider) => {
+        if (isRealSessionEnabled()) {
+            return { error: { message: 'OAuth is not part of the server-session stack' } }
+        }
+
         if (!isSupabaseConfigured()) {
             return { error: { message: 'OAuth not available in development mode' } }
         }
@@ -247,6 +302,13 @@ export function AuthProvider({ children }) {
     }
 
     const logout = async () => {
+        if (isRealSessionEnabled()) {
+            await destroyServerSession()
+            setUser(null)
+            setSession(null)
+            return
+        }
+
         if (!isSupabaseConfigured()) {
             setUser(null)
             localStorage.removeItem('fixars_user')
@@ -259,6 +321,10 @@ export function AuthProvider({ children }) {
     }
 
     const updateUser = async (updates) => {
+        if (isRealSessionEnabled()) {
+            return { error: { message: 'Profile updates are not issued from the client on the server-session stack' } }
+        }
+
         if (!isSupabaseConfigured()) {
             const updatedUser = { ...user, ...updates }
             setUser(updatedUser)
@@ -292,6 +358,10 @@ export function AuthProvider({ children }) {
     }
 
     const resetPassword = async (email) => {
+        if (isRealSessionEnabled()) {
+            return { error: { message: 'Password reset is not part of the server-session stack' } }
+        }
+
         if (!isSupabaseConfigured()) {
             return { error: { message: 'Password reset not available in development mode' } }
         }
@@ -310,6 +380,7 @@ export function AuthProvider({ children }) {
             isLoading,
             isAuthenticated: !!user,
             isSupabaseConfigured: isSupabaseConfigured(),
+            isRealSession: isRealSessionEnabled(),
             login,
             loginWithMagicLink,
             signup,

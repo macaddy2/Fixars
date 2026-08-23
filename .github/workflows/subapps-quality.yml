@@ -1,0 +1,40 @@
+name: Sub-app quality
+
+on:
+  pull_request:
+    paths:
+      - "subapps/**"
+      - ".cpanel.yml"
+      - "docs/architecture/network-event-architecture.md"
+      - ".github/workflows/subapps-quality.yml"
+  push:
+    branches: [main]
+    paths:
+      - "subapps/**"
+      - ".cpanel.yml"
+      - "docs/architecture/network-event-architecture.md"
+      - ".github/workflows/subapps-quality.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: subapps
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: subapps/package-lock.json
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run architecture:validate
+      - run: npm run build:products
+      - name: Verify committed product artifacts are reproducible
+        working-directory: .
+        run: git diff --exit-code -- subapps/dist-products

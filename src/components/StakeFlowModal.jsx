@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { X, TrendingUp } from 'lucide-react'
 import { useWallet } from '@/contexts/WalletContext'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import { formatNumber } from '@/lib/utils'
 
 const QUICK_AMOUNTS = [10000, 25000, 50000, 100000]
@@ -42,7 +43,7 @@ export default function StakeFlowModal({ campaign, onClose, onConfirm }) {
     const pct = campaign ? Math.min(100, Math.round((campaign.currentAmount / campaign.targetAmount) * 100)) : 0
     const days = daysLeft(campaign?.deadline)
 
-    if (!campaign) return null
+    if (!campaign || !isVestDenStakingEnabled()) return null
 
     const numeric = Number(amount) || 0
     const overBalance = numeric > balance
@@ -51,6 +52,7 @@ export default function StakeFlowModal({ campaign, onClose, onConfirm }) {
     // stake write succeeded — a failed write must never consume funds.
     const handleConfirm = async () => {
         setError('')
+        if (!isVestDenStakingEnabled()) { setError('Staking is not available in this build'); return }
         if (numeric <= 0) { setError('Enter an amount greater than zero'); return }
 
         setSubmitting(true)
@@ -93,7 +95,7 @@ export default function StakeFlowModal({ campaign, onClose, onConfirm }) {
                     </div>
                     <div className="flex-1 min-w-0">
                         <h3 className="font-display text-[18px] font-medium leading-tight">Stake in {campaign.title}</h3>
-                        <p className="text-xs text-muted mt-0.5">Back this campaign from your Fixars wallet.</p>
+                        <p className="text-xs text-muted mt-0.5">Gated prototype action. Not a live-money path.</p>
                     </div>
                     <button onClick={onClose} className="p-1 rounded-md hover:bg-muted/10" aria-label="Close">
                         <X className="w-4.5 h-4.5 text-muted" />
@@ -101,7 +103,7 @@ export default function StakeFlowModal({ campaign, onClose, onConfirm }) {
                 </div>
 
                 <div className="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
-                    {/* IRR / progress banner */}
+                    {/* Progress banner */}
                     <div className="rounded-xl p-4" style={{ background: 'var(--color-invest-bg)' }}>
                         <div className="flex items-end justify-between">
                             <div>

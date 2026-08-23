@@ -1,11 +1,19 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useWallet } from '@/contexts/WalletContext'
+import { usePoints } from '@/contexts/PointsContext'
+import { useData } from '@/contexts/DataContext'
+import { exportSnapshot, downloadSnapshot, deleteLocalData } from '@/lib/ledger'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     Settings, Sun, Moon, Coffee,
     Minus, Equal, AlignJustify,
     Palette, Bell, Shield, User,
-    ChevronRight, LogOut, Globe
+    ChevronRight, LogOut, Globe,
+    Database, Download, ReceiptText, Trash2,
+    Smartphone, RefreshCw
 } from 'lucide-react'
 
 /* ====================================================================
@@ -33,17 +41,34 @@ const VIBES = [
 ]
 
 export default function SettingsPage() {
-    const { logout } = useAuth()
+    const { user, logout } = useAuth()
     const { theme, setTheme, density, setDensity, vibe, setVibe } = useTheme()
+    const { balance, transactions } = useWallet()
+    const { history } = usePoints()
+    const { activities } = useData()
     const [notifications, setNotifications] = useState({
         stakes: true,
         ideas: true,
         messages: true,
         weekly: false,
     })
+    const [confirmDelete, setConfirmDelete] = useState(false)
 
     const toggleNotif = (key) => {
         setNotifications(prev => ({ ...prev, [key]: !prev[key] }))
+    }
+
+    const handleExport = () => {
+        downloadSnapshot(exportSnapshot({ user, balance, transactions, history, activities }))
+    }
+
+    const handleDelete = () => {
+        if (!confirmDelete) {
+            setConfirmDelete(true)
+            return
+        }
+        deleteLocalData()
+        window.location.reload()
     }
 
     return (
@@ -132,7 +157,7 @@ export default function SettingsPage() {
                     </h3>
                     <div className="settings-notif-list">
                         {[
-                            { key: 'stakes', label: 'Stake updates', desc: 'Get notified when your staked projects have updates.' },
+                            ...(isVestDenStakingEnabled() ? [{ key: 'stakes', label: 'Stake updates', desc: 'Get notified when your staked projects have updates.' }] : []),
                             { key: 'ideas', label: 'Idea validations', desc: 'Know when your ideas get validated or scored.' },
                             { key: 'messages', label: 'Direct messages', desc: 'Receive notifications for new messages.' },
                             { key: 'weekly', label: 'Weekly digest', desc: 'A weekly summary of your ecosystem activity.' },
@@ -154,15 +179,39 @@ export default function SettingsPage() {
                     </div>
                 </div>
 
+                {/* ── Data & Sovereignty ── */}
+                <div className="settings-card">
+                    <h3 className="settings-card-title display">
+                        <Database size={18} /> Data & Sovereignty
+                    </h3>
+                    <p className="sovereignty-pledge">
+                        <strong>Your data belongs to you.</strong> Everything Fixars records for you —
+                        wallet, points, activity, decisions — is exportable, deletable, and never
+                        used to train anyone else&apos;s models. Your context compounds; it stays yours.
+                    </p>
+                    <div className="settings-account-list">
+                        <button className="settings-account-row" onClick={handleExport}>
+                            <Download size={16} /> <span>Export my data (JSON)</span> <ChevronRight size={14} className="ml-auto" />
+                        </button>
+                        <Link to="/receipts" className="settings-account-row">
+                            <ReceiptText size={16} /> <span>View Receipts — your decision log</span> <ChevronRight size={14} className="ml-auto" />
+                        </Link>
+                        <button className={`settings-account-row ${confirmDelete ? 'danger' : ''}`} onClick={handleDelete}>
+                            <Trash2 size={16} />
+                            <span>{confirmDelete ? 'Tap again to confirm — resets wallet data on this device' : 'Delete local data'}</span>
+                        </button>
+                    </div>
+                </div>
+
                 {/* ── Account ── */}
                 <div className="settings-card">
                     <h3 className="settings-card-title display">
                         <User size={18} /> Account
                     </h3>
                     <div className="settings-account-list">
-                        <button className="settings-account-row">
+                        <Link to="/profile" className="settings-account-row">
                             <User size={16} /> <span>Edit Profile</span> <ChevronRight size={14} className="ml-auto" />
-                        </button>
+                        </Link>
                         <button className="settings-account-row">
                             <Shield size={16} /> <span>Security & Password</span> <ChevronRight size={14} className="ml-auto" />
                         </button>
@@ -172,6 +221,32 @@ export default function SettingsPage() {
                         <button className="settings-account-row danger" onClick={logout}>
                             <LogOut size={16} /> <span>Log Out</span>
                         </button>
+                    </div>
+                </div>
+
+                {/* ── Platform (Delta 4 cross-navigation) ── */}
+                <div className="settings-card">
+                    <h3 className="settings-card-title display">
+                        <Smartphone size={18} /> Platform
+                    </h3>
+                    <div className="settings-account-list">
+                        <Link to="/apps" className="settings-account-row">
+                            <Smartphone size={16} />
+                            <span>Mobile app · Browse app suite</span>
+                            <ChevronRight size={14} className="ml-auto" style={{ color: 'var(--color-blue-500)' }} />
+                        </Link>
+                        <Link to="/apps/skillscanvas" className="settings-account-row">
+                            <RefreshCw size={16} />
+                            <span>SkillsCanvas · List or manage your skills</span>
+                            <ChevronRight size={14} className="ml-auto" style={{ color: 'var(--color-blue-500)' }} />
+                        </Link>
+                        {isVestDenStakingEnabled() && (
+                            <Link to="/apps/vestden" className="settings-account-row">
+                                <RefreshCw size={16} />
+                                <span>vestDen · View active campaigns</span>
+                                <ChevronRight size={14} className="ml-auto" style={{ color: 'var(--color-blue-500)' }} />
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>

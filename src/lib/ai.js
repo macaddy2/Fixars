@@ -1,36 +1,16 @@
 /**
  * AI-powered recommendation engine for Fixars.
- *
- * Gemini is called through the `gemini-proxy` Edge Function so the API key
- * NEVER ships in the browser bundle. When Supabase isn't configured (or the
- * proxy errors), we fall back to heuristic recommendations.
+ * Model-agnostic: talks to whichever provider modelProvider.js exposes
+ * (Gemini today), falls back to heuristic-based recommendations.
  */
 
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { getDefaultProvider, isProviderConfigured } from './modelProvider'
 
 /**
- * Check if AI recommendations are available
+ * Check if a model provider is available
  */
 export function isAIConfigured() {
-    return isSupabaseConfigured()
-}
-
-/**
- * Call Gemini via the server-side proxy. Returns parsed JSON or null.
- */
-async function callGemini(prompt) {
-    if (!isAIConfigured()) return null
-
-    try {
-        const { data, error } = await supabase.functions.invoke('gemini-proxy', {
-            body: { prompt }
-        })
-        if (error || !data?.text) return null
-        return JSON.parse(data.text)
-    } catch (err) {
-        console.warn('Gemini proxy error:', err)
-        return null
-    }
+    return isProviderConfigured()
 }
 
 /**
@@ -62,13 +42,13 @@ Return a JSON array of the top 5 recommended ideas with this format:
 [{"ideaId": "...", "matchReason": "short reason why this matches", "score": 0.0-1.0}]
 Only return the JSON array, nothing else.`
 
-        const aiResult = await callGemini(prompt)
+        const aiResult = await getDefaultProvider().generateJSON(prompt)
         if (aiResult && Array.isArray(aiResult)) {
             return aiResult
                 .map(rec => ({
-                    idea: ideas.find(i => i.id === rec?.ideaId),
-                    matchReason: typeof rec?.matchReason === 'string' ? rec.matchReason : 'Recommended for you',
-                    score: Math.max(0, Math.min(1, Number(rec?.score) || 0))
+                    idea: ideas.find(i => i.id === rec.ideaId),
+                    matchReason: rec.matchReason,
+                    score: rec.score
                 }))
                 .filter(r => r.idea)
         }

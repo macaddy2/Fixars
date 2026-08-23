@@ -4,6 +4,7 @@ import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { useWallet } from '@/contexts/WalletContext'
 import { getInitials, formatNumber } from '@/lib/utils'
+import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     TrendingUp,
     Lightbulb,
@@ -139,7 +140,7 @@ function FeedCard({ activities }) {
                 <div className="live-dot" />
             </div>
             <div className="dash-feed-list">
-                {activities.slice(0, 5).map((act) => (
+                {activities.filter(act => isVestDenStakingEnabled() || act.type !== 'stake').slice(0, 5).map((act) => (
                     <div key={act.id} className="dash-feed-item">
                         <div className="feed-item-icon">{getIcon(act.type)}</div>
                         <div className="feed-item-body">
@@ -261,7 +262,7 @@ export default function Dashboard() {
     const { user, isAuthenticated, isLoading } = useAuth()
     const { points, level, getNextLevel, LEVELS } = usePoints()
     const { stakes, ideas, boards, talents, activities } = useData()
-    const { balance: walletBalance } = useWallet()
+    const { balance: walletBalance, source: walletSource, realSession } = useWallet()
     const location = useLocation()
 
     // While auth is resolving, show a loader instead of redirecting — avoids
@@ -292,15 +293,19 @@ export default function Dashboard() {
             color: 'var(--color-success)',
         },
         {
-            k: 'Wallet', v: `₦${formatNumber(walletBalance)}`, mono: true, tUp: true,
-            t: '↑ ₦12,400 this week', spark: [180, 205, 196, 228, 241, 272, 284],
+            k: 'Wallet', v: walletBalance == null ? '—' : `₦${formatNumber(walletBalance)}`, mono: true, tUp: false,
+            t: realSession ? `${walletSource || 'mock-ledger'} · not live rails` : 'Dummy · not a live-money path', spark: [180, 205, 196, 228, 241, 272, 284],
             color: 'var(--color-blue-500)',
         },
-        {
-            k: 'Active stakes', v: activeStakes.length,
-            t: `across ${stakes.length} campaigns`, spark: [6, 8, 8, 10, 11, 13, 14],
+        ...(isVestDenStakingEnabled() ? [{
+            k: 'Gated items', v: activeStakes.length,
+            t: 'prototype surface only', spark: [6, 8, 8, 10, 11, 13, 14],
             color: 'var(--color-invest)',
-        },
+        }] : [{
+            k: 'Ideas in motion', v: ideas.length,
+            t: 'on ConceptNexus', spark: [4, 5, 5, 6, 7, 8, 8],
+            color: 'var(--color-concept)',
+        }]),
         {
             k: 'Verified skills', v: verifiedSkills.length,
             t: skillNames || 'List your first skill', spark: [1, 1, 2, 2, 2, 3, 3],
@@ -316,11 +321,11 @@ export default function Dashboard() {
         : 100
 
     const subApps = [
-        {
-            icon: TrendingUp, name: 'VestDen', label: 'Active stakes',
+        ...(isVestDenStakingEnabled() ? [{
+            icon: TrendingUp, name: 'vestDen', label: 'Hibernated prototype',
             color: 'var(--color-invest)', gradient: 'linear-gradient(140deg, #10B981, #047857)',
             value: stakes.filter(s => s.status === 'active').length, to: '/apps/vestden'
-        },
+        }] : []),
         {
             icon: Lightbulb, name: 'ConceptNexus', label: 'My ideas',
             color: 'var(--color-concept)', gradient: 'linear-gradient(140deg, #7C3AED, #5B21B6)',
@@ -377,7 +382,7 @@ export default function Dashboard() {
 
             {/* ── Middle Row: Stakes + Trending Ideas ── */}
             <div className="dash-mid-row">
-                <RecentStakes stakes={stakes} />
+                {isVestDenStakingEnabled() && <RecentStakes stakes={stakes} />}
                 <TrendingIdeas ideas={ideas} />
             </div>
 
