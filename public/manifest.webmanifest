@@ -1,0 +1,14 @@
+{
+  "name": "Fixars",
+  "short_name": "Fixars",
+  "description": "Validate ideas, ship with verified teams. Your operating system for African innovation.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0A1628",
+  "theme_color": "#0A1628",
+  "icons": [
+    { "src": "/fixars-mark.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/fixars-mark.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" }
+  ]
+}

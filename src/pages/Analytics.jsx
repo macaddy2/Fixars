@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/contexts/AuthContext'
 import { useData } from '@/contexts/DataContext'
 import { usePoints } from '@/contexts/PointsContext'
+import { useSocial } from '@/contexts/SocialContext'
 import { isVestDenStakingEnabled } from '@/lib/features'
 import StatCard from '@/components/charts/StatCard'
 import MiniChart from '@/components/charts/MiniChart'
@@ -29,7 +30,8 @@ import {
 export default function Analytics() {
     const { isAuthenticated, isLoading } = useAuth()
     const { stakes, ideas, boards, talents, activities } = useData()
-    const { points } = usePoints()
+    const { points, history } = usePoints()
+    const { posts } = useSocial()
     const [timeRange, setTimeRange] = useState('30d')
     const location = useLocation()
 
@@ -38,20 +40,50 @@ export default function Analytics() {
         sum + b.columns.reduce((cs, c) => cs + c.tasks.length, 0), 0
     )
 
-    // Mock sparkline data — memoized so charts don't regenerate on every render.
-    // Hooks must run unconditionally, before any early returns below.
+    // ── Real series where we have data; stable pseudo-series where we don't ──
     const sparklines = useMemo(() => {
         const gen = (base, variance, len = 7) =>
-            Array.from({ length: len }, () => base + Math.floor(Math.random() * variance))
+            Array.from({ length: len }, () =>
+                Math.max(1, Math.round(base + (((Math.imul(base || 7, 2654435761) >>> 8) % Math.max(1, variance)))))
+            )
+
+        // Points progression: cumulative from the real history ledger (12 buckets)
+        let progression = []
+        if (history.length > 0) {
+            const sorted = [...history].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+            const bucketSize = Math.max(1, Math.ceil(sorted.length / 12))
+            progression = []
+            let running = 0
+            for (let i = 0; i < sorted.length; i++) {
+                running += sorted[i].points || 0
+                if ((i + 1) % bucketSize === 0 || i === sorted.length - 1) {
+                    progression.push(Math.max(0, running))
+                }
+            }
+            while (progression.length < 12) progression.unshift(progression[0] ?? 0)
+            progression = progression.slice(-12)
+        }
+
+        // Engagement: posts per day over the last 12 days (real feed data)
+        let engagement = []
+        if (posts.length > 0) {
+            const dayKey = (d) => d.toISOString().slice(0, 10)
+            const today = new Date()
+            engagement = Array.from({ length: 12 }, (_, i) => {
+                const day = dayKey(new Date(today.getTime() - (11 - i) * 86400000))
+                return posts.filter(p => p.createdAt?.slice(0, 10) === day).length
+            })
+        }
+
         return {
             staked: gen(totalStaked * 0.8, totalStaked * 0.2),
-            ideas: gen(1, 3),
-            tasks: gen(3, 5),
-            pointsEarned: gen(50, 100),
-            engagement: gen(10, 30, 12),
-            progression: gen(points * 0.3, points * 0.7, 12)
+            ideas: gen(ideas.length + 2, 3),
+            tasks: gen(totalTasks + 3, 5),
+            pointsEarned: gen(Math.max(points, 40), 60),
+            engagement: engagement.length ? engagement : gen(8, 20, 12),
+            progression: progression.length ? progression : gen(Math.max(points * 0.4, 20), 40, 12),
         }
-    }, [totalStaked, points])
+    }, [totalStaked, totalTasks, ideas.length, points, history, posts])
 
     if (isLoading) {
         return (

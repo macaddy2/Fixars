@@ -24,25 +24,26 @@ import SearchOverlay from '@/components/SearchOverlay'
 import Home from '@/pages/Home'
 import Apps from '@/pages/Apps'
 import Feed from '@/pages/Feed'
-import MessagesPage from '@/pages/MessagesPage'
+import { lazy, Suspense } from 'react'
+const MessagesPage = lazy(() => import('@/pages/MessagesPage'))
 import Login from '@/pages/Login'
 import Signup from '@/pages/Signup'
 import Dashboard from '@/pages/Dashboard'
 import NotificationsPage from '@/pages/NotificationsPage'
-import Analytics from '@/pages/Analytics'
+const Analytics = lazy(() => import('@/pages/Analytics'))
 import ApiDocs from '@/pages/ApiDocs'
 import ProfilePage from '@/pages/ProfilePage'
-import SettingsPage from '@/pages/SettingsPage'
-import WalletPage from '@/pages/WalletPage'
+const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
+const WalletPage = lazy(() => import('@/pages/WalletPage'))
 import ReceiptsPage from '@/pages/ReceiptsPage'
 import RequireSession from '@/components/RequireSession'
 
 // Sub-apps
-import VestDen from '@/apps/vestden/VestDen'
-import ConceptNexus from '@/apps/conceptnexus/ConceptNexus'
-import Collaboard from '@/apps/collaboard/Collaboard'
-import SkillsCanvas from '@/apps/skillscanvas/SkillsCanvas'
-import TalentProfile from '@/apps/skillscanvas/TalentProfile'
+const VestDen = lazy(() => import('@/apps/vestden/VestDen'))
+const ConceptNexus = lazy(() => import('@/apps/conceptnexus/ConceptNexus'))
+const Collaboard = lazy(() => import('@/apps/collaboard/Collaboard'))
+const SkillsCanvas = lazy(() => import('@/apps/skillscanvas/SkillsCanvas'))
+const TalentProfile = lazy(() => import('@/apps/skillscanvas/TalentProfile'))
 
 // Simple placeholder pages
 function About() {
@@ -94,6 +95,14 @@ function NotFound() {
   )
 }
 
+function RouteFallback() {
+  return (
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+    </div>
+  )
+}
+
 function ForgotPassword() {
   return (
     <div className="max-w-md mx-auto px-4 py-16 text-center">
@@ -136,7 +145,8 @@ function AppLayout() {
         <Header />
         <SearchOverlay />
         <div className="flex-1">
-          <Routes>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/about" element={<About />} />
@@ -163,6 +173,7 @@ function AppLayout() {
             <Route path="/messages" element={<RequireSession><MessagesPage /></RequireSession>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </div>
         <Footer />
         <RewardToast />
@@ -180,6 +191,7 @@ function AppLayout() {
           <TopBar />
           <SearchOverlay />
           <section className="fx-content">
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
@@ -211,6 +223,7 @@ function AppLayout() {
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </section>
         </main>
       </div>
