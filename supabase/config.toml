@@ -2,3 +2,9 @@
 # Paystack cannot supply a Supabase user JWT. The function authenticates the
 # exact raw request body with x-paystack-signature before processing an event.
 verify_jwt = false
+
+[functions.campaign-deadlines]
+# The database scheduler cannot mint an end-user JWT. This endpoint is exposed
+# through the gateway but rejects every request unless it is POST and carries
+# the exact high-entropy x-scheduler-secret stored in Function secrets/Vault.
+verify_jwt = false
