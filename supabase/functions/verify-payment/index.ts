@@ -15,6 +15,11 @@ const CORS = {
 }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import {
+    PAYSTACK_CURRENCY,
+    settlePaystackPayment,
+    validatedPaystackTransaction,
+} from '../_shared/paystack.js'
 
 function json(body, status = 200) {
     return new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
@@ -46,12 +51,16 @@ Deno.serve(async (req) => {
 
         const { data: payment } = await adminClient
             .from('payments')
-            .select('*')
+            .select('id, user_id, amount, currency, status, provider_ref')
             .eq('provider_ref', reference)
             .single()
         if (!payment) return json({ error: 'payment not found' }, 404)
         if (payment.user_id !== user.id) return json({ error: 'forbidden' }, 403)
-        if (payment.status === 'succeeded') return json({ status: 'succeeded' })
+        // A succeeded row can only be produced by the atomic settlement RPC,
+        // which already validated Paystack and created the ledger credit.
+        if (payment.status === 'succeeded') {
+            return json({ status: 'succeeded', amount: Number(payment.amount) })
+        }
 
         // ── Verify with Paystack ──
         const vRes = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
@@ -65,35 +74,28 @@ Deno.serve(async (req) => {
         }
 
         if (tx.status === 'success') {
-            // Idempotency: provider_ref is UNIQUE; a replay of the same
-            // verification can't double-credit because we only insert when the
-            // row is still pending.
-            if (payment.status === 'pending') {
-                await adminClient.from('payments')
-                    .update({
-                        status: 'succeeded',
-                        card_last4: tx.authorization?.last4 ?? null,
-                        card_brand: tx.authorization?.card_type ?? null,
-                    })
-                    .eq('id', payment.id)
-
-                // Credit the wallet ledger — the stake flow debits from here
-                await adminClient.from('wallet_transactions').insert({
-                    user_id: payment.user_id,
-                    type: 'deposit',
-                    label: `Wallet top-up · ${payment.stake_id ? 'campaign stake' : 'checkout'}`,
-                    app: 'vestden',
-                    amount: Number(payment.amount),
-                    ref: `paid-${payment.provider_ref}`,
-                })
+            const expectedAmount = Math.round(Number(payment.amount) * 100)
+            if (!validatedPaystackTransaction(tx, {
+                reference: payment.provider_ref,
+                amountSubunit: expectedAmount,
+                currency: payment.currency ?? PAYSTACK_CURRENCY,
+            })) {
+                console.error('paystack transaction did not match the stored payment')
+                return json({ error: 'provider transaction mismatch' }, 409)
             }
+            await settlePaystackPayment(adminClient, tx)
             return json({ status: 'succeeded', amount: Number(payment.amount) })
         }
 
         if (tx.status === 'failed' || tx.status === 'abandoned') {
-            await adminClient.from('payments')
+            const { error: statusErr } = await adminClient.from('payments')
                 .update({ status: 'failed' })
                 .eq('id', payment.id)
+                .eq('status', 'pending')
+            if (statusErr) {
+                console.error('failed payment status update failed:', statusErr.message)
+                return json({ error: 'could not record provider status' }, 500)
+            }
             return json({ status: tx.status })
         }
 

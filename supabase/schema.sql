@@ -1329,6 +1329,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+REVOKE ALL ON FUNCTION close_expired_campaigns() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION close_expired_campaigns() TO service_role;
+
 -- ── Read models for the UI ──
 CREATE OR REPLACE FUNCTION fetch_campaign_milestones(p_campaign_id UUID)
 RETURNS TABLE (

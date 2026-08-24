@@ -18,6 +18,7 @@ const CORS = {
 }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { parseNairaAmount, PAYSTACK_CURRENCY, selectCallbackOrigin } from '../_shared/paystack.js'
 
 function json(body, status = 200) {
     return new Response(JSON.stringify(body), { status, headers: { ...CORS, 'Content-Type': 'application/json' } })
@@ -41,11 +42,19 @@ Deno.serve(async (req) => {
         })
         const { data: { user }, error: userErr } = await userClient.auth.getUser()
         if (userErr || !user) return json({ error: 'not authenticated' }, 401)
+        if (!user.email) return json({ error: 'a verified account email is required' }, 400)
 
         const { stakeId, amount, origin } = await req.json()
-        if (!stakeId || !amount || Number(amount) <= 0) {
+        const parsedAmount = parseNairaAmount(amount)
+        if (!stakeId || !parsedAmount) {
             return json({ error: 'stakeId and a positive amount are required' }, 400)
         }
+        const callbackOrigin = selectCallbackOrigin(
+            origin,
+            req.headers.get('Origin'),
+            Deno.env.get('PAYMENT_CALLBACK_ORIGINS'),
+        )
+        if (!callbackOrigin) return json({ error: 'callback origin is not allowed' }, 400)
 
         // ── Validate the campaign server-side ──
         const adminClient = createClient(supabaseUrl, serviceKey)
@@ -56,43 +65,59 @@ Deno.serve(async (req) => {
             .single()
         if (stakeErr || !stake) return json({ error: 'campaign not found' }, 404)
         if (stake.status !== 'active') return json({ error: 'campaign is no longer active' }, 400)
-        if (Number(stake.current_amount) + Number(amount) > Number(stake.target_amount)) {
+        if (Number(stake.current_amount) + parsedAmount.naira > Number(stake.target_amount)) {
             return json({ error: 'amount exceeds remaining funding target' }, 400)
         }
 
-        // ── Create a Paystack transaction (kobo = naira × 100) ──
+        // Record the canonical amount before creating an external checkout. If
+        // this fails, no Paystack transaction is created without a local row.
         const reference = `fixars-${crypto.randomUUID()}`
-        const initRes = await fetch('https://api.paystack.co/transaction/initialize', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${paystackKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: user.email,
-                amount: Math.round(Number(amount) * 100),
-                currency: 'NGN',
-                reference,
-                metadata: { stakeId, userId: user.id },
-                callback_url: `${origin ?? ''}/wallet?payment=${reference}`,
-            }),
-        })
-        const initData = await initRes.json()
-        if (!initData?.status || !initData?.data?.authorization_url) {
-            console.error('paystack initialize failed:', initData?.message)
-            return json({ error: 'could not start payment' }, 502)
-        }
-
-        // ── Record the pending payment ──
-        await adminClient.from('payments').insert({
+        const { error: paymentErr } = await adminClient.from('payments').insert({
             user_id: user.id,
             stake_id: stakeId,
-            amount: Number(amount),
-            currency: 'NGN',
+            amount: parsedAmount.naira,
+            currency: PAYSTACK_CURRENCY,
             status: 'pending',
             provider: 'paystack',
             provider_ref: reference,
         })
+        if (paymentErr) {
+            console.error('pending payment insert failed:', paymentErr.message)
+            return json({ error: 'could not prepare payment' }, 500)
+        }
+
+        // ── Create a Paystack transaction (kobo = naira × 100) ──
+        let initRes: Response | null = null
+        let initData: any = null
+        try {
+            initRes = await fetch('https://api.paystack.co/transaction/initialize', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${paystackKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: user.email,
+                    amount: parsedAmount.subunit,
+                    currency: PAYSTACK_CURRENCY,
+                    reference,
+                    metadata: { stakeId, userId: user.id },
+                    callback_url: `${callbackOrigin}/wallet?payment=${encodeURIComponent(reference)}`,
+                }),
+            })
+            initData = await initRes.json().catch(() => null)
+        } catch (err) {
+            console.error('paystack initialize request failed:', err)
+        }
+        if (!initRes?.ok || !initData?.status || !initData?.data?.authorization_url) {
+            console.error('paystack initialize failed:', initData?.message)
+            const { error: statusErr } = await adminClient.from('payments')
+                .update({ status: 'failed' })
+                .eq('provider_ref', reference)
+                .eq('status', 'pending')
+            if (statusErr) console.error('failed payment status update failed:', statusErr.message)
+            return json({ error: 'could not start payment' }, 502)
+        }
 
         return json({ authorizationUrl: initData.data.authorization_url, reference })
     } catch (err) {
