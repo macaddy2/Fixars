@@ -26,6 +26,7 @@ import {
     Send
 } from 'lucide-react'
 import BookingModal from '@/components/BookingModal'
+import EngagementsSection from './EngagementsSection'
 
 const SKILL_LEVELS = {
     expert: { label: 'Expert', color: 'success', percentage: 100 },
@@ -91,7 +92,7 @@ function RatingDistribution({ stats }) {
 
 export default function TalentProfile() {
     const { id: talentId } = useParams()
-    const { isAuthenticated } = useAuth()
+    const { user, isAuthenticated } = useAuth()
     const { talent, loading: talentLoading, error: talentError } = useTalent(talentId)
     const { reviews, stats, loading: reviewsLoading, submitReview } = useReviews(talentId, { reviewerName: 'You' })
 
@@ -434,6 +435,13 @@ export default function TalentProfile() {
                             </CardContent>
                         </Card>
                     </div>
+
+                    {/* Own profile: incoming requests + engagement loop */}
+                    {talent.userId && user?.id === talent.userId && (
+                        <div className="lg:col-span-3 mt-2">
+                            <EngagementsSection talent={talent} />
+                        </div>
+                    )}
                 </div>
             </div>
             {showBooking && (
