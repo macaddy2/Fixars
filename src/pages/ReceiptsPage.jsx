@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useWallet } from '@/contexts/WalletContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { buildLedger } from '@/lib/ledger'
-import { ReceiptText, Wallet, Star, AlignLeft } from 'lucide-react'
+import { fetchMyEscrowEvents } from '@/lib/db/ops'
+import { isSupabaseConfigured } from '@/lib/supabase'
+import { ReceiptText, Wallet, Star, AlignLeft, ShieldCheck } from 'lucide-react'
 
 /* ====================================================================
    Receipts — the user-facing Decision Log.
@@ -16,12 +18,14 @@ import { ReceiptText, Wallet, Star, AlignLeft } from 'lucide-react'
 const FILTERS = [
     { key: 'all', label: 'All' },
     { key: 'wallet', label: 'Wallet', icon: Wallet },
+    { key: 'escrow', label: 'Escrow', icon: ShieldCheck },
     { key: 'points', label: 'Points', icon: Star },
     { key: 'activity', label: 'Activity', icon: AlignLeft },
 ]
 
 const SOURCE_META = {
     wallet: { label: 'Wallet', color: 'var(--color-invest)' },
+    escrow: { label: 'Escrow', color: 'var(--color-collab)' },
     points: { label: 'Points', color: 'var(--color-warning)' },
     activity: { label: 'Activity', color: 'var(--color-collab)' },
 }
@@ -52,10 +56,22 @@ export default function ReceiptsPage() {
     const { history } = usePoints()
     const { activities } = useData()
     const [filter, setFilter] = useState('all')
+    const [escrowEvents, setEscrowEvents] = useState([])
+
+    // Escrow audit trail (server tier only): fund/release/freeze/refund events
+    // for campaigns you own or backed.
+    useEffect(() => {
+        if (!isSupabaseConfigured()) return
+        let cancelled = false
+        fetchMyEscrowEvents(50)
+            .then(ev => !cancelled && setEscrowEvents(ev))
+            .catch(err => console.error('Escrow audit load failed:', err))
+        return () => { cancelled = true }
+    }, [])
 
     const ledger = useMemo(
-        () => buildLedger({ transactions, history, activities }),
-        [transactions, history, activities]
+        () => buildLedger({ transactions, history, activities, escrowEvents }),
+        [transactions, history, activities, escrowEvents]
     )
 
     const entries = filter === 'all' ? ledger : ledger.filter(e => e.source === filter)

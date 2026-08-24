@@ -82,11 +82,32 @@ export function normalizeActivity(activity) {
 /**
  * Merge the three histories into one ledger, newest first.
  */
-export function buildLedger({ transactions = [], history = [], activities = [] }) {
+export function normalizeEscrowEvent(ev) {
+    const LABELS = {
+        fund: 'Escrow funded by campaign backers',
+        release: 'Escrow tranche released on milestone verification',
+        freeze: 'Milestone disputed — tranche frozen',
+        refund: 'Campaign refund',
+    }
+    const title = ev.campaignTitle || 'Escrow event'
+    return {
+        id: `escrow-${ev.id}`,
+        type: ev.type,
+        actor: 'escrow',
+        source: 'escrow',
+        amount: ev.amount,
+        points: null,
+        label: title,
+        reason: `${LABELS[ev.type] || 'Escrow movement'} · ${title}`,
+        ts: ev.createdAt,
+    }
+}
+export function buildLedger({ transactions = [], history = [], activities = [], escrowEvents = [] }) {
     return [
         ...transactions.map(normalizeWalletTxn),
         ...history.map(normalizePointsRecord),
         ...activities.map(normalizeActivity),
+        ...escrowEvents.map(normalizeEscrowEvent),
     ].sort((a, b) => new Date(b.ts) - new Date(a.ts))
 }
 
