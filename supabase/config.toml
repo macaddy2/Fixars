@@ -1,0 +1,4 @@
+[functions.paystack-webhook]
+# Paystack cannot supply a Supabase user JWT. The function authenticates the
+# exact raw request body with x-paystack-signature before processing an event.
+verify_jwt = false
