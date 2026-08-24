@@ -6,6 +6,8 @@ import { useWallet } from '@/contexts/WalletContext'
 import { usePoints } from '@/contexts/PointsContext'
 import { useData } from '@/contexts/DataContext'
 import { exportSnapshot, downloadSnapshot, deleteLocalData } from '@/lib/ledger'
+import { isSupabaseConfigured } from '@/lib/supabase'
+import { setKycTier, exportMyData, deleteMyContent, downloadExport, KYC_LABELS, nextKycStep } from '@/lib/db/sovereignty'
 import { isVestDenStakingEnabled } from '@/lib/features'
 import {
     Settings, Sun, Moon, Coffee,
@@ -41,7 +43,7 @@ const VIBES = [
 ]
 
 export default function SettingsPage() {
-    const { user, logout } = useAuth()
+    const { user, logout, updateUser } = useAuth()
     const { theme, setTheme, density, setDensity, vibe, setVibe } = useTheme()
     const { balance, transactions } = useWallet()
     const { history } = usePoints()
@@ -53,22 +55,62 @@ export default function SettingsPage() {
         weekly: false,
     })
     const [confirmDelete, setConfirmDelete] = useState(false)
+    const [kycBusy, setKycBusy] = useState(false)
+    const [serverMsg, setServerMsg] = useState('')
 
     const toggleNotif = (key) => {
         setNotifications(prev => ({ ...prev, [key]: !prev[key] }))
     }
 
-    const handleExport = () => {
+    const handleExport = async () => {
+        if (isSupabaseConfigured()) {
+            setServerMsg('')
+            try {
+                const payload = await exportMyData()
+                downloadExport(payload)
+                return
+            } catch (err) {
+                console.error('Server export failed, falling back to local snapshot:', err)
+            }
+        }
         downloadSnapshot(exportSnapshot({ user, balance, transactions, history, activities }))
     }
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (!confirmDelete) {
             setConfirmDelete(true)
             return
         }
+        if (isSupabaseConfigured()) {
+            setServerMsg('')
+            try {
+                const counts = await deleteMyContent()
+                alert(`Deleted on the server: ${counts.posts} posts · ${counts.comments} comments · ${counts.votes} votes · ${counts.notifications} notifications`)
+            } catch (err) {
+                console.error('Server delete failed:', err)
+            }
+        }
         deleteLocalData()
         window.location.reload()
+    }
+
+    // ── KYC tier actions ──
+    const handleKyc = async () => {
+        if (!isSupabaseConfigured()) return
+        setServerMsg('')
+        setKycBusy(true)
+        try {
+            const step = nextKycStep(user?.kycTier ?? 0)
+            const ref = step.needsRef ? window.prompt('Paste the kyc-… reference issued by the compliance port:') : null
+            if (step.needsRef && !ref) return
+            const tier = await setKycTier(step.action === 'phone' ? 1 : 2, ref)
+            await updateUser({ kycTier: tier })
+            setServerMsg(`Verification updated — ${KYC_LABELS[tier]}`)
+        } catch (err) {
+            setServerMsg(err.message || 'Could not update verification')
+        } finally {
+            setKycBusy(false)
+        }
     }
 
     return (
@@ -190,6 +232,11 @@ export default function SettingsPage() {
                         used to train anyone else&apos;s models. Your context compounds; it stays yours.
                     </p>
                     <div className="settings-account-list">
+                        {serverMsg && (
+                            <p className="text-xs px-3 py-2 rounded-lg" style={{ background: 'var(--color-info-bg)', color: 'var(--color-info)' }}>
+                                {serverMsg}
+                            </p>
+                        )}
                         <button className="settings-account-row" onClick={handleExport}>
                             <Download size={16} /> <span>Export my data (JSON)</span> <ChevronRight size={14} className="ml-auto" />
                         </button>
@@ -198,9 +245,31 @@ export default function SettingsPage() {
                         </Link>
                         <button className={`settings-account-row ${confirmDelete ? 'danger' : ''}`} onClick={handleDelete}>
                             <Trash2 size={16} />
-                            <span>{confirmDelete ? 'Tap again to confirm — resets wallet data on this device' : 'Delete local data'}</span>
+                            <span>{confirmDelete ? 'Tap again to confirm' : isSupabaseConfigured() ? 'Delete my posts, comments & votes (server)' : 'Delete local data'}</span>
                         </button>
                     </div>
+                </div>
+
+                {/* ── Identity verification ── */}
+                <div className="settings-card">
+                    <h3 className="settings-card-title display">
+                        <Shield size={18} /> Identity verification
+                    </h3>
+                    <p className="settings-label" style={{ marginBottom: 8 }}>
+                        Current tier: <b>{KYC_LABELS[user?.kycTier ?? 0]}</b>
+                    </p>
+                    {(() => {
+                        const step = nextKycStep(user?.kycTier ?? 0)
+                        if (!step.selfServe) {
+                            return <p className="text-xs text-muted">{step.label}</p>
+                        }
+                        return (
+                            <button className="settings-account-row" onClick={handleKyc} disabled={kycBusy || !isSupabaseConfigured()}>
+                                <Shield size={16} />
+                                <span>{isSupabaseConfigured() ? step.label : 'Verification runs on the server tier'}</span>
+                            </button>
+                        )
+                    })()}
                 </div>
 
                 {/* ── Account ── */}

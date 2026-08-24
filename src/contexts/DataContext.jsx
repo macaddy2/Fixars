@@ -452,9 +452,9 @@ export function DataProvider({ children }) {
 
         setIdeas(prev => [newIdea, ...prev])
         // Engine cascade: concept enters its lifecycle (SUBMIT)
-        conceptSubmitted(newIdea)
+        conceptSubmitted(newIdea, { kycTier: user?.kycTier ?? 1 })
         return newIdea
-    }, [isConfigured])
+    }, [isConfigured, user?.kycTier])
 
     const voteIdea = useCallback(async (ideaId, userId, vote, comment = null, badge = null) => {
         if (!isConfigured) {

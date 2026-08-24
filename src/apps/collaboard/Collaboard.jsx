@@ -10,6 +10,7 @@ import { getInitials, formatNumber } from '@/lib/utils'
 import CreateBoardModal from '@/components/CreateBoardModal'
 import AddTaskModal from '@/components/AddTaskModal'
 import { fetchCampaignMilestones, getEscrowSummary } from '@/lib/db/milestones'
+import AgreementsCard from '@/components/AgreementsCard'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import PageHead from '@/components/PageHead'
 import { StatRow, Toolbar, ListGrid, EmptyState } from '@/components/SubAppKit'
@@ -349,6 +350,8 @@ export default function Collaboard() {
                             </Card>
 
                             <EscrowCard board={board} />
+
+                            <AgreementsCard board={board} />
 
                             <Card>
                                 <CardHeader className="pb-3">
