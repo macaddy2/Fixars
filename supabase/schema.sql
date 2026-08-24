@@ -1762,3 +1762,165 @@ BEGIN
   RETURN QUERY SELECT vp, vc, vv, vn;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ============================================================
+-- M6: TRUST & OPERATIONS
+-- Operator flag, dispute resolution, KYC tier-3 grants, operator queues,
+-- and a user-facing escrow audit feed. Operators are bootstrap by SQL:
+--   UPDATE profiles SET is_operator = true WHERE email = 'ops@…';
+-- ============================================================
+
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_operator BOOLEAN NOT NULL DEFAULT false;
+
+CREATE OR REPLACE FUNCTION am_i_operator()
+RETURNS BOOLEAN AS $$
+  SELECT COALESCE((SELECT is_operator FROM profiles WHERE id = auth.uid()), false);
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION assert_operator()
+RETURNS VOID AS $$
+BEGIN
+  IF NOT COALESCE((SELECT is_operator FROM profiles WHERE id = auth.uid()), false) THEN
+    RAISE EXCEPTION 'operator access required';
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Shared, idempotent release primitive (used by backer verification AND
+-- operator dispute resolution). p_fee_bps lets policy switch on platform fees
+-- later without a migration — default 0 keeps money math untouched today.
+CREATE OR REPLACE FUNCTION do_release_milestone(p_milestone_id UUID, p_fee_bps INTEGER DEFAULT 0)
+RETURNS NUMERIC AS $$
+DECLARE
+  v_campaign UUID; v_founder UUID; v_tranche NUMERIC;
+  v_held NUMERIC; v_credited NUMERIC; v_fee NUMERIC := 0;
+BEGIN
+  SELECT m.campaign_id, m.tranche INTO v_campaign, v_tranche
+  FROM milestones m WHERE m.id = p_milestone_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'milestone not found'; END IF;
+
+  SELECT creator_id INTO v_founder FROM stakes WHERE id = v_campaign;
+
+  SELECT held INTO v_held FROM escrow_accounts WHERE campaign_id = v_campaign FOR UPDATE;
+  IF v_held IS NULL THEN RAISE EXCEPTION 'escrow account missing'; END IF;
+  IF v_held < v_tranche THEN RAISE EXCEPTION 'escrow holds less than this tranche'; END IF;
+
+  v_fee := ROUND(v_tranche * COALESCE(p_fee_bps,0) / 10000.0, 2);
+
+  INSERT INTO wallet_transactions (user_id, type, label, app, amount, ref)
+  VALUES (v_founder, 'payout',
+          CASE WHEN v_fee > 0 THEN 'Milestone payout · ' || p_milestone_id::TEXT || ' (net of fee)' ELSE 'Milestone payout · ' || p_milestone_id::TEXT END,
+          'collaboard', v_tranche - v_fee, 'escrow:' || p_milestone_id::TEXT)
+  ON CONFLICT (ref) DO NOTHING
+  RETURNING amount INTO v_credited;
+
+  IF v_credited IS NULL THEN
+    RETURN 0; -- replay: already released
+  END IF;
+
+  UPDATE escrow_accounts SET held = held - v_tranche WHERE campaign_id = v_campaign;
+
+  INSERT INTO escrow_events (campaign_id, milestone_id, type, amount, actor, meta)
+  VALUES (v_campaign, p_milestone_id, 'release', v_tranche - v_fee,
+          auth.uid(),
+          jsonb_build_object('fee', v_fee, 'fee_bps', COALESCE(p_fee_bps,0), 'gross', v_tranche));
+
+  UPDATE milestones SET status='verified', verified_at=NOW(), verified_by=auth.uid(), updated_at=NOW()
+  WHERE id = p_milestone_id;
+
+  RETURN v_credited;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Rewrite verify_milestone to delegate to the shared primitive (same contract)
+CREATE OR REPLACE FUNCTION verify_milestone(p_milestone_id UUID)
+RETURNS NUMERIC AS $$
+DECLARE v_campaign UUID; v_status TEXT; v_founder UUID;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT campaign_id, status INTO v_campaign, v_status FROM milestones WHERE id = p_milestone_id;
+  IF v_status = 'verified' THEN RETURN 0; END IF;
+  IF v_status <> 'submitted' THEN RAISE EXCEPTION 'only submitted milestones can be verified'; END IF;
+
+  SELECT creator_id INTO v_founder FROM stakes WHERE id = v_campaign;
+  IF v_founder = auth.uid() THEN RAISE EXCEPTION 'the founder cannot verify their own milestone — a backer must'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM stakers WHERE stake_id = v_campaign AND user_id = auth.uid()) THEN
+    RAISE EXCEPTION 'only backers of this campaign can verify milestones';
+  END IF;
+
+  RETURN do_release_milestone(p_milestone_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ── Operator dispute resolution ──
+CREATE OR REPLACE FUNCTION resolve_dispute(p_milestone_id UUID, p_outcome TEXT, p_fee_bps INTEGER DEFAULT 0)
+RETURNS TEXT AS $$
+DECLARE v_status TEXT;
+BEGIN
+  PERFORM assert_operator();
+
+  SELECT status INTO v_status FROM milestones WHERE id = p_milestone_id FOR UPDATE;
+  IF v_status <> 'disputed' THEN RAISE EXCEPTION 'milestone is not disputed'; END IF;
+
+  IF p_outcome = 'release' THEN
+    UPDATE milestones SET status='verified' WHERE id=p_milestone_id;
+    PERFORM do_release_milestone(p_milestone_id, COALESCE(p_fee_bps,0));
+    RETURN 'released';
+  ELSIF p_outcome = 'rework' THEN
+    UPDATE milestones SET status='in_progress', updated_at=NOW() WHERE id=p_milestone_id;
+    RETURN 'rework';
+  ELSE
+    RAISE EXCEPTION 'outcome must be release|rework';
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ── Operator queues ──
+CREATE OR REPLACE FUNCTION list_disputed_milestones()
+RETURNS TABLE (
+  milestone_id UUID, milestone_title TEXT, campaign_title TEXT, founder_name TEXT,
+  tranche NUMERIC, submitted_at TIMESTAMP WITH TIME ZONE, submission_note TEXT,
+  held NUMERIC, disputed_by TEXT
+) AS $$
+  SELECT m.id, m.title, s.title, fp.display_name, m.tranche, m.submitted_at, m.submission_note,
+         e.held,
+         (SELECT dp.display_name FROM escrow_events ev JOIN profiles dp ON dp.id=ev.actor
+           WHERE ev.milestone_id=m.id AND ev.type='freeze' ORDER BY ev.created_at DESC LIMIT 1)
+  FROM milestones m
+  JOIN stakes s ON s.id = m.campaign_id
+  JOIN profiles fp ON fp.id = s.creator_id
+  LEFT JOIN escrow_accounts e ON e.campaign_id = m.campaign_id
+  WHERE m.status = 'disputed'
+  ORDER BY m.submitted_at ASC;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION grant_kyc_tier3(p_user_id UUID) RETURNS VOID AS $$
+BEGIN
+  PERFORM assert_operator();
+  UPDATE profiles SET kyc_tier = GREATEST(kyc_tier,3) WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION list_kyc_queue()
+RETURNS TABLE (user_id UUID, display_name TEXT, email TEXT, kyc_tier INTEGER, joined_at TIMESTAMP WITH TIME ZONE) AS $$
+  SELECT id, display_name, email, kyc_tier, created_at
+  FROM profiles
+  WHERE kyc_tier < 3
+  ORDER BY created_at DESC
+  LIMIT 50;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+-- ── User-facing escrow audit (founder or backer campaigns only) ──
+CREATE OR REPLACE FUNCTION fetch_my_escrow_events(p_limit INTEGER DEFAULT 50)
+RETURNS TABLE (
+  event_id UUID, campaign_id UUID, campaign_title TEXT, milestone_id UUID,
+  type TEXT, amount NUMERIC, created_at TIMESTAMP WITH TIME ZONE
+) AS $$
+  SELECT ev.id, ev.campaign_id, s.title, ev.milestone_id, ev.type, ev.amount, ev.created_at
+  FROM escrow_events ev
+  JOIN stakes s ON s.id = ev.campaign_id
+  WHERE s.creator_id = auth.uid()
+     OR EXISTS (SELECT 1 FROM stakers st WHERE st.stake_id = ev.campaign_id AND st.user_id = auth.uid())
+  ORDER BY ev.created_at DESC
+  LIMIT COALESCE(p_limit, 50);
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;

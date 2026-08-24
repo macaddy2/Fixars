@@ -44,6 +44,7 @@ const ConceptNexus = lazy(() => import('@/apps/conceptnexus/ConceptNexus'))
 const Collaboard = lazy(() => import('@/apps/collaboard/Collaboard'))
 const SkillsCanvas = lazy(() => import('@/apps/skillscanvas/SkillsCanvas'))
 const TalentProfile = lazy(() => import('@/apps/skillscanvas/TalentProfile'))
+const OpsPage = lazy(() => import('@/pages/OpsPage'))
 
 // Simple placeholder pages
 function About() {
@@ -171,6 +172,7 @@ function AppLayout() {
             <Route path="/developers" element={<ApiDocs />} />
             <Route path="/settings" element={<RequireSession><SettingsPage /></RequireSession>} />
             <Route path="/messages" element={<RequireSession><MessagesPage /></RequireSession>} />
+            <Route path="/ops" element={<RequireSession><OpsPage /></RequireSession>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </Suspense>
@@ -220,6 +222,7 @@ function AppLayout() {
               <Route path="/developers" element={<ApiDocs />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/messages" element={<MessagesPage />} />
+              <Route path="/ops" element={<OpsPage />} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
