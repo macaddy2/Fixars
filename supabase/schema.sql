@@ -1087,3 +1087,268 @@ BEGIN
   RETURN v_balance + v_new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ============================================================
+-- M1: ESCROW & MILESTONES
+-- Funded campaigns hold raised funds in escrow_accounts (mirror of the
+-- wallet ledger, not a separate balance). Milestone verification releases
+-- tranches from escrow into the founder's wallet_transactions — idempotently,
+-- via ref-keyed inserts. Clients NEVER write these tables directly.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS milestones (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  campaign_id UUID REFERENCES stakes(id) ON DELETE CASCADE NOT NULL,
+  board_id UUID REFERENCES boards(id) ON DELETE SET NULL,
+  title TEXT NOT NULL CHECK (char_length(title) <= 200),
+  description TEXT,
+  tranche NUMERIC(12,2) NOT NULL CHECK (tranche > 0),
+  position INTEGER NOT NULL DEFAULT 0 CHECK (position >= 0),
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending','in_progress','submitted','verified','disputed','missed')),
+  due_date DATE,
+  submitted_at TIMESTAMP WITH TIME ZONE,
+  submission_note TEXT CHECK (submission_note IS NULL OR char_length(submission_note) <= 2000),
+  verified_at TIMESTAMP WITH TIME ZONE,
+  verified_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS escrow_accounts (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  campaign_id UUID UNIQUE REFERENCES stakes(id) ON DELETE CASCADE NOT NULL,
+  founder_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  raised_amount NUMERIC(12,2) NOT NULL CHECK (raised_amount > 0),
+  held NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (held >= 0),
+  status TEXT NOT NULL DEFAULT 'held' CHECK (status IN ('held','released','frozen','refunded')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Append-only audit trail; no UPDATE/DELETE policies ever.
+CREATE TABLE IF NOT EXISTS escrow_events (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  campaign_id UUID REFERENCES stakes(id) ON DELETE CASCADE NOT NULL,
+  milestone_id UUID REFERENCES milestones(id) ON DELETE SET NULL,
+  type TEXT NOT NULL CHECK (type IN ('fund','release','freeze','refund')),
+  amount NUMERIC(12,2) NOT NULL,
+  actor UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  meta JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE milestones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE escrow_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE escrow_events ENABLE ROW LEVEL SECURITY;
+
+-- Reads follow the stakes visibility model: any authenticated user can see
+-- campaigns, so milestone/escrow state is readable too. ALL writes go through
+-- SECURITY DEFINER RPCs below.
+DROP POLICY IF EXISTS "milestones_select" ON milestones;
+CREATE POLICY "milestones_select" ON milestones FOR SELECT USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "escrow_select" ON escrow_accounts;
+CREATE POLICY "escrow_select" ON escrow_accounts FOR SELECT USING (auth.uid() IS NOT NULL);
+DROP POLICY IF EXISTS "escrow_events_select" ON escrow_events;
+CREATE POLICY "escrow_events_select" ON escrow_events FOR SELECT USING (auth.uid() IS NOT NULL);
+
+CREATE INDEX IF NOT EXISTS idx_milestones_campaign ON milestones(campaign_id, position);
+CREATE INDEX IF NOT EXISTS idx_escrow_events_campaign ON escrow_events(campaign_id, created_at);
+
+-- ── Auto-open an escrow account when a campaign first becomes funded ──
+CREATE OR REPLACE FUNCTION open_escrow_on_funding()
+RETURNS TRIGGER AS $$
+DECLARE v_founder UUID;
+BEGIN
+  IF NEW.status = 'funded' AND OLD.status IS DISTINCT FROM 'funded' THEN
+    SELECT creator_id INTO v_founder FROM stakes WHERE id = NEW.id;
+    INSERT INTO escrow_accounts (campaign_id, founder_id, raised_amount, held)
+    VALUES (NEW.id, v_founder, NEW.current_amount, NEW.current_amount)
+    ON CONFLICT (campaign_id) DO NOTHING;
+    INSERT INTO escrow_events (campaign_id, type, amount)
+    VALUES (NEW.id, 'fund', NEW.current_amount);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_stake_funded ON stakes;
+CREATE TRIGGER on_stake_funded
+  AFTER UPDATE ON stakes
+  FOR EACH ROW EXECUTE FUNCTION open_escrow_on_funding();
+
+-- ── Create a milestone (founder only; tranches may not exceed escrow) ──
+CREATE OR REPLACE FUNCTION create_milestone(
+  p_campaign_id UUID, p_title TEXT, p_description TEXT,
+  p_tranche NUMERIC, p_due_date DATE DEFAULT NULL, p_position INTEGER DEFAULT 0
+)
+RETURNS UUID AS $$
+DECLARE
+  v_founder UUID; v_raised NUMERIC; v_committed NUMERIC; v_status TEXT; v_id UUID;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT creator_id, status INTO v_founder, v_status FROM stakes WHERE id = p_campaign_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'campaign not found'; END IF;
+  IF v_founder <> auth.uid() THEN RAISE EXCEPTION 'only the campaign founder can add milestones'; END IF;
+  IF v_status <> 'funded' THEN RAISE EXCEPTION 'milestones unlock when the campaign is fully funded'; END IF;
+  IF p_tranche IS NULL OR p_tranche <= 0 THEN RAISE EXCEPTION 'tranche must be positive'; END IF;
+
+  SELECT raised_amount INTO v_raised FROM escrow_accounts WHERE campaign_id = p_campaign_id;
+  SELECT COALESCE(SUM(tranche),0) INTO v_committed FROM milestones WHERE campaign_id = p_campaign_id;
+  IF v_committed + p_tranche > v_raised THEN
+    RAISE EXCEPTION 'schedule exceeds escrow: committed % + % > raised %', v_committed, p_tranche, v_raised;
+  END IF;
+
+  INSERT INTO milestones (campaign_id, title, description, tranche, due_date, position)
+  VALUES (p_campaign_id, p_title, NULLIF(p_description,''), p_tranche, p_due_date, p_position)
+  RETURNING id INTO v_id;
+  RETURN v_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ── Submit deliverables (founder or a member of the linked board) ──
+CREATE OR REPLACE FUNCTION submit_milestone(p_milestone_id UUID, p_note TEXT)
+RETURNS VOID AS $$
+DECLARE v_campaign UUID; v_board UUID; v_status TEXT; v_founder UUID;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT campaign_id, board_id, status INTO v_campaign, v_board, v_status FROM milestones WHERE id = p_milestone_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'milestone not found'; END IF;
+  IF v_status NOT IN ('pending','in_progress','disputed') THEN RAISE EXCEPTION 'milestone is not submittable from state %', v_status; END IF;
+
+  SELECT creator_id INTO v_founder FROM stakes WHERE id = v_campaign;
+  IF v_founder <> auth.uid() THEN
+    IF v_board IS NULL OR NOT EXISTS (
+      SELECT 1 FROM board_members WHERE board_id = v_board AND user_id = auth.uid()
+    ) THEN
+      RAISE EXCEPTION 'only the founder or linked board members can submit';
+    END IF;
+  END IF;
+
+  UPDATE milestones
+  SET status='submitted', submission_note=NULLIF(p_note,''), submitted_at=NOW(), updated_at=NOW()
+  WHERE id = p_milestone_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ── Verify → release tranche to founder wallet (backers verify, founder cannot) ──
+CREATE OR REPLACE FUNCTION verify_milestone(p_milestone_id UUID)
+RETURNS NUMERIC AS $$
+DECLARE
+  v_campaign UUID; v_status TEXT; v_tranche NUMERIC; v_founder UUID;
+  v_held NUMERIC; v_released NUMERIC;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT m.campaign_id, m.status, m.tranche INTO v_campaign, v_status, v_tranche
+  FROM milestones m WHERE m.id = p_milestone_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'milestone not found'; END IF;
+  IF v_status = 'verified' THEN
+    RETURN 0; -- idempotent replay
+  END IF;
+  IF v_status <> 'submitted' THEN RAISE EXCEPTION 'only submitted milestones can be verified'; END IF;
+
+  SELECT creator_id INTO v_founder FROM stakes WHERE id = v_campaign;
+  IF v_founder = auth.uid() THEN RAISE EXCEPTION 'the founder cannot verify their own milestone — a backer must'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM stakers WHERE stake_id = v_campaign AND user_id = auth.uid()) THEN
+    RAISE EXCEPTION 'only backers of this campaign can verify milestones';
+  END IF;
+
+  SELECT held INTO v_held FROM escrow_accounts WHERE campaign_id = v_campaign FOR UPDATE;
+  IF v_held IS NULL THEN RAISE EXCEPTION 'escrow account missing'; END IF;
+  IF v_held < v_tranche THEN RAISE EXCEPTION 'escrow holds less than this tranche'; END IF;
+
+  -- Idempotent money move: ref-unique credit, then conditional updates
+  INSERT INTO wallet_transactions (user_id, type, label, app, amount, ref)
+  VALUES (v_founder, 'payout', 'Milestone payout · ' || p_milestone_id, 'collaboard', v_tranche, 'escrow:' || p_milestone_id::TEXT)
+  ON CONFLICT (ref) DO NOTHING
+  RETURNING amount INTO v_released;
+
+  IF v_released IS NOT NULL THEN
+    UPDATE escrow_accounts SET held = held - v_tranche WHERE campaign_id = v_campaign;
+    INSERT INTO escrow_events (campaign_id, milestone_id, type, amount, actor)
+    VALUES (v_campaign, p_milestone_id, 'release', v_tranche, auth.uid());
+  END IF;
+
+  UPDATE milestones
+  SET status='verified', verified_at=NOW(), verified_by=auth.uid(), updated_at=NOW()
+  WHERE id = p_milestone_id;
+
+  RETURN COALESCE(v_released, 0);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ── Dispute (backer, after submission) / rework (founder, after dispute) ──
+CREATE OR REPLACE FUNCTION dispute_milestone(p_milestone_id UUID) RETURNS VOID AS $$
+DECLARE v_campaign UUID; v_status TEXT;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT campaign_id, status INTO v_campaign, v_status FROM milestones WHERE id = p_milestone_id;
+  IF v_status <> 'submitted' THEN RAISE EXCEPTION 'only submitted milestones can be disputed'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM stakers WHERE stake_id = v_campaign AND user_id = auth.uid()) THEN
+    RAISE EXCEPTION 'only backers can dispute';
+  END IF;
+  UPDATE milestones SET status='disputed', updated_at=NOW() WHERE id=p_milestone_id;
+  INSERT INTO escrow_events (campaign_id, milestone_id, type, amount, actor)
+  SELECT campaign_id, p_milestone_id, 'freeze', 0, auth.uid() FROM milestones WHERE id=p_milestone_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION rework_milestone(p_milestone_id UUID) RETURNS VOID AS $$
+DECLARE v_founder UUID;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not authenticated'; END IF;
+  SELECT s.creator_id INTO v_founder FROM milestones m JOIN stakes s ON s.id=m.campaign_id WHERE m.id=p_milestone_id;
+  IF v_founder <> auth.uid() THEN RAISE EXCEPTION 'only the founder can send back for rework'; END IF;
+  UPDATE milestones SET status='in_progress', updated_at=NOW() WHERE id=p_milestone_id AND status='disputed';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ── Deadline sweeper (service role / scheduled Edge Function) ──
+-- Refunds expired unfunded campaigns back to staker wallets (idempotent via
+-- ref keys) and marks overdue in-flight milestones as missed.
+CREATE OR REPLACE FUNCTION close_expired_campaigns()
+RETURNS INTEGER AS $$
+DECLARE
+  r RECORD; s RECORD; v_count INTEGER := 0;
+BEGIN
+  FOR s IN SELECT id, current_amount FROM stakes WHERE status='active' AND deadline < CURRENT_DATE FOR UPDATE LOOP
+    UPDATE stakes SET status='refunded', updated_at=NOW() WHERE id=s.id;
+    FOR r IN SELECT stake_id, user_id, amount FROM stakers WHERE stake_id=s.id LOOP
+      INSERT INTO wallet_transactions (user_id, type, label, app, amount, ref)
+      VALUES (r.user_id, 'refund', 'Refund · expired campaign', 'vestden', r.amount,
+              'refund:' || s.id::TEXT || ':' || r.user_id::TEXT)
+      ON CONFLICT (ref) DO NOTHING;
+    END LOOP;
+    v_count := v_count + 1;
+  END LOOP;
+
+  UPDATE milestones SET status='missed', updated_at=NOW()
+  WHERE status IN ('pending','in_progress') AND due_date < CURRENT_DATE
+    AND campaign_id IN (SELECT id FROM stakes WHERE status='funded');
+
+  RETURN v_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- ── Read models for the UI ──
+CREATE OR REPLACE FUNCTION fetch_campaign_milestones(p_campaign_id UUID)
+RETURNS TABLE (
+  id UUID, title TEXT, description TEXT, tranche NUMERIC, position INTEGER,
+  status TEXT, due_date DATE, submission_note TEXT,
+  submitted_at TIMESTAMP WITH TIME ZONE, verified_at TIMESTAMP WITH TIME ZONE
+) AS $$
+  SELECT m.id, m.title, m.description, m.tranche, m.position, m.status,
+         m.due_date, m.submission_note, m.submitted_at, m.verified_at
+  FROM milestones m
+  WHERE m.campaign_id = p_campaign_id
+  ORDER BY m.position, m.created_at;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION get_escrow_summary(p_campaign_id UUID)
+RETURNS TABLE (raised NUMERIC, held NUMERIC, released NUMERIC, status TEXT, is_backer BOOLEAN, is_founder BOOLEAN) AS $$
+  SELECT e.raised_amount, e.held,
+         (e.raised_amount - e.held),
+         e.status,
+         EXISTS (SELECT 1 FROM stakers WHERE stake_id=p_campaign_id AND user_id=auth.uid()),
+         (e.founder_id = auth.uid())
+  FROM escrow_accounts e WHERE e.campaign_id = p_campaign_id;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;

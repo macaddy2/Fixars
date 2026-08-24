@@ -56,6 +56,9 @@ export const TABLES = {
     // VestDen
     STAKES: 'stakes',
     STAKERS: 'stakers',
+    MILESTONES: 'milestones',
+    ESCROW_ACCOUNTS: 'escrow_accounts',
+    ESCROW_EVENTS: 'escrow_events',
     // ConceptNexus
     IDEAS: 'ideas',
     IDEA_VOTES: 'idea_votes',

@@ -8,9 +8,10 @@ import { formatNumber } from '@/lib/utils'
 import { isVestDenStakingEnabled } from '@/lib/features'
 import PageHead from '@/components/PageHead'
 import { StatRow, Toolbar, ListGrid, EmptyState } from '@/components/SubAppKit'
-import { Plus, Sparkles, ExternalLink } from 'lucide-react'
+import { Plus, Sparkles, ExternalLink, ShieldCheck } from 'lucide-react'
 import StakeFlowModal from '@/components/StakeFlowModal'
 import CreateStakeModal from '@/components/CreateStakeModal'
+import MilestonesPanel from './MilestonesPanel'
 
 const FILTERS = [
     { value: 'all', label: 'All' },
@@ -26,7 +27,7 @@ function daysLeft(deadline) {
     return d > 0 ? d : 0
 }
 
-function CampaignCard({ stake, onStake, onCreateBoard }) {
+function CampaignCard({ stake, onStake, onCreateBoard, onMilestones }) {
     const pct = Math.min(100, Math.round((stake.currentAmount / stake.targetAmount) * 100))
     const funded = pct >= 100 || stake.status === 'funded'
     const days = daysLeft(stake.deadline)
@@ -66,17 +67,23 @@ function CampaignCard({ stake, onStake, onCreateBoard }) {
                         View campaign
                     </button>
                 ) : (
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center justify-between w-full gap-2">
+                        <button
+                            className="btn-app btn-app-invest text-xs px-3 py-1.5 flex-1 justify-center"
+                            onClick={() => onMilestones?.(stake)}
+                        >
+                            <ShieldCheck className="w-3.5 h-3.5 mr-1 inline" /> Milestones
+                        </button>
                         {stake.linkedBoardId ? (
-                            <Link to={`/apps/collaboard?boardId=${stake.linkedBoardId}`} className="btn-ghost text-xs w-full text-center">
-                                <ExternalLink className="w-3.5 h-3.5 mr-1 inline" /> View CollaBoard Room
+                            <Link to={`/apps/collaboard?boardId=${stake.linkedBoardId}`} className="btn-ghost text-xs whitespace-nowrap">
+                                <ExternalLink className="w-3.5 h-3.5 mr-1 inline" /> Room
                             </Link>
                         ) : (
                             <button
-                                className="btn-app btn-app-collab text-xs px-3 py-1.5 w-full justify-center"
+                                className="btn-app btn-app-collab text-xs px-3 py-1.5 whitespace-nowrap"
                                 onClick={() => onCreateBoard?.(stake)}
                             >
-                                <Sparkles className="w-3.5 h-3.5 mr-1 inline" /> Create Execution Board
+                                <Sparkles className="w-3.5 h-3.5 mr-1 inline" /> Board
                             </button>
                         )}
                     </div>
@@ -115,6 +122,7 @@ function VestDenLive() {
     const [filter, setFilter] = useState('all')
     const [stakeModal, setStakeModal] = useState({ open: false, stake: null })
     const [createOpen, setCreateOpen] = useState(false)
+    const [milestonesPanel, setMilestonesPanel] = useState({ open: false, stake: null })
 
     const handleCreateBoard = useCallback(async (stake) => {
         if (!isAuthenticated || !user) return
@@ -213,7 +221,7 @@ function VestDenLive() {
                 <ListGrid>
                     {visible.length > 0 ? (
                         visible.map(stake => (
-                            <CampaignCard key={stake.id} stake={stake} onStake={handleStakeClick} onCreateBoard={handleCreateBoard} />
+                            <CampaignCard key={stake.id} stake={stake} onStake={handleStakeClick} onCreateBoard={handleCreateBoard} onMilestones={(s) => setMilestonesPanel({ open: true, stake: s })} />
                         ))
                     ) : (
                         <EmptyState
@@ -236,6 +244,9 @@ function VestDenLive() {
 
             {/* Gated campaign modal */}
             <CreateStakeModal open={createOpen} onClose={() => setCreateOpen(false)} />
+            {milestonesPanel.open && milestonesPanel.stake && (
+                <MilestonesPanel campaign={milestonesPanel.stake} onClose={() => setMilestonesPanel({ open: false, stake: null })} />
+            )}
         </main>
     )
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -6,9 +6,11 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { useData } from '@/contexts/DataContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { getInitials } from '@/lib/utils'
+import { getInitials, formatNumber } from '@/lib/utils'
 import CreateBoardModal from '@/components/CreateBoardModal'
 import AddTaskModal from '@/components/AddTaskModal'
+import { fetchCampaignMilestones, getEscrowSummary } from '@/lib/db/milestones'
+import { isSupabaseConfigured } from '@/lib/supabase'
 import PageHead from '@/components/PageHead'
 import { StatRow, Toolbar, ListGrid, EmptyState } from '@/components/SubAppKit'
 import {
@@ -60,6 +62,59 @@ function TaskCard({ task, columnId }) {
                 )}
             </div>
         </div>
+    )
+}
+
+/** Read-only escrow/milestone snapshot for the campaign linked to this board. */
+function EscrowCard({ board }) {
+    const [data, setData] = useState(null)
+
+    useEffect(() => {
+        if (!isSupabaseConfigured() || !board?.linkedIdeaId) return
+        let cancelled = false
+        ;(async () => {
+            // Find the funded campaign linked to this board's idea
+            const { fetchStakes } = await import('@/lib/db/stakes')
+            const stakes = await fetchStakes()
+            const stake = stakes.find(s => s.linkedIdeaId === board.linkedIdeaId && s.status === 'funded')
+            if (!stake || cancelled) { setData({ none: true }); return }
+            const [summary, milestones] = await Promise.all([
+                getEscrowSummary(stake.id),
+                fetchCampaignMilestones(stake.id),
+            ])
+            if (!cancelled) setData({ stake, summary, milestones })
+        })().catch(() => !cancelled && setData({ none: true }))
+        return () => { cancelled = true }
+    }, [board?.linkedIdeaId])
+
+    if (!isSupabaseConfigured() || !board?.linkedIdeaId) return null
+    if (!data || data.none) return null
+
+    const done = data.milestones.filter(m => m.status === 'verified').length
+    return (
+        <Card className="border-collaboard/20">
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Escrow · Milestones</CardTitle>
+                <p className="text-xs text-muted truncate">{data.stake.title}</p>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+                <div className="flex justify-between mono">
+                    <span className="text-muted">Held</span>
+                    <span>₦{formatNumber(data.summary?.held ?? 0)}</span>
+                </div>
+                <div className="flex justify-between mono">
+                    <span className="text-muted">Released</span>
+                    <span className="text-success">₦{formatNumber(data.summary?.released ?? 0)}</span>
+                </div>
+                <div className="flex justify-between mono">
+                    <span className="text-muted">Verified</span>
+                    <span>{done}/{data.milestones.length}</span>
+                </div>
+                <Link to="/apps/vestden" className="btn-ghost text-xs w-full text-center block mt-1">
+                    Manage on vestDen →
+                </Link>
+            </CardContent>
+        </Card>
     )
 }
 
@@ -292,6 +347,8 @@ export default function Collaboard() {
                                     </Button>
                                 </CardContent>
                             </Card>
+
+                            <EscrowCard board={board} />
 
                             <Card>
                                 <CardHeader className="pb-3">
