@@ -48,3 +48,12 @@ export function getRelativeTime(date) {
     if (diffDays < 7) return `${diffDays}d ago`
     return formatDate(date)
 }
+
+/** Sort items newest-first by a timestamp field (missing timestamps sink). */
+export function sortByRecency(items, key = 'lastActivity') {
+    return [...items].sort((a, b) => {
+        const ta = new Date(a?.[key] || 0).getTime()
+        const tb = new Date(b?.[key] || 0).getTime()
+        return tb - ta
+    })
+}

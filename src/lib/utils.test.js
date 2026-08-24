@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { cn, formatNumber, getInitials, getRelativeTime } from './utils'
+import { cn, formatNumber, getInitials, getRelativeTime, sortByRecency } from './utils'
 
 describe('cn', () => {
     it('joins class names', () => {
@@ -57,5 +57,32 @@ describe('getRelativeTime', () => {
     it('formats hours and days ago', () => {
         expect(getRelativeTime(new Date(Date.now() - 3 * 3600_000).toISOString())).toBe('3h ago')
         expect(getRelativeTime(new Date(Date.now() - 2 * 86400_000).toISOString())).toBe('2d ago')
+    })
+})
+
+describe('sortByRecency', () => {
+    const items = [
+        { id: 'a', lastActivity: '2026-01-01T00:00:00Z' },
+        { id: 'b', lastActivity: '2026-03-01T00:00:00Z' },
+        { id: 'c' }, // missing timestamp
+        { id: 'd', lastActivity: '2026-02-01T00:00:00Z' },
+    ]
+
+    it('sorts newest first and sinks missing timestamps', () => {
+        const sorted = sortByRecency(items)
+        expect(sorted.map(x => x.id)).toEqual(['b', 'd', 'a', 'c'])
+    })
+
+    it('does not mutate the input array', () => {
+        sortByRecency(items)
+        expect(items[0].id).toBe('a')
+    })
+
+    it('supports custom keys', () => {
+        const byCreated = sortByRecency(
+            [{ id: 1, createdAt: '2026-01-01' }, { id: 2, createdAt: '2026-06-01' }],
+            'createdAt'
+        )
+        expect(byCreated[0].id).toBe(2)
     })
 })
