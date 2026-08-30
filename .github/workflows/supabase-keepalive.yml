@@ -2,9 +2,7 @@ name: Supabase keepalive
 
 on:
   schedule:
-    # GitHub Actions cron cannot express a true rolling 72-hour interval, so this
-    # uses the closest native cadence: 12:00 UTC on every third day-of-month.
-    - cron: "0 12 */3 * *"
+    - cron: "0 12 * * *"
   workflow_dispatch:
     inputs:
       keepalive_table:
@@ -32,6 +30,14 @@ jobs:
             exit 1
           fi
 
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
+            epoch_days=$(( $(date -u +%s) / 86400 ))
+            if [ $(( epoch_days % 3 )) -ne 0 ]; then
+              echo "Skipping scheduled keepalive run to maintain a 3-day cadence."
+              exit 0
+            fi
+          fi
+
           raw_keepalive_table="${KEEPALIVE_TABLE:-}"
           if [ -n "${raw_keepalive_table}" ]; then
             case "${raw_keepalive_table}" in
@@ -44,7 +50,7 @@ jobs:
 
           keepalive_table="${raw_keepalive_table:-ideas}"
           endpoint="${SUPABASE_URL%/}/rest/v1/${keepalive_table}?select=id&limit=1"
-          echo "Running keepalive query against ${endpoint}"
+          echo "Running keepalive query for table ${keepalive_table}"
 
           response_headers="$(mktemp)"
           response_body="$(mktemp)"
