@@ -63,12 +63,10 @@ jobs:
               --write-out "%{http_code}" \
               --header "apikey: ${SUPABASE_ANON_KEY}" \
               --header "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
-              --header "Prefer: count=exact" \
               "${endpoint}"
           )"
 
           echo "Supabase keepalive HTTP status: ${status_code}"
-          grep -i '^content-range:' "${response_headers}" | tr -d '\r' || true
           cat "${response_body}"
 
           if [ "${status_code}" -lt 200 ] || [ "${status_code}" -ge 300 ]; then
