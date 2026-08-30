@@ -1,0 +1,52 @@
+name: Supabase keepalive
+
+on:
+  schedule:
+    - cron: "0 12 */3 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run lightweight Supabase keepalive query
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "SUPABASE_URL and SUPABASE_ANON_KEY secrets must be configured."
+            exit 1
+          fi
+
+          endpoint="${SUPABASE_URL%/}/rest/v1/ideas?select=id&limit=1"
+          echo "Running keepalive query against ${endpoint}"
+
+          response_headers="$(mktemp)"
+          auth_header="Authorization: Bearer ${SUPABASE_ANON_KEY}"
+          trap 'rm -f "${response_headers}"' EXIT
+
+          status_code="$(
+            curl --silent --show-error --location \
+              --request HEAD \
+              --dump-header "${response_headers}" \
+              --output /dev/null \
+              --write-out "%{http_code}" \
+              --header "apikey: ${SUPABASE_ANON_KEY}" \
+              --header "${auth_header}" \
+              --header "Prefer: count=exact" \
+              "${endpoint}"
+          )"
+
+          echo "Supabase keepalive HTTP status: ${status_code}"
+          grep -i '^content-range:' "${response_headers}" | tr -d '\r' || true
+
+          if [ "${status_code}" -lt 200 ] || [ "${status_code}" -ge 300 ]; then
+            echo "Supabase keepalive query failed."
+            exit 1
+          fi
