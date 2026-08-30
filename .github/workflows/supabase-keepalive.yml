@@ -30,19 +30,21 @@ jobs:
             exit 1
           fi
 
-          keepalive_table="${KEEPALIVE_TABLE:-ideas}"
-          case "${keepalive_table}" in
-            ''|*[!A-Za-z0-9_-]*)
-              echo "KEEPALIVE_TABLE must contain only letters, numbers, underscores, or hyphens."
-              exit 1
-              ;;
-          esac
+          raw_keepalive_table="${KEEPALIVE_TABLE:-}"
+          if [ -n "${raw_keepalive_table}" ]; then
+            case "${raw_keepalive_table}" in
+              *[!A-Za-z0-9_-]*)
+                echo "KEEPALIVE_TABLE must contain only letters, numbers, underscores, or hyphens."
+                exit 1
+                ;;
+            esac
+          fi
 
+          keepalive_table="${raw_keepalive_table:-ideas}"
           endpoint="${SUPABASE_URL%/}/rest/v1/${keepalive_table}?select=id&limit=1"
           echo "Running keepalive query against ${endpoint}"
 
           response_headers="$(mktemp)"
-          auth_header="Authorization: Bearer ${SUPABASE_ANON_KEY}"
           trap 'rm -f "${response_headers}"' EXIT
 
           status_code="$(
@@ -52,7 +54,7 @@ jobs:
               --output /dev/null \
               --write-out "%{http_code}" \
               --header "apikey: ${SUPABASE_ANON_KEY}" \
-              --header "${auth_header}" \
+              --header "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
               --header "Prefer: count=exact" \
               "${endpoint}"
           )"
