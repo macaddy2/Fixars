@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 12 */3 * *"
   workflow_dispatch:
+    inputs:
+      keepalive_table:
+        description: Public table to query for keepalive
+        required: false
+        default: ideas
 
 permissions:
   contents: read
@@ -16,6 +21,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          KEEPALIVE_TABLE: ${{ github.event.inputs.keepalive_table }}
         run: |
           set -euo pipefail
 
@@ -24,7 +30,15 @@ jobs:
             exit 1
           fi
 
-          endpoint="${SUPABASE_URL%/}/rest/v1/ideas?select=id&limit=1"
+          keepalive_table="${KEEPALIVE_TABLE:-ideas}"
+          case "${keepalive_table}" in
+            ''|*[!A-Za-z0-9_-]*)
+              echo "KEEPALIVE_TABLE must contain only letters, numbers, underscores, or hyphens."
+              exit 1
+              ;;
+          esac
+
+          endpoint="${SUPABASE_URL%/}/rest/v1/${keepalive_table}?select=id&limit=1"
           echo "Running keepalive query against ${endpoint}"
 
           response_headers="$(mktemp)"
