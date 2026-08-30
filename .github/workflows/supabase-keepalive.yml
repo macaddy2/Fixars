@@ -2,6 +2,8 @@ name: Supabase keepalive
 
 on:
   schedule:
+    # GitHub Actions cron cannot express a true rolling 72-hour interval, so this
+    # uses the closest native cadence: 12:00 UTC on every third day-of-month.
     - cron: "0 12 */3 * *"
   workflow_dispatch:
     inputs:
@@ -45,13 +47,13 @@ jobs:
           echo "Running keepalive query against ${endpoint}"
 
           response_headers="$(mktemp)"
-          trap 'rm -f "${response_headers}"' EXIT
+          response_body="$(mktemp)"
+          trap 'rm -f "${response_headers}" "${response_body}"' EXIT
 
           status_code="$(
             curl --silent --show-error --location \
-              --request HEAD \
               --dump-header "${response_headers}" \
-              --output /dev/null \
+              --output "${response_body}" \
               --write-out "%{http_code}" \
               --header "apikey: ${SUPABASE_ANON_KEY}" \
               --header "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
@@ -61,6 +63,7 @@ jobs:
 
           echo "Supabase keepalive HTTP status: ${status_code}"
           grep -i '^content-range:' "${response_headers}" | tr -d '\r' || true
+          cat "${response_body}"
 
           if [ "${status_code}" -lt 200 ] || [ "${status_code}" -ge 300 ]; then
             echo "Supabase keepalive query failed."
