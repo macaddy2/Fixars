@@ -67,7 +67,29 @@ jobs:
           )"
 
           echo "Supabase keepalive HTTP status: ${status_code}"
-          cat "${response_body}"
+          python - <<'PYTHON' "${response_body}"
+import json
+import pathlib
+import sys
+
+body = pathlib.Path(sys.argv[1]).read_text().strip()
+if not body:
+    print('Supabase keepalive result: empty response body')
+    raise SystemExit(0)
+
+try:
+    payload = json.loads(body)
+except json.JSONDecodeError:
+    print(f'Supabase keepalive result: non-JSON response ({len(body)} bytes)')
+    raise SystemExit(0)
+
+if isinstance(payload, list):
+    print(f'Supabase keepalive result: {len(payload)} row(s) returned')
+elif isinstance(payload, dict):
+    print(f"Supabase keepalive result: object response with keys {', '.join(sorted(payload.keys()))}")
+else:
+    print(f'Supabase keepalive result: {type(payload).__name__} response')
+PYTHON
 
           if [ "${status_code}" -lt 200 ] || [ "${status_code}" -ge 300 ]; then
             echo "Supabase keepalive query failed."
