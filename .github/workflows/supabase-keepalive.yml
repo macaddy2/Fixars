@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       keepalive_table:
-        description: Public table to query for keepalive
+        description: Public table to query for keepalive (letters, numbers, underscores, and hyphens only)
         required: false
         # Keep in sync with the shell fallback below for scheduled runs.
         default: ideas
@@ -32,6 +32,8 @@ jobs:
           fi
 
           if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
+            # Use a stable UTC day anchor so scheduled runs execute on a
+            # deterministic every-third-day cadence without external state.
             epoch_days=$(( $(date -u +%s) / 86400 ))
             if [ $(( epoch_days % 3 )) -ne 0 ]; then
               echo "Skipping scheduled keepalive run to maintain a 3-day cadence."
