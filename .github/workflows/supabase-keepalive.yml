@@ -8,6 +8,7 @@ on:
       keepalive_table:
         description: Public table to query for keepalive
         required: false
+        # Keep in sync with the shell fallback below for scheduled runs.
         default: ideas
 
 permissions:
@@ -67,6 +68,12 @@ jobs:
           )"
 
           echo "Supabase keepalive HTTP status: ${status_code}"
+
+          if [ "${status_code}" -lt 200 ] || [ "${status_code}" -ge 300 ]; then
+            echo "Supabase keepalive query failed."
+            exit 1
+          fi
+
           python - <<'PYTHON' "${response_body}"
 import json
 import pathlib
@@ -90,8 +97,3 @@ elif isinstance(payload, dict):
 else:
     print(f'Supabase keepalive result: {type(payload).__name__} response')
 PYTHON
-
-          if [ "${status_code}" -lt 200 ] || [ "${status_code}" -ge 300 ]; then
-            echo "Supabase keepalive query failed."
-            exit 1
-          fi
